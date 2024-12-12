@@ -1,4 +1,50 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import {
+  type NavigationGuardNext,
+  type RouteLocationNormalized,
+  createRouter,
+  createWebHistory,
+} from 'vue-router'
+import { removeUser } from '@/helpers/auth'
+import { isAdmin, isAuthenticated, isOfficer } from '@/middlewares/auth'
+
+const adminOnly = (
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext,
+) => {
+  if
+  (isAdmin()) {
+    next()
+  }
+  else {
+    // Removing user because the login route will not be
+    // accessible to the user if the user is still in the local storage
+    removeUser()
+    next({ name: 'login' })
+  }
+}
+
+const merchantOnly = (
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext,
+) => {
+  if (isOfficer()) {
+    next()
+  }
+  else {
+    // Removing user because the login route will not be
+    // accessible to the user if the user is still in the local storage
+    removeUser()
+    next({ name: 'login' })
+  }
+}
+
+const guest = (
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext,
+) => (!isAuthenticated() ? next() : next({ name: from.name as string }))
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,12 +59,28 @@ const router = createRouter({
           component: () => import('../pages/dashboard.vue'),
         },
         {
+          path: 'enrollment',
+          component: () => import('../pages/enrollment.vue'),
+        },
+        {
+          name: 'schools',
+          path: 'enrollment/schools/:id/:name',
+          component: () => import('../pages/schools.vue'),
+        },
+        {
+          name: 'students',
+          path: 'enrollment/schools/students/:id/:name',
+          component: () => import('../pages/students.vue'),
+        },
+        {
           path: 'account-settings',
           component: () => import('../pages/account-settings.vue'),
+          beforeEnter: adminOnly,
         },
         {
           path: 'typography',
           component: () => import('../pages/typography.vue'),
+          beforeEnter: merchantOnly,
         },
         {
           path: 'icons',
@@ -43,6 +105,7 @@ const router = createRouter({
       component: () => import('../layouts/blank.vue'),
       children: [
         {
+          name: 'login',
           path: 'login',
           component: () => import('../pages/login.vue'),
         },
@@ -53,10 +116,22 @@ const router = createRouter({
         {
           path: '/:pathMatch(.*)*',
           component: () => import('../pages/[...all].vue'),
+          beforeEnter: guest,
         },
       ],
     },
   ],
+})
+
+const unGuardedRoutes = ['login', 'register', 'otp', 'delete-account']
+
+router.beforeEach((to, from, next) => {
+  // If the route is guarded and not authenticated, redirect to login
+  if (!unGuardedRoutes.includes(to.name as string) && !isAuthenticated())
+    next({ name: 'login' })
+  else if (unGuardedRoutes.includes(to.name as string) && isAuthenticated())
+    next({ name: 'enrollment' })
+  else next()
 })
 
 export default router

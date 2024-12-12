@@ -1,11 +1,43 @@
 <script lang="ts" setup>
+import { useRoute, useRouter } from 'vue-router'
 import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
+import { useUserStore } from '@/stores/user'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
 
 // Components
-import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
+// import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
 import UserProfile from '@/layouts/components/UserProfile.vue'
+
+const route = useRoute()
+const router = useRouter()
+const currentRouteTitle = ref('Search') // Default to 'Search'
+
+// Define the navigation links with their corresponding routes and titles
+const navLinks = [
+  { title: 'Dashboard', to: '/dashboard' },
+  { title: 'Enrollment', to: '/enrollment' },
+  { title: 'Attendance', to: '/attendance' },
+  { title: 'Financial Incentives', to: '/financial-incentives' },
+  { title: 'Report', to: '/report' },
+  { title: 'User Management', to: '/user-management' },
+  { title: 'Schools', to: '/enrollment/schools' },
+]
+
+// Watch for route changes and update the title
+
+watch(() => route.path, newPath => {
+  const matchedLink = navLinks.find(link => link.to === newPath)
+
+  currentRouteTitle.value = matchedLink ? matchedLink.title : 'Search'
+}, { immediate: true })
+
+const user = useUserStore().getUser()
+
+function logout() {
+  localStorage.removeItem('user')
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -26,39 +58,32 @@ import UserProfile from '@/layouts/components/UserProfile.vue'
           class="d-flex align-center cursor-pointer"
           style="user-select: none;"
         >
-          <!-- 👉 Search Trigger button -->
-          <IconBtn>
-            <VIcon icon="bx-search" />
-          </IconBtn>
-
           <span class="d-none d-md-flex align-center text-disabled">
-            <span class="me-3">Search</span>
-            <span class="meta-key">&#8984;K</span>
+            <span class="me-3 text-body-1">{{ currentRouteTitle }}</span>
+            <!-- <span class="meta-key">&#8984;K</span> -->
           </span>
         </div>
 
         <VSpacer />
 
-        <IconBtn
-          class="me-2"
-          href="#"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <VIcon icon="bxl-github" />
-        </IconBtn>
-
-        <IconBtn class="me-2">
-          <VIcon icon="bx-bell" />
-        </IconBtn>
-
-        <NavbarThemeSwitcher class="me-2" />
-
         <UserProfile />
+        <div class="me-2 mx-3">
+          <VCardTitle class="text-body-1 pa-0">
+            {{ user.name }}
+          </VCardTitle>
+          <VCardSubtitle class="text-caption pa-0">
+            {{ user.email }}
+          </VCardSubtitle>
+        </div>
       </div>
     </template>
 
     <template #vertical-nav-content>
+      <VerticalNavSectionTitle
+        :item="{
+          heading: 'Menu',
+        }"
+      />
       <VerticalNavLink
         :item="{
           title: 'Dashboard',
@@ -68,80 +93,128 @@ import UserProfile from '@/layouts/components/UserProfile.vue'
       />
       <VerticalNavLink
         :item="{
-          title: 'Account Settings',
-          icon: 'mdi-account-cog-outline',
-          to: '/account-settings',
-        }"
-      />
-
-      <!-- 👉 Pages -->
-      <VerticalNavSectionTitle
-        :item="{
-          heading: 'Pages',
+          title: 'Enrollment',
+          icon: 'bx-download',
+          to: '/enrollment',
         }"
       />
       <VerticalNavLink
         :item="{
-          title: 'Login',
-          icon: 'bx-log-in',
-          to: '/login',
+          title: 'Attendance',
+          icon: 'bx-check-circle',
+          to: '/',
         }"
       />
       <VerticalNavLink
         :item="{
-          title: 'Register',
-          icon: 'bx-user-plus',
-          to: '/register',
+          title: 'Financial Incentives',
+          icon: 'bx-camera',
+          to: '/',
         }"
       />
       <VerticalNavLink
         :item="{
-          title: 'Error',
-          icon: 'bx-info-circle',
-          to: '/no-existence',
+          title: 'report',
+          icon: 'bx-receipt',
+          to: '/',
         }"
       />
-
+      <VerticalNavLink
+        :item="{
+          title: 'User Management',
+          icon: 'bx-user',
+          to: '/',
+        }"
+      />
+      <!--
+        👉 Pages
+        <VerticalNavSectionTitle
+        :item="{
+        heading: 'Pages',
+        }"
+        />
+        <VerticalNavLink
+        :item="{
+        title: 'Account Settings',
+        icon: 'mdi-account-cog-outline',
+        to: '/account-settings',
+        }"
+        />
+        <VerticalNavLink
+        :item="{
+        title: 'Login',
+        icon: 'bx-log-in',
+        to: '/login',
+        }"
+        />
+        <VerticalNavLink
+        :item="{
+        title: 'Register',
+        icon: 'bx-user-plus',
+        to: '/register',
+        }"
+        />
+        <VerticalNavLink
+        :item="{
+        title: 'Error',
+        icon: 'bx-info-circle',
+        to: '/no-existence',
+        }"
+        />
+      -->
       <!-- 👉 User Interface -->
-      <VerticalNavSectionTitle
+      <!--
+        <VerticalNavSectionTitle
         :item="{
-          heading: 'User Interface',
+        heading: 'User Interface',
         }"
-      />
-      <VerticalNavLink
+        />
+        <VerticalNavLink
         :item="{
-          title: 'Typography',
-          icon: 'mdi-alpha-t-box-outline',
-          to: '/typography',
+        title: 'Typography',
+        icon: 'mdi-alpha-t-box-outline',
+        to: '/typography',
         }"
-      />
-      <VerticalNavLink
+        />
+        <VerticalNavLink
         :item="{
-          title: 'Icons',
-          icon: 'bx-show',
-          to: '/icons',
+        title: 'Icons',
+        icon: 'bx-show',
+        to: '/icons',
         }"
-      />
-      <VerticalNavLink
+        />
+        <VerticalNavLink
         :item="{
-          title: 'Cards',
-          icon: 'bx-credit-card',
-          to: '/cards',
+        title: 'Cards',
+        icon: 'bx-credit-card',
+        to: '/cards',
         }"
-      />
-      <VerticalNavLink
+        />
+        <VerticalNavLink
         :item="{
-          title: 'Tables',
-          icon: 'bx-table',
-          to: '/tables',
+        title: 'Tables',
+        icon: 'bx-table',
+        to: '/tables',
         }"
-      />
-      <VerticalNavLink
+        />
+        <VerticalNavLink
         :item="{
-          title: 'Form Layouts',
-          icon: 'mdi-form-select',
-          to: '/form-layouts',
+        title: 'Form Layouts',
+        icon: 'mdi-form-select',
+        to: '/form-layouts',
         }"
+        />
+      -->
+    </template>
+    <template #after-vertical-nav-items>
+      <VBtn
+        style="margin-bottom: 27px;"
+        prepend-icon="bx-exit"
+        text="Exit"
+        size="small"
+        variant="outlined"
+        color="error"
+        @click="logout"
       />
     </template>
 

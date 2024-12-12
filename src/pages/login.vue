@@ -1,48 +1,182 @@
 <script setup lang="ts">
-import AuthProvider from '@/views/pages/authentication/AuthProvider.vue'
-import logo from '@images/logo.svg?raw'
+import { useVuelidate } from '@vuelidate/core'
+import { email, helpers, minLength, required } from '@vuelidate/validators'
+import config from '@/config'
+import router from '@/router'
+import { useUserStore } from '@/stores/user'
+import logo from '@images/logo.jpeg'
 
-const form = ref({
-  email: '',
-  password: '',
-  remember: false,
+const baseURL: string = config.baseURL
+const loading = ref(false)
+const user = useUserStore()
+
+const showAlert = ref(false)
+
+const alertInfo = reactive({
+  show: false,
+  message: '',
+  title: '',
+  type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
+interface LoginFormData {
+  email: string
+  password?: string
+}
+
+const form = reactive({
+  email: '',
+  password: '',
+})
+
+const loginFormRules = computed(() => {
+  const min = 8
+
+  // Conditional validation based on user type
+  return {
+    email: { required, email: helpers.withMessage('Email is invalid', email) },
+    password: {
+      required,
+      minLength: helpers.withMessage(
+        `Password should be at least ${min} characters long`,
+        minLength(min),
+      ),
+    },
+  }
+})
+
+const v$ = useVuelidate(loginFormRules, form)
+
+const errors = ref<{
+  status: string
+  message: string
+  data: []
+} | undefined>()
+
+async function submit(data: LoginFormData) {
+  loading.value = true
+
+  try {
+    // Validate input
+    const isValid = await v$.value.$validate()
+    if (!isValid) {
+      loading.value = false
+
+      return
+    }
+
+    // Send login request
+    const response = await fetch(`${baseURL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      // Login successful
+      const { data: profileData } = responseData
+
+      user.setUser(profileData)
+      localStorage.setItem('user', JSON.stringify(profileData))
+      router.push('/enrollment')
+    }
+    else {
+      // Handle error response
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong, please try again later'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    // Handle unexpected errors
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'An unexpected error occurred. Please try again later.'
+    alertInfo.type = 'error'
+  }
+  finally {
+    // Reset loading state
+    loading.value = false
+  }
+}
+
+const emailErrorMessage = computed(() => v$.value.email.$errors[0]?.$message as string)
+const passwordErrorMessage = computed(() => v$.value.password.$errors[0]?.$message as string)
+
 const isPasswordVisible = ref(false)
+
+watch(errors, newErrors => {
+  if (newErrors) {
+    showAlert.value = true
+    setTimeout(() => {
+      showAlert.value = false
+      errors.value = undefined // Clear the errors
+    }, 4000) // 4000 milliseconds = 4 seconds
+  }
+})
+
+onMounted(() => {
+  const tokenCheckInterval = setInterval(() => {
+    if (user.isTokenExpired()) {
+      user.removeUser()
+      clearInterval(tokenCheckInterval)
+    }
+  }, 5 * 60 * 1000) // Check every 5 minutes
+
+  onUnmounted(() => {
+    clearInterval(tokenCheckInterval)
+  })
+})
 </script>
 
 <template>
+  <VSnackbar
+    v-model="alertInfo.show"
+    :color="alertInfo.type"
+    :timeout="4000"
+    elevation="4"
+  >
+    <p>{{ alertInfo.message }}</p>
+    <template #actions>
+      <VBtn
+        icon="bx-x"
+        variant="text"
+        @click="alertInfo.show = false"
+      />
+    </template>
+  </VSnackbar>
   <div class="auth-wrapper d-flex align-center justify-center pa-4">
     <VCard
-      class="auth-card pa-4 pt-7"
+      class="auth-card pa-2 pt-7"
       max-width="448"
     >
-      <VCardItem class="justify-center">
-        <template #prepend>
-          <div class="d-flex">
-            <div
-              class="d-flex text-primary"
-              v-html="logo"
-            />
-          </div>
-        </template>
-
-        <VCardTitle class="text-2xl font-weight-bold">
-          Agile
-        </VCardTitle>
+      <VCardItem class="justify-center pb-1.5">
+        <VImg
+          :src="logo"
+          max-width="145"
+          class="mx-auto my-2 mb-0"
+        />
       </VCardItem>
 
-      <VCardText class="pt-2">
-        <h5 class="text-h5 mb-1">
-          Welcome to Agile! 👋🏻
+      <VCardText class="pt-0">
+        <h5 class="text-h4 mb-3 text-center font-weight-semibold text-heading">
+          Login
         </h5>
-        <p class="mb-0">
-          Please sign-in to your account and start the adventure
+        <p class="mb-8 text-center text-subtitle-1 text-subheading font-weight-medium">
+          Welcome. Login to get started
         </p>
       </VCardText>
 
       <VCardText>
-        <VForm @submit.prevent="$router.push('/')">
+        <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+          Your email address
+        </div>
+        <VForm @submit.prevent="submit(form)">
           <VRow>
             <!-- email -->
             <VCol cols="12">
@@ -50,41 +184,41 @@ const isPasswordVisible = ref(false)
                 v-model="form.email"
                 autofocus
                 placeholder="johndoe@email.com"
-                label="Email"
                 type="email"
+                density="compact"
+                class="mb-0"
+                color="primary"
+                clearable
+                :error-messages="emailErrorMessage"
               />
             </VCol>
 
             <!-- password -->
             <VCol cols="12">
+              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+                Your password
+              </div>
               <VTextField
                 v-model="form.password"
-                label="Password"
-                placeholder="············"
+                placeholder="****"
+                class="mb-8"
+                color="primary"
+                density="compact"
                 :type="isPasswordVisible ? 'text' : 'password'"
+                clearable
                 :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
+                :error-messages="passwordErrorMessage"
                 @click:append-inner="isPasswordVisible = !isPasswordVisible"
               />
-
-              <!-- remember me checkbox -->
-              <div class="d-flex align-center justify-space-between flex-wrap mt-1 mb-4">
-                <VCheckbox
-                  v-model="form.remember"
-                  label="Remember me"
-                />
-
-                <RouterLink
-                  class="text-primary ms-2 mb-1"
-                  to="javascript:void(0)"
-                >
-                  Forgot Password?
-                </RouterLink>
-              </div>
 
               <!-- login button -->
               <VBtn
                 block
+                size="large"
                 type="submit"
+                :loading="loading"
+                class="text-subtitle-1 font-weight-medium"
+                color="primary"
               >
                 Login
               </VBtn>
@@ -93,32 +227,23 @@ const isPasswordVisible = ref(false)
             <!-- create account -->
             <VCol
               cols="12"
-              class="text-center text-base"
+              class="text-center text-base font-weight-medium"
+              style="font-weight: 500;"
             >
-              <span>New on our platform?</span>
+              <span class="text-grey-5">By clicking continue, you agree to our </span>
               <RouterLink
-                class="text-primary ms-2"
-                to="/register"
+                class="text-primary ms-0"
+                to="#"
               >
-                Create an account
+                Terms of Service
               </RouterLink>
-            </VCol>
-
-            <VCol
-              cols="12"
-              class="d-flex align-center"
-            >
-              <VDivider />
-              <span class="mx-4">or</span>
-              <VDivider />
-            </VCol>
-
-            <!-- auth providers -->
-            <VCol
-              cols="12"
-              class="text-center"
-            >
-              <AuthProvider />
+              <span class="text-grey-5"> and</span>
+              <RouterLink
+                class="text-primary ms-0"
+                to="#"
+              >
+                Privacy Policy
+              </RouterLink>
             </VCol>
           </VRow>
         </VForm>

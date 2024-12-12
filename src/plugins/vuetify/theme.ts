@@ -1,6 +1,6 @@
 import type { VuetifyOptions } from 'vuetify'
 
-export const staticPrimaryColor = '#696CFF'
+export const staticPrimaryColor = '#2563eb'
 
 const theme: VuetifyOptions['theme'] = {
   defaultTheme: 'light',
@@ -8,7 +8,8 @@ const theme: VuetifyOptions['theme'] = {
     light: {
       dark: false,
       colors: {
-        'primary': '#696CFF',
+        'primary': '#2563eb',
+        'white': '#ffffff',
         'on-primary': '#fff',
         'secondary': '#8592A3',
         'on-secondary': '#fff',
@@ -20,8 +21,8 @@ const theme: VuetifyOptions['theme'] = {
         'on-warning': '#fff',
         'error': '#FF3E1D',
         'background': '#F5F5F9',
-        'on-background': '#32475C',
-        'on-surface': '#32475C',
+        'on-background': '#000000',
+        'on-surface': '#000000',
         'grey-50': '#FAFAFA',
         'grey-100': '#EBEEF0',
         'grey-200': '#EEEEEE',
@@ -39,10 +40,10 @@ const theme: VuetifyOptions['theme'] = {
 
       variables: {
         'code-color': '#d400ff',
-        'overlay-scrim-background': '#32475C',
+        'overlay-scrim-background': '#000000',
         'overlay-scrim-opacity': 0.5,
-        'border-color': '#32475C',
-        'snackbar-background': '#32475C',
+        'border-color': '#000000',
+        'snackbar-background': '#000000',
         'snackbar-color': '#ffffff',
         'tooltip-background': '#262732',
         'tooltip-opacity': 0.9,
@@ -57,7 +58,7 @@ const theme: VuetifyOptions['theme'] = {
     dark: {
       dark: true,
       colors: {
-        'primary': '#696CFF',
+        'primary': '#2563eb',
         'on-primary': '#fff',
         'secondary': '#8592A3',
         'on-secondary': '#fff',
