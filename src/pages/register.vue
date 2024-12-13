@@ -2,17 +2,21 @@
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, minLength, required, sameAs } from '@vuelidate/validators'
 import config from '@/config'
+import { useUserStore } from '@/stores/user'
 import router from '@/router'
 
 // import { useUserStore } from '@/stores/user'
 import logo from '@images/logo.jpeg'
 
 const baseURL: string = config.baseURL
+const user = useUserStore()
 const loading = ref(false)
 
 // const user = useUserStore()
 
-const token = '1|j5p3CrokcGskuIUW8jWLQXbNjHO9ali6dFqDBx9Jc2f9ec9b'
+const token = ref('')
+
+token.value = user.getUserInfo().token
 
 const alertInfo = reactive({
   show: false,

@@ -21,7 +21,6 @@ const navLinks = [
   { title: 'Financial Incentives', to: '/financial-incentives' },
   { title: 'Report', to: '/report' },
   { title: 'User Management', to: '/user-management' },
-  { title: 'Schools', to: '/enrollment/schools' },
 ]
 
 // Watch for route changes and update the title
