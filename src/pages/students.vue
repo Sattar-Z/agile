@@ -108,6 +108,64 @@ async function submit() {
     loading.value = false
   }
 }
+
+async function submitStudent() {
+  loading.value = true
+
+  const file = uploadedFile.value
+
+  if (!file) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Please select a file to upload'
+    alertInfo.type = 'error'
+    loading.value = false
+
+    return
+  }
+
+  const formData = new FormData()
+
+  formData.append('file', file)
+  formData.append('file_type', 'students')
+
+  try {
+    const response = await fetch('https://staging-agile.moneta.ng/api/enrolement/file/upload', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    // Handle response similarly to your existing code
+    if (response.ok) {
+      const { message } = await response.json()
+
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = message
+      alertInfo.type = 'success'
+    }
+    else {
+      const errorResponse = await response.json()
+
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = errorResponse.message || 'Upload failed'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'An unexpected error occurred'
+    alertInfo.type = 'error'
+  }
+  finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -176,7 +234,7 @@ async function submit() {
     </VCol>
     <VCol
       v-if="!Admin"
-      cols="12"
+      cols="auto"
       class="mt-4"
     >
       <VBtn
@@ -184,7 +242,21 @@ async function submit() {
         color="primary"
         @click="submit"
       >
-        Upload
+        Upload School Info
+      </VBtn>
+    </VCol>
+    <VCol
+      v-if="!Admin"
+      cols="auto"
+      class="mt-4"
+    >
+      <VBtn
+        :loading="loading"
+        variant="tonal"
+        color="primary"
+        @click="submitStudent"
+      >
+        Upload Student Info
       </VBtn>
     </VCol>
     <VCol

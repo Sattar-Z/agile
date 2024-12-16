@@ -7,12 +7,10 @@ import { useUserStore } from '@/stores/user'
 import { callApi } from '@/helpers/request'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
-const token = ref('')
 const uploadedFile = ref<File | null>(null)
 
-const user = useUserStore()
-
-token.value = user.getUserInfo().token
+const user = useUserStore().getUser()
+const token = user.value.token
 
 interface Files {
   id: number | null

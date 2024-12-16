@@ -66,6 +66,8 @@ const fetchTerminalDetails = async () => {
       totalItems.value = lgas.value.length
     }
     else {
+      if (user.isTokenExpired())
+        user.removeUser()
       throw new Error('Invalid response format')
     }
   }
@@ -74,6 +76,8 @@ const fetchTerminalDetails = async () => {
     alertInfo.title = 'Error'
     alertInfo.message = 'Something went wrong please try again later'
     alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
   }
   finally {
     isLoaded.value = true
@@ -127,26 +131,6 @@ const openExportModal = () => {
   exportModal.value = true
   exportType.value = null
 }
-
-// const performExport = () => {
-//   if (!exportType.value) {
-//     alertInfo.show = true
-//     alertInfo.title = 'Error'
-//     alertInfo.message = 'Please select an export type'
-//     alertInfo.type = 'error'
-
-//     return
-//   }
-
-//   exportModal.value = false
-
-//   if (exportType.value === 'CSV')
-//     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-//     exportCSV()
-//   else if (exportType.value === 'Excel')
-//     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-//     exportExcel()
-// }
 
 const exportCSV = () => {
   if (lgas.value.length === 0) {
