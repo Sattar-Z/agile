@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { isAdmin } from '@/middlewares/auth'
-import StudentTable from '@/views/pages/enrollment/StudentTable.vue'
 import { useUserStore } from '@/stores/user'
-import Table from '@/views/pages/enrollment/Table.vue'
+import StudentTable from '@/views/pages/enrollment/StudentTable.vue'
 
 const isCardSelected = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -239,30 +238,10 @@ async function submitStudent() {
       <VBtn
         :loading="loading"
         color="primary"
-        @click="submit"
-      >
-        Upload School Info
-      </VBtn>
-    </VCol>
-    <VCol
-      v-if="!Admin"
-      cols="auto"
-      class="mt-4"
-    >
-      <VBtn
-        :loading="loading"
-        variant="tonal"
-        color="primary"
         @click="submitStudent"
       >
-        Upload Student Info
+        Upload
       </VBtn>
-    </VCol>
-    <VCol
-      v-if="Admin"
-      cols="12"
-    >
-      <Table />
     </VCol>
     <VCol cols="12">
       <StudentTable />

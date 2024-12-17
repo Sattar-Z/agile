@@ -559,7 +559,7 @@ onMounted(() => {
       v-else
       cols="12"
     >
-      <LoadingTable type="Transactions" />
+      <LoadingTable type="Files" />
     </VCol>
   </VRow>
   <VDialog

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
 import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
+import { isAdmin } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
@@ -12,6 +13,7 @@ import UserProfile from '@/layouts/components/UserProfile.vue'
 const route = useRoute()
 const router = useRouter()
 const currentRouteTitle = ref('Search') // Default to 'Search'
+const Admin = ref(isAdmin())
 
 // Define the navigation links with their corresponding routes and titles
 const navLinks = [
@@ -119,6 +121,7 @@ function logout() {
         }"
       />
       <VerticalNavLink
+        v-if="Admin"
         :item="{
           title: 'User Management',
           icon: 'bx-user',

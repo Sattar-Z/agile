@@ -243,23 +243,9 @@ async function submitStudent() {
       <VBtn
         :loading="loading"
         color="primary"
-        @click="submit"
-      >
-        Upload School Info
-      </VBtn>
-    </VCol>
-    <VCol
-      v-if="!Admin"
-      cols="auto"
-      class="mt-4"
-    >
-      <VBtn
-        :loading="loading"
-        variant="tonal"
-        color="primary"
         @click="submitStudent"
       >
-        Upload Student Info
+        Upload
       </VBtn>
     </VCol>
     <VCol
