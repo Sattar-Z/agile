@@ -122,7 +122,7 @@ function logout() {
         :item="{
           title: 'User Management',
           icon: 'bx-user',
-          to: '/',
+          to: '/register',
         }"
       />
       <!--

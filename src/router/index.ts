@@ -73,6 +73,10 @@ const router = createRouter({
           component: () => import('../pages/students.vue'),
         },
         {
+          path: 'register',
+          component: () => import('../pages/register.vue'),
+        },
+        {
           path: 'account-settings',
           component: () => import('../pages/account-settings.vue'),
           beforeEnter: adminOnly,
@@ -110,10 +114,6 @@ const router = createRouter({
           component: () => import('../pages/login.vue'),
         },
         {
-          path: 'register',
-          component: () => import('../pages/register.vue'),
-        },
-        {
           path: '/:pathMatch(.*)*',
           component: () => import('../pages/[...all].vue'),
           beforeEnter: guest,
@@ -123,7 +123,7 @@ const router = createRouter({
   ],
 })
 
-const unGuardedRoutes = ['login', 'register', 'otp', 'delete-account']
+const unGuardedRoutes = ['login', 'otp', 'delete-account']
 
 router.beforeEach((to, from, next) => {
   // If the route is guarded and not authenticated, redirect to login
