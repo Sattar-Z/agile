@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
+import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
 import { useUserStore } from '@/stores/user'
@@ -8,8 +9,10 @@ import { callApi } from '@/helpers/request'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
 const uploadedFile = ref<File | null>(null)
+const users = useUserStore()
 
 const user = useUserStore().getUser()
+const router = useRouter()
 const token = user.value.token
 
 interface Files {
@@ -77,8 +80,15 @@ const fetchTerminalDetails = async () => {
       files.value = Object.values(responseData.data)
       totalItems.value = files.value.length
     }
+    else if (response.status === 401) {
+      users.removeUser()
+      router.push({ name: 'login' })
+    }
     else {
-      throw new Error('Invalid response format')
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.type = 'error'
     }
   }
   catch (error) {
@@ -561,19 +571,20 @@ onMounted(() => {
       v-if="selectedFile"
       class="pa-4"
     >
-      <VCardTitle class="text-h5 text-end mb-4">
-        File Management
-        <VBtn
-          icon
-          variant="text"
-          absolute
-          top
-          right
-          @click="fileManagementModal = false"
-        >
-          <VIcon icon="bx-x" />
-        </VBtn>
-      </VCardTitle>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            File Management
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="fileManagementModal = false"
+          />
+        </VCol>
+      </VRow>
 
       <VCardText>
         <VRow>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
@@ -10,7 +10,12 @@ import { callApi } from '@/helpers/request'
 // import { toNigerianCurrency } from '@/helpers/numbers'
 const token = ref('')
 
+const uploadFile = ref<File | null>(null)
+const uploadModal = ref(false)
+const loading = ref(false)
 const route = useRoute()
+const router = useRouter()
+
 const user = useUserStore()
 
 token.value = user.getUserInfo().token
@@ -48,7 +53,8 @@ const headers = ref([
   { title: 'Schools', align: 'start', sortable: false, key: 'name' },
   { title: 'Education Level', key: 'education_level', align: 'center' },
   { title: 'NO of Students', key: 'students_count', align: 'center' },
-  { title: 'Action', key: 'action', align: 'center' },
+  { title: 'Upload Records', key: 'upload', align: 'center' },
+  { title: 'Action', key: 'view', align: 'center' },
 ] as const)
 
 const schools = ref<Schools[]>([])
@@ -58,6 +64,73 @@ const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
+
+const openUploadModal = (school: Schools) => {
+  selectedSchools.value = school
+  uploadModal.value = true
+}
+
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file)
+    uploadFile.value = file
+}
+
+const submitStudent = async () => {
+  loading.value = true
+
+  if (!uploadFile.value) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Please select a file to upload'
+    alertInfo.type = 'error'
+    loading.value = false
+
+    return
+  }
+
+  const formData = new FormData()
+
+  formData.append('file', uploadFile.value)
+  formData.append('file_type', 'students_per_school')
+  formData.append('school_id', selectedSchools.value?.id?.toString() || '')
+
+  try {
+    const response = await fetch('https://staging-agile.moneta.ng/api/enrolement/file/upload', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = responseData.message || 'File uploaded successfully'
+      alertInfo.type = 'success'
+      uploadModal.value = false
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Upload failed'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'An unexpected error occurred'
+    alertInfo.type = 'error'
+  }
+  finally {
+    loading.value = false
+  }
+}
 
 // Fetch merchant Transactions
 const fetchTerminalDetails = async () => {
@@ -76,8 +149,15 @@ const fetchTerminalDetails = async () => {
       schools.value = Object.values(responseData.data)
       totalItems.value = schools.value.length
     }
+    else if (response.status === 401) {
+      user.removeUser()
+      router.push({ name: 'login' })
+    }
     else {
-      throw new Error('Invalid response format')
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.type = 'error'
     }
   }
   catch (error) {
@@ -285,7 +365,7 @@ onMounted(() => {
           class="transaction-table"
           @update:options="loadItems"
         >
-          <template #item.action="{ item }">
+          <template #item.view="{ item }">
             <RouterLink
               :to="{
                 name: 'students',
@@ -298,9 +378,17 @@ onMounted(() => {
               <VBtn
                 density="compact"
                 variant="tonal"
-                text="View"
+                text="view"
               />
             </RouterLink>
+          </template>
+          <template #item.upload="{ item }">
+            <VBtn
+              density="compact"
+              variant="text"
+              icon="bx-upload"
+              @click="openUploadModal(item.raw)"
+            />
           </template>
         </VDataTableServer>
       </VCard>
@@ -358,19 +446,20 @@ onMounted(() => {
     persistent
   >
     <VCard class="pa-6">
-      <VCardTitle class="text-h5 text-center mb-4">
-        Export Records
-        <VBtn
-          icon
-          variant="text"
-          absolute
-          top
-          right
-          @click="exportModal = false"
-        >
-          <VIcon icon="bx-x" />
-        </VBtn>
-      </VCardTitle>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Export Records
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="exportModal = false"
+          />
+        </VCol>
+      </VRow>
 
       <VCardText>
         <VRow class="d-flex justify-center">
@@ -403,6 +492,53 @@ onMounted(() => {
                 icon="bx-table"
               />
               Excel
+            </VBtn>
+          </VCol>
+        </VRow>
+      </VCardText>
+    </VCard>
+  </VDialog>
+  <VDialog
+    v-model="uploadModal"
+    width="500"
+    persistent
+  >
+    <VCard class="pa-6">
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Upload Students File
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="uploadModal = false"
+          />
+        </VCol>
+      </VRow>
+
+      <VCardText>
+        <VRow class="d-flex justify-center">
+          <VCol cols="12">
+            <VFileInput
+              v-model="uploadFile"
+              label="Choose file"
+              prepend-icon="bx-file"
+              @change="handleFileUpload"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            class="d-flex justify-center"
+          >
+            <VBtn
+              color="primary"
+              :loading="loading"
+              @click="submitStudent"
+            >
+              Upload
             </VBtn>
           </VCol>
         </VRow>

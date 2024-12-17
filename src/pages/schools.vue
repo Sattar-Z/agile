@@ -6,13 +6,12 @@ import Table from '@/views/pages/enrollment/Table.vue'
 
 const isCardSelected = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
-const token = ref('')
 const loading = ref(false)
 const uploadedFile = ref<File | null>(null)
 const Admin = ref(isAdmin())
-const user = useUserStore()
+const user = useUserStore().getUser()
 
-token.value = user.getUserInfo().token
+const token = user.value.token
 
 const alertInfo = reactive({
   show: false,

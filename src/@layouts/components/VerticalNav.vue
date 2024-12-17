@@ -56,16 +56,16 @@ const handleNavScroll = (evt: Event) => {
       <slot name="nav-header">
         <RouterLink
           to="/"
-          class="app-logo d-flex align-center gap-x-3 app-title-wrapper"
+          class="app-logo d-flex align-center gap-x-1 app-title-wrapper"
         >
           <VImg
             :src="logo"
-            max-width="55"
+            max-width="52"
             class="mx-auto"
           />
 
           <h1 class="leading-normal text-primary">
-            Agile
+            NAS-AGILE
           </h1>
         </RouterLink>
       </slot>

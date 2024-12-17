@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
+import { useRouter } from 'vue-router'
+
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
 import { useUserStore } from '@/stores/user'
@@ -10,6 +12,7 @@ import { callApi } from '@/helpers/request'
 const token = ref('')
 
 const user = useUserStore()
+const router = useRouter()
 
 token.value = user.getUserInfo().token
 
@@ -65,10 +68,15 @@ const fetchTerminalDetails = async () => {
       lgas.value = Object.values(responseData.data)
       totalItems.value = lgas.value.length
     }
+    else if (response.status === 401) {
+      user.removeUser()
+      router.push({ name: 'login' })
+    }
     else {
-      if (user.isTokenExpired())
-        user.removeUser()
-      throw new Error('Invalid response format')
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.type = 'error'
     }
   }
   catch (error) {
@@ -357,19 +365,20 @@ onMounted(() => {
       v-if="selectedLgas"
       class="pa-4"
     >
-      <VCardTitle class="text-h5 text-end mb-4">
-        File Management
-        <VBtn
-          icon
-          variant="text"
-          absolute
-          top
-          right
-          @click="LgaManagementModal = false"
-        >
-          <VIcon icon="bx-x" />
-        </VBtn>
-      </VCardTitle>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            File Management
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="LgaManagementModal = false"
+          />
+        </VCol>
+      </VRow>
 
       <VCardText>
         <VRow>
@@ -392,19 +401,20 @@ onMounted(() => {
     persistent
   >
     <VCard class="pa-6">
-      <VCardTitle class="text-h5 text-center mb-4">
-        Export Records
-        <VBtn
-          icon
-          variant="text"
-          absolute
-          top
-          right
-          @click="exportModal = false"
-        >
-          <VIcon icon="bx-x" />
-        </VBtn>
-      </VCardTitle>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Export Records
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="exportModal = false"
+          />
+        </VCol>
+      </VRow>
 
       <VCardText>
         <VRow class="d-flex justify-center">

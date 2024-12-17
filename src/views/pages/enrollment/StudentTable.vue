@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
-import { useUserStore } from '@/stores/user'
+import StudentDetailsModal from './StudentDetailsModal.vue'
+
 import { callApi } from '@/helpers/request'
+import { useUserStore } from '@/stores/user'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
 const token = ref('')
+const router = useRouter()
+const showStudentDetails = ref(false)
 
 const route = useRoute()
 const user = useUserStore()
@@ -17,18 +21,42 @@ token.value = user.getUserInfo().token
 
 const { id, name } = route.params
 
+interface CareGiver {
+  id: number | null
+  bvn_id: number | null
+  nin_id: number | null
+  name: number | null
+  phone: string | null
+  date_of_birth: string | null
+  community: string | null
+  gender: string | null
+  qualification: string | null
+  income: string | null
+  is_employed: string | null
+  certificate: number | null
+  is_bvn_verfied: string | null
+  is_nin_verfied: string | null
+  date_collected: string | null
+  status: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 interface Students {
   id: number | null
+  school_id: number | null
   lga_id: number | null
+  care_giver_id: number | null
   name: string | null
-  code: string | null
-  education_level: string | null
-  principal_name: string | null
-  principal_phone: string | null
-  longitude: string | null
-  latitude: string | null
-  students_count: number | null
-  daily_attendance_percentage: string | null
+  date_of_birth: string | null
+  student_admission_number: string | null
+  class: string | null
+  disabilities: string | null
+  uniform: number | null
+  text_book: number | null
+  school_distance: string | null
+  materials: number | null
+  care_giver: CareGiver
   created_at: string | null
   updated_at: string | null
 }
@@ -46,8 +74,9 @@ const StudentManagementModal = ref(false)
 
 const headers = ref([
   { title: 'Students', align: 'start', sortable: false, key: 'name' },
-  { title: 'Education Level', key: 'education_level', align: 'center' },
-  { title: 'NO of Students', key: 'students_count', align: 'center' },
+  { title: 'Admission No', key: 'student_admission_number', align: 'center' },
+  { title: 'DOB', key: 'date_of_birth', align: 'center' },
+  { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -58,6 +87,7 @@ const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
+const verifyingBvn = ref<number | null>(null)
 
 // Fetch merchant Transactions
 const fetchTerminalDetails = async () => {
@@ -76,8 +106,15 @@ const fetchTerminalDetails = async () => {
       students.value = Object.values(responseData.data)
       totalItems.value = students.value.length
     }
+    else if (response.status === 401) {
+      user.removeUser()
+      router.push({ name: 'login' })
+    }
     else {
-      throw new Error('Invalid response format')
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.type = 'error'
     }
   }
   catch (error) {
@@ -89,6 +126,65 @@ const fetchTerminalDetails = async () => {
   finally {
     isLoaded.value = true
   }
+}
+
+const verifyBvn = async (bvnId: number) => {
+  if (!bvnId) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'No BVN ID available'
+    alertInfo.type = 'error'
+
+    return
+  }
+
+  verifyingBvn.value = bvnId
+
+  try {
+    const response = await callApi({
+      url: `bvn/verify/${bvnId}`,
+      method: 'POST',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      // Update the specific student's care giver BVN verification status
+      const studentIndex = students.value.findIndex(
+        student => student.care_giver.bvn_id === bvnId,
+      )
+
+      if (studentIndex !== -1)
+        students.value[studentIndex].care_giver.is_bvn_verfied = 'true'
+
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = responseData.message || 'BVN verified successfully'
+      alertInfo.type = 'success'
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'BVN verification failed'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong during BVN verification'
+    alertInfo.type = 'error'
+  }
+  finally {
+    verifyingBvn.value = null
+  }
+}
+
+function openStudentDetails(student: Students) {
+  selectedStudents.value = student
+  showStudentDetails.value = true
 }
 
 // Filter items based on search
@@ -285,12 +381,33 @@ onMounted(() => {
           class="transaction-table"
           @update:options="loadItems"
         >
-          <template #item.action>
+          <template #item.action="{ item }">
             <VBtn
               density="compact"
               variant="tonal"
               text="View"
+              size="small"
+              @click="openStudentDetails(item.raw)"
             />
+          </template>
+          <template #item.care_giver.is_bvn_verfied="{ item }">
+            <VChip
+              v-if="item.raw.care_giver.is_bvn_verfied === 'true'"
+              density="compact"
+              text="BVN Verified"
+              color="success"
+            />
+
+            <VBtn
+              v-else
+              :loading="verifyingBvn === item.raw.care_giver.bvn_id"
+              density="compact"
+              variant="outlined"
+              size="small"
+              @click="verifyBvn(item.raw.care_giver.bvn_id || 0)"
+            >
+              Verify
+            </VBtn>
           </template>
         </VDataTableServer>
       </VCard>
@@ -313,19 +430,20 @@ onMounted(() => {
       v-if="selectedStudents"
       class="pa-4"
     >
-      <VCardTitle class="text-h5 text-end mb-4">
-        File Management
-        <VBtn
-          icon
-          variant="text"
-          absolute
-          top
-          right
-          @click="StudentManagementModal = false"
-        >
-          <VIcon icon="bx-x" />
-        </VBtn>
-      </VCardTitle>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            File Management
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="StudentManagementModal = false"
+          />
+        </VCol>
+      </VRow>
 
       <VCardText>
         <VRow>
@@ -348,19 +466,20 @@ onMounted(() => {
     persistent
   >
     <VCard class="pa-6">
-      <VCardTitle class="text-h5 text-center mb-4">
-        Export Records
-        <VBtn
-          icon
-          variant="text"
-          absolute
-          top
-          right
-          @click="exportModal = false"
-        >
-          <VIcon icon="bx-x" />
-        </VBtn>
-      </VCardTitle>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Export Records
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="exportModal = false"
+          />
+        </VCol>
+      </VRow>
 
       <VCardText>
         <VRow class="d-flex justify-center">
@@ -399,6 +518,10 @@ onMounted(() => {
       </VCardText>
     </VCard>
   </VDialog>
+  <StudentDetailsModal
+    v-model="showStudentDetails"
+    :student="selectedStudents"
+  />
 </template>
 
 <style scoped>
