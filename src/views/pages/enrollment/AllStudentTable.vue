@@ -39,6 +39,28 @@ interface CareGiver {
   updated_at: string | null
 }
 
+interface Schools {
+  id: number | null
+  lga_id: number | null
+  name: string | null
+  code: string | null
+  education_level: string | null
+  principal_name: string | null
+  principal_phone: string | null
+  longitude: string | null
+  latitude: string | null
+  daily_attendance_percentage: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+interface Lgas {
+  id: number | null
+  name: string | null
+  daily_attendance_percentage: string | null
+  created_at: string | null
+}
+
 interface Students {
   id: number | null
   school_id: number | null
@@ -56,6 +78,8 @@ interface Students {
   care_giver: CareGiver
   created_at: string | null
   updated_at: string | null
+  school: Schools
+  lga: Lgas
 }
 
 const alertInfo = reactive({
@@ -70,11 +94,14 @@ const selectedStudents = ref<Students | null>(null)
 const StudentManagementModal = ref(false)
 
 const headers = ref([
-  { title: 'Students', align: 'start', sortable: false, key: 'name' },
+  { title: 'Students', align: 'start', sortable: true, key: 'name' },
+  { title: 'LGA', key: 'lga.name', sortable: true, align: 'center' },
+  { title: 'School', key: 'school.name', sortable: true, align: 'center' },
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
   { title: 'Class', key: 'class', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center' },
+  { title: 'Uploaded', key: 'care_giver.date_collected', sortable: true, align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -190,8 +217,11 @@ const filterItems = (items: Students[], searchValue: string): Students[] => {
   return items.filter(item => {
     if (!item.name)
       return false
+    const nameMatch = item.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
+    const schoolMatch = item.school.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
+    const lgaMatch = item.lga.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
 
-    return item.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
+    return nameMatch || schoolMatch || lgaMatch
   })
 }
 
@@ -200,7 +230,37 @@ const openExportModal = () => {
   exportType.value = null
 }
 
-// Sort items
+// Helper function to get nested values
+const getNestedValue = (item: Students, key: string): any => {
+  return key.split('.').reduce((value, k) => value?.[k], item as any)
+}
+
+// Helper function to compare dates
+const compareDates = (aValue: any, bValue: any, order: string): number => {
+  if (!aValue)
+    return order === 'desc' ? 1 : -1
+  if (!bValue)
+    return order === 'desc' ? -1 : 1
+
+  const dateA = new Date(aValue).getTime()
+  const dateB = new Date(bValue).getTime()
+
+  return order === 'desc' ? dateB - dateA : dateA - dateB
+}
+
+// Helper function to compare strings
+const compareStrings = (aValue: string, bValue: string, order: string): number => {
+  return order === 'desc'
+    ? bValue.localeCompare(aValue)
+    : aValue.localeCompare(bValue)
+}
+
+// Helper function to compare numbers
+const compareNumbers = (aValue: number, bValue: number, order: string): number => {
+  return order === 'desc' ? bValue - aValue : aValue - bValue
+}
+
+// Main sorting function
 const sortItems = (items: Students[], sortBy: { key: string; order: string }[]): Students[] => {
   if (sortBy.length === 0)
     return items
@@ -208,13 +268,17 @@ const sortItems = (items: Students[], sortBy: { key: string; order: string }[]):
   const [sortItem] = sortBy
 
   return [...items].sort((a, b) => {
-    const aValue = a[sortItem.key as keyof Students]
-    const bValue = b[sortItem.key as keyof Students]
+    const aValue = getNestedValue(a, sortItem.key)
+    const bValue = getNestedValue(b, sortItem.key)
+
+    if (sortItem.key === 'care_giver.date_collected')
+      return compareDates(aValue, bValue, sortItem.order)
 
     if (typeof aValue === 'string' && typeof bValue === 'string')
-      return sortItem.order === 'desc' ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
+      return compareStrings(aValue, bValue, sortItem.order)
+
     if (typeof aValue === 'number' && typeof bValue === 'number')
-      return sortItem.order === 'desc' ? bValue - aValue : aValue - bValue
+      return compareNumbers(aValue, bValue, sortItem.order)
 
     return 0
   })
@@ -344,7 +408,7 @@ onMounted(() => {
               <VTextField
                 v-model="search"
                 prepend-inner-icon="bx-search"
-                label="Search for Students"
+                label="Search for Student / school / lga"
                 density="compact"
                 hide-details
               />
