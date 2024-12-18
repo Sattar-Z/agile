@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isAdmin } from '@/middlewares/auth'
-import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
 import AllStudentTable from '@/views/pages/enrollment/AllStudentTable.vue'
+import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
 
 // import SchoolTable from '@/views/pages/enrollment/SchoolTable.vue'
 import { useUserStore } from '@/stores/user'
@@ -12,6 +12,7 @@ import Table from '@/views/pages/enrollment/Table.vue'
 const isCardSelected = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
+const seeIt = ref(false)
 const uploadedFile = ref<File | null>(null)
 const Admin = ref(isAdmin())
 const user = useUserStore().getUser()
@@ -191,7 +192,22 @@ async function submitStudent() {
       />
     </template>
   </VSnackbar>
-  <VRow>
+  <VRow v-if="seeIt">
+    <VCol
+      cols="12"
+      class="align-center"
+    >
+      <VBtn
+        icon="bx-left-arrow-alt"
+        variant="text"
+        @click="seeIt = false"
+      />
+    </VCol>
+    <VCol cols="12">
+      <Table />
+    </VCol>
+  </VRow>
+  <VRow v-else>
     <VCol
       v-if="!Admin"
       cols="12"
@@ -247,6 +263,20 @@ async function submitStudent() {
         @click="submitStudent"
       >
         Upload
+      </VBtn>
+    </VCol>
+    <VCol
+      v-if="!Admin"
+      cols="auto"
+      class="mt-4"
+    >
+      <VBtn
+        :loading="loading"
+        color="primary"
+        variant="outlined"
+        @click="seeIt = true"
+      >
+        See Uploads
       </VBtn>
     </VCol>
     <VCol
