@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
@@ -14,12 +14,9 @@ const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
 
-const route = useRoute()
 const user = useUserStore()
 
 token.value = user.getUserInfo().token
-
-const { id, name } = route.params
 
 interface CareGiver {
   id: number | null
@@ -75,6 +72,7 @@ const StudentManagementModal = ref(false)
 const headers = ref([
   { title: 'Students', align: 'start', sortable: false, key: 'name' },
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
+  { title: 'Class', key: 'class', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
@@ -94,7 +92,7 @@ const fetchTerminalDetails = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `school/students/${id}`,
+      url: 'students',
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -328,7 +326,7 @@ onMounted(() => {
             md="4"
           >
             <VCardText>
-              <VCardTitle>{{ name }} Students</VCardTitle>
+              <VCardTitle> All Students</VCardTitle>
             </VCardText>
           </VCol>
         </VRow>

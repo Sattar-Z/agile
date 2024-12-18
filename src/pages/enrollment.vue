@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { isAdmin } from '@/middlewares/auth'
 import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
+import AllStudentTable from '@/views/pages/enrollment/AllStudentTable.vue'
 
 // import SchoolTable from '@/views/pages/enrollment/SchoolTable.vue'
 import { useUserStore } from '@/stores/user'
@@ -253,6 +254,9 @@ async function submitStudent() {
       cols="12"
     >
       <Table />
+    </VCol>
+    <VCol cols="12">
+      <AllStudentTable />
     </VCol>
     <VCol cols="12">
       <LgasTable />

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
-import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import { useRouter } from 'vue-router'
+import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
 import { useUserStore } from '@/stores/user'
@@ -10,10 +10,19 @@ import { callApi } from '@/helpers/request'
 // import { toNigerianCurrency } from '@/helpers/numbers'
 const uploadedFile = ref<File | null>(null)
 const users = useUserStore()
-
+const errorDetailsModal = ref(false)
+const currentErrorMessage = ref('')
 const user = useUserStore().getUser()
 const router = useRouter()
 const token = user.value.token
+
+const fileContents = ref<any[]>([])
+const fileContentsModal = ref(false)
+const fileContentHeaders = ref<any[]>([])
+const totalFileContentItems = ref(0)
+const fileContentItemsPerPage = ref(10)
+const fileContentCurrentItems = ref<any[]>([])
+const fileContentSearch = ref('')
 
 interface Files {
   id: number | null
@@ -25,7 +34,10 @@ interface Files {
   is_scanned: number | null
   file_type: string | null
   created_at: string | null
-  updated_at: string | null // active, suspend, block
+  updated_at: string | null
+  error_message: number | null
+  scan_trial: string | null
+
 }
 
 const alertInfo = reactive({
@@ -34,6 +46,11 @@ const alertInfo = reactive({
   title: '',
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
+
+const showErrorDetails = (errorMessage: string) => {
+  currentErrorMessage.value = errorMessage
+  errorDetailsModal.value = true
+}
 
 const currentItems = ref<Files[]>([])
 const selectedFile = ref<Files | null>(null)
@@ -45,6 +62,7 @@ const headers = ref([
   { title: 'Approved', key: 'is_approved', align: 'center' },
   { title: 'Scanned', key: 'is_scanned', align: 'center' },
   { title: 'File Type', key: 'file_type', align: 'center' },
+  { title: 'Scans', key: 'scan_trial', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -235,6 +253,61 @@ async function uploadFile() {
   }
 }
 
+const filterFileContentItems = (items: any[], searchValue: string): any[] => {
+  if (!searchValue)
+    return items
+
+  return items.filter(item =>
+    Object.values(item).some(value =>
+      String(value).toLowerCase().includes(searchValue.toLowerCase()),
+    ),
+  )
+}
+
+// Server-side sorting function
+const sortFileContentItems = (items: any[], sortBy: { key: string; order: string }[]): any[] => {
+  if (sortBy.length === 0)
+    return items
+
+  const [sortItem] = sortBy
+
+  return [...items].sort((a, b) => {
+    const aValue = a[sortItem.key]
+    const bValue = b[sortItem.key]
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortItem.order === 'desc'
+        ? bValue.localeCompare(aValue)
+        : aValue.localeCompare(bValue)
+    }
+
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return sortItem.order === 'desc'
+        ? bValue - aValue
+        : aValue - bValue
+    }
+
+    return 0
+  })
+}
+
+// Load items for server-side pagination
+const loadFileContentItems = ({ page, itemsPerPage, sortBy }: any) => {
+  const filteredItems = filterFileContentItems(fileContents.value, fileContentSearch.value)
+  const sortedItems = sortFileContentItems(filteredItems, sortBy)
+
+  const start = (page - 1) * itemsPerPage
+  const end = start + itemsPerPage
+
+  fileContentCurrentItems.value = sortedItems.slice(start, end)
+  totalFileContentItems.value = filteredItems.length
+
+  return {
+    items: fileContentCurrentItems.value,
+    total: totalFileContentItems.value,
+  }
+}
+
 const viewFile = async () => {
   if (!selectedFile.value?.id) {
     alertInfo.show = true
@@ -255,32 +328,39 @@ const viewFile = async () => {
     if (response.ok) {
       const csvData = await response.text() // Parse CSV data as text
 
-      // Create a Blob from the CSV data
-      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
+      // Parse CSV data into an array of objects
+      const parseCSV = (csv: string) => {
+        const lines = csv.split('\n')
+        const header1 = lines[0].split(',')
 
-      // Create a link element to trigger the download
-      const link = document.createElement('a')
-      const url = URL.createObjectURL(blob)
+        // Generate headers for the table
+        fileContentHeaders.value = header1.map(header => ({
+          title: header.trim(),
+          key: header.trim(),
+          sortable: true,
+          align: 'start',
+        }))
 
-      link.setAttribute('href', url)
-      link.setAttribute('download', 'file.csv') // Specify the filename
-      link.style.display = 'none'
-      document.body.appendChild(link)
+        // Parse data rows
+        const data = lines.slice(1)
+          .filter(line => line.trim() !== '') // Remove empty lines
+          .map(line => {
+            const values = line.split(',')
 
-      // Trigger the download
-      link.click()
+            return header1.reduce((obj, header, index) => {
+              obj[header.trim()] = values[index] ? values[index].trim() : ''
 
-      // Cleanup
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+              return obj
+            }, {} as any)
+          })
 
-      alertInfo.show = true
-      alertInfo.title = 'Success'
-      alertInfo.message = 'File downloaded successfully'
-      alertInfo.type = 'success'
+        fileContents.value = data
+        fileContentSearch.value = '' // Reset search
+        fileContentsModal.value = true
+      }
 
-      // Close the modal
-      fileManagementModal.value = false
+      // Call the CSV parsing function
+      parseCSV(csvData)
     }
     else {
       const responseData = await response.json()
@@ -504,6 +584,25 @@ onMounted(() => {
           class="transaction-table"
           @update:options="loadItems"
         >
+          <template #item.file_name="{ item }">
+            <div class="d-flex align-center">
+              {{ formatFileName(item.raw.file_name) }}
+              <VChip
+                v-if="item.raw.error_message"
+                color="error"
+                size="small"
+                class="mx-2"
+                @click="showErrorDetails(item.raw.error_message)"
+              >
+                Error
+                <VIcon
+                  size="small"
+                  end
+                  icon="bx-error-circle"
+                />
+              </VChip>
+            </div>
+          </template>
           <template #item.is_approved="{ item }">
             <VIcon
               v-if="item.raw.is_approved === 0"
@@ -531,9 +630,6 @@ onMounted(() => {
               icon="bx-check-circle"
               color="success"
             />
-          </template>
-          <template #item.file_name="{ item }">
-            {{ formatFileName(item.raw.file_name) }}
           </template>
           <template #item.file_size="{ item }">
             {{ formatFileSize(item.raw.file_size) }}
@@ -677,9 +773,87 @@ onMounted(() => {
           density="compact"
           @click="viewFile"
         >
-          Download File
+          View File
         </VBtn>
       </VCardActions>
+    </VCard>
+  </VDialog>
+  <VDialog
+    v-model="errorDetailsModal"
+    max-width="500"
+  >
+    <VCard>
+      <VCardTitle class="text-h6">
+        File Error Details
+      </VCardTitle>
+      <VCardText>
+        <VAlert
+          type="error"
+          variant="outlined"
+          icon="bx-error-circle"
+        >
+          {{ currentErrorMessage }}
+        </VAlert>
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          @click="errorDetailsModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
+  <VDialog
+    v-model="fileContentsModal"
+    fullscreen
+    scrollable
+  >
+    <VCard>
+      <VToolbar
+        dark
+        color="secondary"
+      >
+        <VBtn
+          icon="bx-x"
+          color="error"
+          @click="fileContentsModal = false"
+        />
+        <VToolbarTitle>File Contents: {{ formatFileName(selectedFile?.file_name || '') }}</VToolbarTitle>
+      </VToolbar>
+
+      <VCardText>
+        <VRow
+          align="center"
+          justify="space-between"
+          class="mb-4"
+        >
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <VTextField
+              v-model="fileContentSearch"
+              prepend-inner-icon="bx-search"
+              label="Search"
+              density="compact"
+              hide-details
+            />
+          </VCol>
+        </VRow>
+
+        <VDataTableServer
+          v-model:items-per-page="fileContentItemsPerPage"
+          :headers="fileContentHeaders"
+          :items="fileContentCurrentItems"
+          :items-length="totalFileContentItems"
+          :search="fileContentSearch"
+          density="compact"
+          @update:options="loadFileContentItems"
+        />
+      </VCardText>
     </VCard>
   </VDialog>
 </template>
