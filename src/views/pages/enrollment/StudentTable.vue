@@ -34,8 +34,8 @@ interface CareGiver {
   income: string | null
   is_employed: string | null
   certificate: number | null
-  is_bvn_verfied: string | null
-  is_nin_verfied: string | null
+  is_bvn_verfied: number | null
+  is_nin_verfied: number | null
   date_collected: string | null
   status: string | null
   created_at: string | null
@@ -157,7 +157,7 @@ const verifyBvn = async (bvnId: number) => {
       )
 
       if (studentIndex !== -1)
-        students.value[studentIndex].care_giver.is_bvn_verfied = 'true'
+        students.value[studentIndex].care_giver.is_bvn_verfied = 1
 
       alertInfo.show = true
       alertInfo.title = 'Success'

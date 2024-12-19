@@ -14,8 +14,8 @@ interface CareGiver {
   income: string | null
   is_employed: string | null
   certificate: number | null
-  is_bvn_verfied: string | null
-  is_nin_verfied: string | null
+  is_bvn_verfied: number | null
+  is_nin_verfied: number | null
   date_collected: string | null
   status: string | null
   created_at: string | null
@@ -112,12 +112,12 @@ const closeDialog = () => {
               <VCol cols="12">
                 <span class="font-weight-bold text-caption">Care Giver Status:</span>
                 <VChip
-                  :color="student.care_giver.status === '1' ? 'success' : 'error'"
+                  :color="student.care_giver.is_bvn_verfied === 1 ? 'success' : 'error'"
                   size="small"
                   density="compact"
                   class="mx-3"
                 >
-                  {{ student.care_giver.status === '1' ? 'Verified' : 'Unverified' }}
+                  {{ student.care_giver.is_bvn_verfied === 1 ? 'Verified' : 'Unverified' }}
                 </VChip>
               </VCol>
             </VRow>
