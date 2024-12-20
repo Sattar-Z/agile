@@ -59,6 +59,7 @@ const router = createRouter({
           component: () => import('../pages/dashboard.vue'),
         },
         {
+          name: 'enrollment',
           path: 'enrollment',
           component: () => import('../pages/enrollment.vue'),
         },

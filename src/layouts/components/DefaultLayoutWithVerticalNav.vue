@@ -60,7 +60,7 @@ function logout() {
           style="user-select: none;"
         >
           <span class="d-none d-md-flex align-center text-disabled">
-            <span class="me-3 text-body-1">{{ currentRouteTitle }}</span>
+            <span class="me-3 text-body-1 font-weight-bold">{{ currentRouteTitle }}</span>
             <!-- <span class="meta-key">&#8984;K</span> -->
           </span>
         </div>

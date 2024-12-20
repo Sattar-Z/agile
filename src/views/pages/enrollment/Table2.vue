@@ -1,0 +1,526 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import LoadingTable from './LoadingTable.vue'
+import FileContentsDialog from './modals/FileContentsDialog.vue'
+import { useUserStore } from '@/stores/user'
+import { callApi } from '@/helpers/request'
+
+const users = useUserStore()
+const errorDetailsModal = ref(false)
+const currentErrorMessage = ref('')
+const router = useRouter()
+
+const fileContents = ref<any[]>([])
+const fileContentsModal = ref(false)
+const fileContentHeaders = ref<any[]>([])
+const fileContentSearch = ref('')
+const selectedCategory = ref<'approved' | 'pending' | 'rejected' | null>(null)
+
+interface Files {
+  id: number | null
+  user_id: number | null
+  file_name: string | null
+  file_path: string | null
+  file_size: string | null
+  is_approved: number | null
+  is_scanned: number | null
+  file_type: string | null
+  created_at: string | null
+  updated_at: string | null
+  error_message: string | null
+  scan_trial: string | null
+}
+
+const alertInfo = reactive({
+  show: false,
+  message: '',
+  title: '',
+  type: 'error' as 'error' | 'success' | 'warning' | 'info',
+})
+
+const files = ref<Files[]>([])
+const isLoaded = ref(false)
+const selectedFile = ref<Files | null>(null)
+const fileManagementModal = ref(false)
+
+// New computed properties for file categories
+const approvedFiles = computed(() =>
+  files.value.filter(file => file.is_approved === 1),
+)
+
+const pendingFiles = computed(() =>
+  files.value.filter(file => file.is_approved === 0 && !file.error_message),
+)
+
+const rejectedFiles = computed(() =>
+  files.value.filter(file => file.error_message),
+)
+
+const categoryMappings = {
+  approved: () => files.value.filter(file => file.is_approved === 1),
+  pending: () => files.value.filter(file => file.is_approved === 0 && !file.error_message),
+  rejected: () => files.value.filter(file => file.error_message),
+} as const
+
+const currentFiles = computed(() => {
+  return selectedCategory.value
+    ? categoryMappings[selectedCategory.value]()
+    : []
+})
+
+// Format functions
+const formatFileName = (fileName: string): string => {
+  const parts = fileName.split('_')
+
+  parts.shift()
+
+  return parts.join('_').replace('.csv', '')
+}
+
+const formatFileSize = (sizeInBytes: number): string => {
+  if (sizeInBytes < 1024)
+    return `${sizeInBytes} bytes`
+  else if (sizeInBytes < 1024 ** 2)
+    return `${(sizeInBytes / 1024).toFixed(2)} KB`
+  else if (sizeInBytes < 1024 ** 3)
+    return `${(sizeInBytes / 1024 ** 2).toFixed(2)} MB`
+  else
+    return `${(sizeInBytes / 1024 ** 3).toFixed(2)} GB`
+}
+
+// API calls and functionality (reusing existing functions)
+const fetchTerminalDetails = async () => {
+  isLoaded.value = false
+  try {
+    const response = await callApi({
+      url: 'enrolement/files',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      files.value = Object.values(responseData.data)
+    }
+    else if (response.status === 401) {
+      users.removeUser()
+      router.push({ name: 'login' })
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong please try again later'
+    alertInfo.type = 'error'
+  }
+  finally {
+    isLoaded.value = true
+  }
+}
+
+const showErrorDetails = (errorMessage: string) => {
+  currentErrorMessage.value = errorMessage
+  errorDetailsModal.value = true
+}
+
+// Helper to perform the API call
+const performApiCall = async (file: Files, action: 'approve' | 'reject') => {
+  return callApi({
+    url: `enrolement/file/${action}/${file.id}`,
+    method: 'POST',
+    authorized: true,
+    showAlert: false,
+  })
+}
+
+// Helper to update the local files array
+const updateLocalFileState = (fileId: number | null, action: 'approve' | 'reject') => {
+  if (fileId === null) {
+    console.error('File ID is null, cannot update file state.')
+
+    return
+  }
+
+  const fileIndex = files.value.findIndex(f => f.id === fileId)
+  if (fileIndex !== -1) {
+    files.value[fileIndex].is_approved = action === 'approve' ? 1 : 0
+
+    if (action === 'reject')
+      files.value[fileIndex].error_message = 'File rejected by user'
+  }
+}
+
+// Helper to show alert messages
+const showAlert = (title: string, message: string, type: 'success' | 'error') => {
+  alertInfo.show = true
+  alertInfo.title = title
+  alertInfo.message = message
+  alertInfo.type = type
+}
+
+// Helper to close the modal
+const closeModalIfOpen = () => {
+  if (fileManagementModal.value)
+    fileManagementModal.value = false
+}
+
+const handleFileAction = async (file: Files, action: 'approve' | 'reject') => {
+  try {
+    const response = await performApiCall(file, action)
+    const responseData = await response.json()
+
+    if (response.ok) {
+      updateLocalFileState(file.id, action)
+      showAlert('Success', `File ${action}d successfully`, 'success')
+      closeModalIfOpen()
+    }
+    else {
+      throw new Error(responseData.message || 'Failed to perform action')
+    }
+  }
+  catch (error) {
+    const errorMessage
+      = error instanceof Error ? error.message : 'Something went wrong'
+
+    showAlert('Error', errorMessage, 'error')
+  }
+}
+
+const viewFile = async (file: Files) => {
+  try {
+    const response = await callApi({
+      url: `enrolement/file/download/${file.id}`,
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    if (response.ok) {
+      const csvData = await response.text()
+
+      const parseCSV = (csv: string) => {
+        const lines = csv.split('\n')
+        const header1 = lines[0].split(',')
+
+        fileContentHeaders.value = header1.map(header => ({
+          title: header.trim(),
+          key: header.trim(),
+          sortable: true,
+          align: 'start',
+        }))
+
+        const data = lines.slice(1)
+          .filter(line => line.trim() !== '')
+          .map(line => {
+            const values = line.split(',')
+
+            return header1.reduce((obj, header, index) => {
+              obj[header.trim()] = values[index] ? values[index].trim() : ''
+
+              return obj
+            }, {} as any)
+          })
+
+        fileContents.value = data
+        fileContentSearch.value = ''
+        fileContentsModal.value = true
+      }
+
+      parseCSV(csvData)
+    }
+    else {
+      const responseData = await response.json()
+      throw new Error(responseData.message || 'Failed to download the file')
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
+    alertInfo.type = 'error'
+  }
+}
+
+onMounted(() => {
+  fetchTerminalDetails()
+})
+
+onMounted(() => {
+  fetchTerminalDetails()
+})
+</script>
+
+<template>
+  <!-- Snackbar -->
+  <VSnackbar
+    v-model="alertInfo.show"
+    :color="alertInfo.type"
+    :timeout="4000"
+    elevation="4"
+  >
+    <p>{{ alertInfo.message }}</p>
+    <template #actions>
+      <VBtn
+        icon="bx-x"
+        variant="text"
+        @click="alertInfo.show = false"
+      />
+    </template>
+  </VSnackbar>
+
+  <!-- Main Layout -->
+  <VRow v-if="isLoaded">
+    <!-- Summary Cards View (when no category is selected) -->
+    <template v-if="!selectedCategory">
+      <VCol
+        cols="12"
+        md="4"
+      >
+        <VCard
+          class="h-100"
+          variant="tonal"
+          color="success"
+          @click="selectedCategory = 'approved'"
+        >
+          <VCardTitle class="d-flex align-center pa-4">
+            <VIcon
+              icon="bx-check-circle"
+              color="success"
+              size="48"
+            />
+            <span class="mx-4">Approved Files</span>
+          </VCardTitle>
+          <VCardText class="text-h4">
+            {{ approvedFiles.length }}
+          </VCardText>
+        </VCard>
+      </VCol>
+
+      <VCol
+        cols="12"
+        md="4"
+      >
+        <VCard
+          class="h-100"
+          variant="tonal"
+          color="warning"
+          @click="selectedCategory = 'pending'"
+        >
+          <VCardTitle class="d-flex align-center pa-4">
+            <VIcon
+              icon="bx-time"
+              color="warning"
+              size="48"
+            />
+            <span class="mx-4">Pending Files</span>
+          </VCardTitle>
+          <VCardText class="text-h4">
+            {{ pendingFiles.length }}
+          </VCardText>
+        </VCard>
+      </VCol>
+
+      <VCol
+        cols="12"
+        md="4"
+      >
+        <VCard
+          class="h-100"
+          variant="tonal"
+          color="error"
+          @click="selectedCategory = 'rejected'"
+        >
+          <VCardTitle class="d-flex align-center pa-4">
+            <VIcon
+              icon="bx-x-circle"
+              color="error"
+              size="48"
+            />
+            <span class="mx-4">Rejected Files</span>
+          </VCardTitle>
+          <VCardText class="text-h4">
+            {{ rejectedFiles.length }}
+          </VCardText>
+        </VCard>
+      </VCol>
+    </template>
+
+    <!-- Detailed Card View (when category is selected) -->
+    <template v-else>
+      <VCol cols="12">
+        <VCard class="mb-4">
+          <VCardTitle class="d-flex align-center justify-space-between pa-4">
+            <div class="d-flex align-center">
+              <VBtn
+                icon
+                variant="text"
+                class="me-2"
+                @click="selectedCategory = null"
+              >
+                <VIcon icon="bx-arrow-back" />
+              </VBtn>
+              {{ selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) }} Files
+            </div>
+          </VCardTitle>
+        </VCard>
+
+        <VRow>
+          <VCol
+            v-for="file in currentFiles"
+            :key="file.id"
+            cols="12"
+            md="6"
+            lg="4"
+          >
+            <VCard>
+              <VCardTitle class="d-flex align-center justify-space-between pa-4">
+                <div class="text-truncate">
+                  {{ formatFileName(file.file_name || '') }}
+                </div>
+              </VCardTitle>
+              <VCardText>
+                <VRow>
+                  <VCol cols="6">
+                    <div class="text-caption">
+                      Size
+                    </div>
+                    <div>{{ formatFileSize(Number(file.file_size)) }}</div>
+                  </VCol>
+                  <VCol cols="6">
+                    <div class="text-caption">
+                      Status
+                    </div>
+                    <VChip
+                      :color="file.is_approved ? 'success' : file.error_message ? 'error' : 'warning'"
+                      size="small"
+                    >
+                      {{ file.is_approved ? 'Approved' : file.error_message ? 'Rejected' : 'Pending' }}
+                    </VChip>
+                  </VCol>
+                </VRow>
+                <VRow
+                  v-if="file.error_message"
+                  class="mt-2"
+                >
+                  <VCol cols="12">
+                    <VBtn
+                      color="error"
+                      variant="text"
+                      density="compact"
+                      block
+                      @click="showErrorDetails(file.error_message)"
+                    >
+                      View Error Details
+                    </VBtn>
+                  </VCol>
+                </VRow>
+              </VCardText>
+              <VDivider />
+              <VCardActions>
+                <VBtn
+                  variant="outlined"
+                  color="primary"
+                  density="compact"
+                  @click="viewFile(file)"
+                >
+                  View File
+                </VBtn>
+                <VSpacer />
+                <VBtn
+                  v-if="!file.is_approved && !file.error_message"
+                  variant="outlined"
+                  color="success"
+                  density="compact"
+                  @click="handleFileAction(file, 'approve')"
+                >
+                  Approve
+                </VBtn>
+                <VBtn
+                  v-if="!file.error_message"
+                  variant="outlined"
+                  color="error"
+                  density="compact"
+                  @click="handleFileAction(file, 'reject')"
+                >
+                  Reject
+                </VBtn>
+              </VCardActions>
+            </VCard>
+          </VCol>
+        </VRow>
+      </VCol>
+    </template>
+  </VRow>
+
+  <!-- Loading State -->
+  <VRow v-else>
+    <VCol cols="12">
+      <LoadingTable type="Files" />
+    </VCol>
+  </VRow>
+
+  <!-- Error Details Modal -->
+  <VDialog
+    v-model="errorDetailsModal"
+    max-width="500"
+  >
+    <VCard>
+      <VCardTitle class="text-h6">
+        File Error Details
+      </VCardTitle>
+      <VCardText>
+        <VAlert
+          type="error"
+          variant="outlined"
+          icon="bx-error-circle"
+        >
+          {{ currentErrorMessage }}
+        </VAlert>
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          @click="errorDetailsModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
+
+  <!-- File Contents Dialog -->
+  <FileContentsDialog
+    v-model="fileContentsModal"
+    :file-name="formatFileName(selectedFile?.file_name || '')"
+    :file-contents="fileContents"
+    :file-content-headers="fileContentHeaders"
+  />
+</template>
+
+<style scoped>
+.v-card {
+  transition: transform 0.2s;
+}
+
+.v-card:hover {
+  cursor: pointer;
+  transform: translateY(-2px);
+}
+
+.v-card-title {
+  font-size: 1.1rem;
+}
+
+.text-caption {
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+</style>
