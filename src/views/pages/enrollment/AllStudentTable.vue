@@ -5,6 +5,7 @@ import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
 import StudentDetailsModal from './StudentDetailsModal.vue'
+import { isAdmin } from '@/middlewares/auth'
 
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
@@ -15,6 +16,7 @@ const router = useRouter()
 const showStudentDetails = ref(false)
 
 const user = useUserStore()
+const Admin = ref(isAdmin())
 
 token.value = user.getUserInfo().token
 
@@ -460,14 +462,20 @@ onMounted(() => {
             />
 
             <VBtn
-              v-else
+              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
               :loading="verifyingBvn === item.raw.care_giver.bvn_id"
               density="compact"
               variant="outlined"
+              text="Verify BVN"
               @click="verifyBvn(item.raw.care_giver.bvn_id || 0)"
-            >
-              Verify
-            </VBtn>
+            />
+
+            <VChip
+              v-else
+              density="compact"
+              text="BVN Not Verified"
+              color="warning"
+            />
           </template>
         </VDataTableServer>
       </VCard>

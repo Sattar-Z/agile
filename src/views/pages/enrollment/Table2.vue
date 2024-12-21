@@ -3,12 +3,14 @@ import { useRouter } from 'vue-router'
 import LoadingTable from './LoadingTable.vue'
 import FileContentsDialog from './modals/FileContentsDialog.vue'
 import { useUserStore } from '@/stores/user'
+import { isAdmin } from '@/middlewares/auth'
 import { callApi } from '@/helpers/request'
 
 const users = useUserStore()
 const errorDetailsModal = ref(false)
 const currentErrorMessage = ref('')
 const router = useRouter()
+const Admin = ref(isAdmin())
 
 const fileContents = ref<any[]>([])
 const fileContentsModal = ref(false)
@@ -53,14 +55,43 @@ const pendingFiles = computed(() =>
 )
 
 const rejectedFiles = computed(() =>
-  files.value.filter(file => file.error_message),
+  files.value.filter(file => file.error_message && file.is_approved === 0),
 )
 
+const sortedFiles = computed(() => {
+  return [...files.value].sort((a, b) => {
+    const dateA = new Date(a.created_at || 0).getTime()
+    const dateB = new Date(b.created_at || 0).getTime()
+
+    return dateB - dateA
+  })
+})
+
 const categoryMappings = {
-  approved: () => files.value.filter(file => file.is_approved === 1),
-  pending: () => files.value.filter(file => file.is_approved === 0 && !file.error_message),
-  rejected: () => files.value.filter(file => file.error_message),
+  approved: () => sortedFiles.value.filter(file => file.is_approved === 1),
+  pending: () => sortedFiles.value.filter(file => file.is_approved === 0 && !file.error_message),
+  rejected: () => sortedFiles.value.filter(file => file.error_message && file.is_approved === 0),
 } as const
+
+const formatDate = (date: string | null): string => {
+  if (!date)
+    return ''
+
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+const isNewFile = (date: string | null): boolean => {
+  if (!date)
+    return false
+  const fileDate = new Date(date)
+  const today = new Date()
+
+  return fileDate.toDateString() === today.toDateString()
+}
 
 const currentFiles = computed(() => {
   return selectedCategory.value
@@ -194,7 +225,10 @@ const handleFileAction = async (file: Files, action: 'approve' | 'reject') => {
   }
 }
 
+const viewFileLoad = ref(false)
+
 const viewFile = async (file: Files) => {
+  viewFileLoad.value = true
   try {
     const response = await callApi({
       url: `enrolement/file/download/${file.id}`,
@@ -229,6 +263,7 @@ const viewFile = async (file: Files) => {
             }, {} as any)
           })
 
+        viewFileLoad.value = false
         fileContents.value = data
         fileContentSearch.value = ''
         fileContentsModal.value = true
@@ -237,11 +272,14 @@ const viewFile = async (file: Files) => {
       parseCSV(csvData)
     }
     else {
+      viewFileLoad.value = false
+
       const responseData = await response.json()
       throw new Error(responseData.message || 'Failed to download the file')
     }
   }
   catch (error) {
+    viewFileLoad.value = false
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
@@ -385,6 +423,14 @@ onMounted(() => {
                 <div class="text-truncate">
                   {{ formatFileName(file.file_name || '') }}
                 </div>
+                <VChip
+                  v-if="isNewFile(file.created_at)"
+                  color="primary"
+                  size="small"
+                  class="ms-2"
+                >
+                  New
+                </VChip>
               </VCardTitle>
               <VCardText>
                 <VRow>
@@ -406,6 +452,14 @@ onMounted(() => {
                     </VChip>
                   </VCol>
                 </VRow>
+                <VRow class="mt-2">
+                  <VCol cols="12">
+                    <div class="text-caption">
+                      Date Added
+                    </div>
+                    <div>{{ formatDate(file.created_at) }}</div>
+                  </VCol>
+                </VRow>
                 <VRow
                   v-if="file.error_message"
                   class="mt-2"
@@ -423,11 +477,12 @@ onMounted(() => {
                   </VCol>
                 </VRow>
               </VCardText>
-              <VDivider />
+              <VDivider class="my-3" />
               <VCardActions>
                 <VBtn
                   variant="outlined"
                   color="primary"
+                  :loading="viewFileLoad"
                   density="compact"
                   @click="viewFile(file)"
                 >
@@ -435,7 +490,7 @@ onMounted(() => {
                 </VBtn>
                 <VSpacer />
                 <VBtn
-                  v-if="!file.is_approved && !file.error_message"
+                  v-if="Admin && !file.is_approved && !file.error_message"
                   variant="outlined"
                   color="success"
                   density="compact"
@@ -444,7 +499,15 @@ onMounted(() => {
                   Approve
                 </VBtn>
                 <VBtn
-                  v-if="!file.error_message"
+                  v-if="file.is_approved || file.error_message"
+                  variant="outlined"
+                  color="error"
+                  density="compact"
+                >
+                  Delete
+                </VBtn>
+                <VBtn
+                  v-if="Admin && !file.error_message && !file.is_approved"
                   variant="outlined"
                   color="error"
                   density="compact"

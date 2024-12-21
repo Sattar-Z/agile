@@ -239,27 +239,15 @@ async function submitStudent() {
         variant="outlined"
         closable
       >
-        <VRow justify="space-between">
-          <VCol cols="auto">
-            <VCardText>
-              <VBtn
-                icon="bx-upload"
-                class="mx-2"
-                size="small"
-                variant="tonal"
-              />Enrollment Summary
-            </VCardText>
-          </VCol>
-          <VCol cols="auto">
-            <VCardText>
-              <VBtn
-                icon="bx-x"
-                variant="outlined"
-                size="x-small"
-              />
-            </VCardText>
-          </VCol>
-        </VRow>
+        <VCardText>
+          <VBtn
+            icon="bx-upload"
+            class="mx-2"
+            size="small"
+            variant="tonal"
+          />Enrollment Summary
+        </VCardText>
+
         <VDivider />
         <VCardItem>
           <Table />
