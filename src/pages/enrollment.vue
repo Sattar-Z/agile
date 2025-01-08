@@ -2,6 +2,7 @@
 import { isAdmin } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import AllStudentTable from '@/views/pages/enrollment/AllStudentTable.vue'
+import CareGiversTable from '@/views/pages/enrollment/CareGiversTable.vue'
 import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
 import CsvPreviewModal from '@/views/pages/enrollment/modals/CsvPreviewModal.vue'
 import Table from '@/views/pages/enrollment/Table2.vue'
@@ -16,6 +17,20 @@ const showPreviewModal = ref(false)
 const csvData = ref<any[]>([])
 
 const token = user.value.token
+
+const form = ref({
+  session: '2024',
+  term: '1',
+})
+
+interface Types {
+  name: string
+  value: string
+}
+
+const termSelect = ref<Types[]>([
+  { name: '1st', value: '1' },
+])
 
 const alertInfo = reactive({
   show: false,
@@ -164,11 +179,34 @@ async function submitStudent() {
     :loading="loading"
     @confirm="submitStudent"
   />
+  <VRow justify="end">
+    <VCol cols="auto">
+      <span class="text-caption">Session</span>
+      <VSelect
+        v-model="form.session"
+        :items="['2024']"
+        density="compact"
+        variant="solo-filled"
+      />
+    </VCol>
+    <VCol cols="auto">
+      <span class="text-caption">Term</span>
+      <VSelect
+        v-model="form.term"
+        :items="termSelect"
+        item-title="name"
+        item-value="value"
+        density="compact"
+        variant="solo-filled"
+      />
+    </VCol>
+  </VRow>
 
   <VRow>
     <VCol
       v-if="!Admin"
-      cols="8"
+      cols="12"
+      md="8"
     >
       <VCard variant="outlined">
         <VCardText>
@@ -188,7 +226,8 @@ async function submitStudent() {
     </VCol>
     <VCol
       v-if="!Admin"
-      cols="4"
+      cols="12"
+      md="4"
     >
       <VCard
         class="border-4 border-dashed cursor-pointer"
@@ -255,10 +294,19 @@ async function submitStudent() {
       </VCard>
     </VCol>
     <VCol cols="12">
-      <AllStudentTable />
+      <CareGiversTable />
     </VCol>
     <VCol cols="12">
-      <LgasTable />
+      <AllStudentTable
+        :term-id="form.term"
+        :session="form.session"
+      />
+    </VCol>
+    <VCol cols="12">
+      <LgasTable
+        :term-id="form.term"
+        :session="form.session"
+      />
     </VCol>
   </VRow>
 </template>

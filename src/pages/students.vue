@@ -2,6 +2,8 @@
 import { isAdmin } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import StudentTable from '@/views/pages/enrollment/StudentTable.vue'
+import CsvPreviewModal from '@/views/pages/enrollment/modals/CsvPreviewModal.vue'
+import Table from '@/views/pages/enrollment/Table2.vue'
 
 const isCardSelected = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -9,8 +11,23 @@ const loading = ref(false)
 const uploadedFile = ref<File | null>(null)
 const Admin = ref(isAdmin())
 const user = useUserStore().getUser()
-
+const showPreviewModal = ref(false)
+const csvData = ref<any[]>([])
 const token = user.value.token
+
+const form = ref({
+  session: '2024',
+  term: '1',
+})
+
+interface Types {
+  name: string
+  value: string
+}
+
+const termSelect = ref<Types[]>([
+  { name: '1st', value: '1' },
+])
 
 const alertInfo = reactive({
   show: false,
@@ -23,10 +40,31 @@ const handleCardClick = () => {
   fileInput.value?.click()
 }
 
-const handleFileUpload = (event: Event) => {
+const parseCSV = async (file: File) => {
+  const text = await file.text()
+  const lines = text.split('\n')
+  const headers = lines[0].split(',').map(header => header.trim())
+
+  const parsedData = lines.slice(1).map(line => {
+    const values = line.split(',')
+
+    return headers.reduce((obj, header, index) => {
+      obj[header] = values[index]?.trim()
+
+      return obj
+    }, {} as any)
+  }).filter(row => Object.values(row).some(value => value))
+
+  csvData.value = parsedData
+  showPreviewModal.value = true
+}
+
+const handleFileUpload = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
-  if (file)
+  if (file) {
     uploadedFile.value = file
+    await parseCSV(file)
+  }
 }
 
 const handleFileDrop = (event: DragEvent) => {
@@ -47,64 +85,6 @@ const handleDragOver = (event: DragEvent) => {
 
 const handleDragLeave = () => {
   isCardSelected.value = false
-}
-
-async function submit() {
-  loading.value = true
-
-  const file = uploadedFile.value
-
-  if (!file) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Please select a file to upload'
-    alertInfo.type = 'error'
-    loading.value = false
-
-    return
-  }
-
-  const formData = new FormData()
-
-  formData.append('file', file)
-  formData.append('file_type', 'school')
-
-  try {
-    const response = await fetch('https://staging-agile.moneta.ng/api/enrolement/file/upload', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    })
-
-    // Handle response similarly to your existing code
-    if (response.ok) {
-      const { message } = await response.json()
-
-      alertInfo.show = true
-      alertInfo.title = 'Success'
-      alertInfo.message = message
-      alertInfo.type = 'success'
-    }
-    else {
-      const errorResponse = await response.json()
-
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = errorResponse.message || 'Upload failed'
-      alertInfo.type = 'error'
-    }
-  }
-  catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'An unexpected error occurred'
-    alertInfo.type = 'error'
-  }
-  finally {
-    loading.value = false
-  }
 }
 
 async function submitStudent() {
@@ -136,7 +116,6 @@ async function submitStudent() {
       body: formData,
     })
 
-    // Handle response similarly to your existing code
     if (response.ok) {
       const { message } = await response.json()
 
@@ -144,6 +123,12 @@ async function submitStudent() {
       alertInfo.title = 'Success'
       alertInfo.message = message
       alertInfo.type = 'success'
+
+      // Reset the form after successful upload
+      uploadedFile.value = null
+      csvData.value = []
+      if (fileInput.value)
+        fileInput.value.value = ''
     }
     else {
       const errorResponse = await response.json()
@@ -162,6 +147,7 @@ async function submitStudent() {
   }
   finally {
     loading.value = false
+    showPreviewModal.value = false
   }
 }
 </script>
@@ -185,13 +171,63 @@ async function submitStudent() {
       />
     </template>
   </VSnackbar>
+  <CsvPreviewModal
+    v-model="showPreviewModal"
+    :csv-data="csvData"
+    :loading="loading"
+    @confirm="submitStudent"
+  />
+  <VRow justify="end">
+    <VCol cols="auto">
+      <span class="text-caption">Session</span>
+      <VSelect
+        v-model="form.session"
+        :items="['2024']"
+        density="compact"
+        variant="solo-filled"
+      />
+    </VCol>
+    <VCol cols="auto">
+      <span class="text-caption">Term</span>
+      <VSelect
+        v-model="form.term"
+        :items="termSelect"
+        item-title="name"
+        item-value="value"
+        density="compact"
+        variant="solo-filled"
+      />
+    </VCol>
+  </VRow>
   <VRow>
     <VCol
       v-if="!Admin"
       cols="12"
+      md="8"
+    >
+      <VCard variant="outlined">
+        <VCardText>
+          <VBtn
+            icon="bx-upload"
+            class="mx-2"
+            size="small"
+            variant="tonal"
+          />Enrollment Summary
+        </VCardText>
+
+        <VDivider />
+        <VCardItem>
+          <Table />
+        </VCardItem>
+      </VCard>
+    </VCol>
+    <VCol
+      v-if="!Admin"
+      cols="12"
+      md="4"
     >
       <VCard
-        class="mt-4 cursor-pointer"
+        class="border-4 border-dashed cursor-pointer"
         :class="{
           'border-4 border-dashed border-primary': isCardSelected,
           'border-4 border-dashed border-success': uploadedFile,
@@ -203,13 +239,13 @@ async function submitStudent() {
         @dragleave.prevent="handleDragLeave"
         @drop.prevent="handleFileDrop"
       >
-        <VCardText class="d-flex flex-column align-center justify-center pa-8">
+        <VCardText class="d-flex flex-column align-center justify-center pa-8 my-3">
           <img
             src="@images/upload.svg"
             alt="Upload icon"
             class="mb-4"
-            width="68"
-            height="68"
+            width="78"
+            height="78"
           >
           <h3 class="text-h5 font-weight-medium mb-2">
             {{
@@ -224,6 +260,7 @@ async function submitStudent() {
           <input
             ref="fileInput"
             type="file"
+            accept=".csv"
             class="d-none"
             @change="handleFileUpload"
           >
@@ -231,20 +268,33 @@ async function submitStudent() {
       </VCard>
     </VCol>
     <VCol
-      v-if="!Admin"
-      cols="auto"
-      class="mt-4"
+      v-if="Admin"
+      cols="12"
     >
-      <VBtn
-        :loading="loading"
-        color="primary"
-        @click="submitStudent"
+      <VCard
+        variant="outlined"
+        closable
       >
-        Upload
-      </VBtn>
+        <VCardText>
+          <VBtn
+            icon="bx-upload"
+            class="mx-2"
+            size="small"
+            variant="tonal"
+          />Enrollment Summary
+        </VCardText>
+
+        <VDivider />
+        <VCardItem>
+          <Table />
+        </VCardItem>
+      </VCard>
     </VCol>
     <VCol cols="12">
-      <StudentTable />
+      <StudentTable
+        :term-id="form.term"
+        :session="form.session"
+      />
     </VCol>
   </VRow>
 </template>

@@ -103,7 +103,7 @@ function logout() {
         :item="{
           title: 'Attendance',
           icon: 'bx-check-circle',
-          to: '/',
+          to: '/attendance',
         }"
       />
       <VerticalNavLink

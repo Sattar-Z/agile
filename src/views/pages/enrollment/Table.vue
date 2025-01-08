@@ -80,8 +80,7 @@ const formatFileName = (fileName: string): string => {
   return parts.join('_').replace('.csv', '')
 }
 
-// Fetch merchant Transactions
-const fetchTerminalDetails = async () => {
+const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
@@ -227,7 +226,7 @@ async function uploadFile() {
       alertInfo.type = 'success'
 
       // Refresh the files list
-      await fetchTerminalDetails()
+      await fetchData()
 
       // Close the modal
       fileManagementModal.value = false
@@ -416,7 +415,7 @@ watch(search, () => {
 })
 
 onMounted(() => {
-  fetchTerminalDetails()
+  fetchData()
 })
 </script>
 

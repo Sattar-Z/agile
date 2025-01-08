@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
+
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
-import StudentDetailsModal from './StudentDetailsModal.vue'
-import { isAdmin } from '@/middlewares/auth'
-
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 
@@ -18,64 +16,22 @@ const props = defineProps<{
 }>()
 
 const token = ref('')
-const router = useRouter()
-const showStudentDetails = ref(false)
-const selectedStudentId = ref<number | null>(null)
+const attendance = ref(0)
 
-const route = useRoute()
 const user = useUserStore()
-const Admin = ref(isAdmin())
+const router = useRouter()
 
 token.value = user.getUserInfo().token
 
-const { id, name } = route.params
-
-interface CareGiver {
-  id: number
-  bvn_id: number
-  nin_id: number
-  name: string
-  phone: string
-  address: string
-  community: string
-  gender: string
-  date_of_birth: string
-  qualification: string
-  income: string
-  photo: string
-  signature: string
-  certificate: number
-  is_employed: number
-  date_collected: string
-  is_bvn_verfied: number
-  is_nin_verfied: number
-  status: number
-  created_at: string
-  updated_at: string
-  lga_id: number
-}
-
-interface Students {
+interface Lgas {
   id: number | null
-  school_id: number | null
-  lga_id: number | null
-  care_giver_id: number | null
   name: string | null
-  date_of_birth: string | null
-  student_admission_number: string | null
-  class: string | null
-  disabilities: string | null
-  biometrics_photo: string | null
-  uniform: number | null
-  text_book: number | null
-  school_distance: string | null
-  materials: number | null
-  photo: number | null
-  attendance: number | null
+  daily_attendance_percentage: string | null
+  schools_count: number | null
+  students_count: number | null
+  verified_care_givers_count: number | null
+  unverified_care_givers_count: number | null
   created_at: string | null
-  updated_at: string | null
-  care_giver: CareGiver
-  term_attendances: object | null
 }
 
 const alertInfo = reactive({
@@ -85,32 +41,32 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
-const currentItems = ref<Students[]>([])
-const selectedStudents = ref<Students | null>(null)
-const StudentManagementModal = ref(false)
+const currentItems = ref<Lgas[]>([])
+const selectedLgas = ref<Lgas | null>(null)
+const LgaManagementModal = ref(false)
 
 const headers = ref([
-  { title: 'Students', align: 'start', sortable: false, key: 'name' },
-  { title: 'Admission No', key: 'student_admission_number', align: 'center' },
-  { title: 'DOB', key: 'date_of_birth', align: 'center' },
-  { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
+  { title: 'LGAS', align: 'start', sortable: false, key: 'name' },
+  { title: 'NO of Schools', key: 'schools_count', align: 'center' },
+  { title: 'NO of Students', key: 'students_count', align: 'center' },
+  { title: 'Verified Accounts', key: 'verified_care_givers_count', align: 'center' },
+  { title: 'Unverified Accounts', key: 'unverified_care_givers_count', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
-const students = ref<Students[]>([])
+const lgas = ref<Lgas[]>([])
 const isLoaded = ref(false)
 const totalItems = ref(0)
 const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
-const verifyingBvn = ref<number | null>(null)
 
 const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}`,
+      url: `lgas?term_id=${props.termId}&session=${props.session}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -119,8 +75,9 @@ const fetchData = async () => {
     const responseData = await response.json()
 
     if (response.ok) {
-      students.value = Object.values(responseData.data.students)
-      totalItems.value = students.value.length
+      lgas.value = Object.values(responseData.data.lgas)
+      attendance.value = responseData.data.overall_attendance
+      totalItems.value = lgas.value.length
     }
     else if (response.status === 401) {
       user.removeUser()
@@ -138,78 +95,16 @@ const fetchData = async () => {
     alertInfo.title = 'Error'
     alertInfo.message = 'Something went wrong please try again later'
     alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
   }
   finally {
     isLoaded.value = true
   }
 }
 
-const verifyBvn = async (bvnId: number) => {
-  if (!bvnId) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'No BVN ID available'
-    alertInfo.type = 'error'
-
-    return
-  }
-
-  verifyingBvn.value = bvnId
-
-  try {
-    const response = await callApi({
-      url: `bvn/verify/${bvnId}`,
-      method: 'POST',
-      authorized: true,
-      showAlert: false,
-    })
-
-    const responseData = await response.json()
-
-    if (response.ok) {
-      // Update both the main students array and current items being displayed
-      const updateStudent = (studentArray: Students[]) => {
-        const studentIndex = studentArray.findIndex(
-          student => student.care_giver.bvn_id === bvnId,
-        )
-
-        if (studentIndex !== -1)
-          studentArray[studentIndex].care_giver.is_bvn_verfied = 1
-      }
-
-      updateStudent(students.value)
-      updateStudent(currentItems.value)
-
-      alertInfo.show = true
-      alertInfo.title = 'Success'
-      alertInfo.message = responseData.message || 'BVN verified successfully'
-      alertInfo.type = 'success'
-    }
-    else {
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = responseData.message || 'BVN verification failed'
-      alertInfo.type = 'error'
-    }
-  }
-  catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Something went wrong during BVN verification'
-    alertInfo.type = 'error'
-  }
-  finally {
-    verifyingBvn.value = null
-  }
-}
-
-function openStudentDetails(student: Students) {
-  selectedStudentId.value = student.id
-  showStudentDetails.value = true
-}
-
 // Filter items based on search
-const filterItems = (items: Students[], searchValue: string): Students[] => {
+const filterItems = (items: Lgas[], searchValue: string): Lgas[] => {
   return items.filter(item => {
     if (!item.name)
       return false
@@ -218,21 +113,16 @@ const filterItems = (items: Students[], searchValue: string): Students[] => {
   })
 }
 
-const openExportModal = () => {
-  exportModal.value = true
-  exportType.value = null
-}
-
 // Sort items
-const sortItems = (items: Students[], sortBy: { key: string; order: string }[]): Students[] => {
+const sortItems = (items: Lgas[], sortBy: { key: string; order: string }[]): Lgas[] => {
   if (sortBy.length === 0)
     return items
 
   const [sortItem] = sortBy
 
   return [...items].sort((a, b) => {
-    const aValue = a[sortItem.key as keyof Students]
-    const bValue = b[sortItem.key as keyof Students]
+    const aValue = a[sortItem.key as keyof Lgas]
+    const bValue = b[sortItem.key as keyof Lgas]
 
     if (typeof aValue === 'string' && typeof bValue === 'string')
       return sortItem.order === 'desc' ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
@@ -244,7 +134,7 @@ const sortItems = (items: Students[], sortBy: { key: string; order: string }[]):
 }
 
 const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
-  const filteredItems = filterItems(students.value, search.value)
+  const filteredItems = filterItems(lgas.value, search.value)
   const sortedItems = sortItems(filteredItems, sortBy)
 
   const start = (page - 1) * itemsPerPageOption
@@ -256,8 +146,13 @@ const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
   return { items: currentItems.value, total: totalItems.value }
 }
 
+const openExportModal = () => {
+  exportModal.value = true
+  exportType.value = null
+}
+
 const exportCSV = () => {
-  if (students.value.length === 0) {
+  if (lgas.value.length === 0) {
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = 'No data to export'
@@ -267,13 +162,13 @@ const exportCSV = () => {
   }
 
   const parser = new Parser()
-  const csv = parser.parse(students.value)
+  const csv = parser.parse(lgas.value)
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')
 
   link.href = url
-  link.download = 'student_export.csv'
+  link.download = 'lga_export.csv'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -282,7 +177,7 @@ const exportCSV = () => {
 }
 
 const exportExcel = () => {
-  if (students.value.length === 0) {
+  if (lgas.value.length === 0) {
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = 'No data to export'
@@ -291,11 +186,11 @@ const exportExcel = () => {
     return
   }
 
-  const ws = XLSX.utils.json_to_sheet(students.value)
+  const ws = XLSX.utils.json_to_sheet(lgas.value)
   const wb = XLSX.utils.book_new()
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Student Export')
-  XLSX.writeFile(wb, 'student_export.xlsx')
+  XLSX.utils.book_append_sheet(wb, ws, 'LGA Export')
+  XLSX.writeFile(wb, 'lga_export.xlsx')
 
   exportModal.value = false
 }
@@ -305,11 +200,24 @@ onMounted(() => {
 })
 
 watch(search, () => {
-  totalItems.value = filterItems(students.value, search.value).length
+  totalItems.value = filterItems(lgas.value, search.value).length
 })
 
 onMounted(() => {
   fetchData()
+})
+
+onMounted(() => {
+  const tokenCheckInterval = setInterval(() => {
+    if (user.isTokenExpired()) {
+      user.removeUser()
+      clearInterval(tokenCheckInterval)
+    }
+  }, 20 * 60 * 1000) // Check every 5 minutes
+
+  onUnmounted(() => {
+    clearInterval(tokenCheckInterval)
+  })
 })
 
 watch(
@@ -341,6 +249,27 @@ watch(
 
   <!-- Main Layout -->
   <VRow>
+    <VCol>
+      <VCard
+        variant="tonal"
+        color="purple"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-group"
+            />
+            <VCardTitle class="my-auto">
+              Overall Attendance
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ attendance }}
+        </VCardText>
+      </VCard>
+    </VCol>
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -357,7 +286,7 @@ watch(
             md="4"
           >
             <VCardText>
-              <VCardTitle>{{ name }} Students</VCardTitle>
+              <VCardTitle>All LGAs</VCardTitle>
             </VCardText>
           </VCol>
         </VRow>
@@ -375,7 +304,7 @@ watch(
               <VTextField
                 v-model="search"
                 prepend-inner-icon="bx-search"
-                label="Search for Students"
+                label="Search for LGAs"
                 density="compact"
                 hide-details
               />
@@ -410,38 +339,50 @@ watch(
           class="transaction-table"
           @update:options="loadItems"
         >
-          <template #item.action="{ item }">
-            <VBtn
-              density="compact"
-              variant="tonal"
-              text="View"
-              @click="openStudentDetails(item.raw)"
+          <template #item.is_approved="{ item }">
+            <VIcon
+              v-if="item.raw.is_approved === 0"
+              size="small"
+              icon="bx-x-circle"
+              color="error"
             />
-          </template>
-
-          <template #item.care_giver.is_bvn_verfied="{ item }">
-            <VChip
-              v-if="item.raw.care_giver.is_bvn_verfied === 1"
-              density="compact"
-              text="BVN Verified"
+            <VIcon
+              v-else
+              size="small"
+              icon="bx-check-circle"
               color="success"
             />
-
-            <VBtn
-              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
-              :loading="verifyingBvn === item.raw.care_giver.bvn_id"
-              density="compact"
-              variant="outlined"
-              text="Verify BVN"
-              @click="verifyBvn(item.raw.care_giver.bvn_id || 0)"
+          </template>
+          <template #item.is_scanned="{ item }">
+            <VIcon
+              v-if="item.raw.is_scanned === 0"
+              size="small"
+              icon="bx-x-circle"
+              color="error"
             />
-
-            <VChip
+            <VIcon
               v-else
-              density="compact"
-              text="BVN Not Verified"
-              color="warning"
+              size="small"
+              icon="bx-check-circle"
+              color="success"
             />
+          </template>
+          <template #item.action="{ item }">
+            <RouterLink
+              :to="{
+                name: 'attendance-schools',
+                params: {
+                  id: item.raw.id,
+                  name: item.raw.name,
+                },
+              }"
+            >
+              <VBtn
+                density="compact"
+                variant="tonal"
+                text="View"
+              />
+            </RouterLink>
           </template>
         </VDataTableServer>
       </VCard>
@@ -452,16 +393,16 @@ watch(
       v-else
       cols="12"
     >
-      <LoadingTable type="Students" />
+      <LoadingTable type="All LGAs" />
     </VCol>
   </VRow>
   <VDialog
-    v-model="StudentManagementModal"
+    v-model="LgaManagementModal"
     width="600"
     persistent
   >
     <VCard
-      v-if="selectedStudents"
+      v-if="selectedLgas"
       class="pa-4"
     >
       <VRow justify="space-between">
@@ -474,7 +415,7 @@ watch(
           <VBtn
             icon="bx-x"
             variant="text"
-            @click="StudentManagementModal = false"
+            @click="LgaManagementModal = false"
           />
         </VCol>
       </VRow>
@@ -552,10 +493,6 @@ watch(
       </VCardText>
     </VCard>
   </VDialog>
-  <StudentDetailsModal
-    v-model="showStudentDetails"
-    :student-id="selectedStudentId"
-  />
 </template>
 
 <style scoped>

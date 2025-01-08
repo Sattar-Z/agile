@@ -64,14 +64,29 @@ const router = createRouter({
           component: () => import('../pages/enrollment.vue'),
         },
         {
+          name: 'attendance',
+          path: 'attendance',
+          component: () => import('../pages/attendance.vue'),
+        },
+        {
           name: 'schools',
           path: 'enrollment/schools/:id/:name',
           component: () => import('../pages/schools.vue'),
         },
         {
+          name: 'attendance-schools',
+          path: 'attendance/schools/:id/:name',
+          component: () => import('../pages/attendance-schools.vue'),
+        },
+        {
           name: 'students',
           path: 'enrollment/schools/students/:id/:name',
           component: () => import('../pages/students.vue'),
+        },
+        {
+          name: 'attendance-students',
+          path: 'attendance/schools/students/:id/:name',
+          component: () => import('../pages/attendance-students.vue'),
         },
         {
           path: 'register',

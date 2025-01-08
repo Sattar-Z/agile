@@ -9,6 +9,12 @@ import { useUserStore } from '@/stores/user'
 import { callApi } from '@/helpers/request'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
+
+const props = defineProps<{
+  termId: string
+  session: string
+}>()
+
 const token = ref('')
 
 const user = useUserStore()
@@ -22,6 +28,8 @@ interface Lgas {
   daily_attendance_percentage: string | null
   schools_count: number | null
   students_count: number | null
+  verified_care_givers_count: number | null
+  unverified_care_givers_count: number | null
   created_at: string | null
 }
 
@@ -40,6 +48,8 @@ const headers = ref([
   { title: 'LGAS', align: 'start', sortable: false, key: 'name' },
   { title: 'NO of Schools', key: 'schools_count', align: 'center' },
   { title: 'NO of Students', key: 'students_count', align: 'center' },
+  { title: 'Verified Accounts', key: 'verified_care_givers_count', align: 'center' },
+  { title: 'Unverified Accounts', key: 'unverified_care_givers_count', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -51,12 +61,11 @@ const search = ref('')
 const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
 
-// Fetch merchant Transactions
-const fetchTerminalDetails = async () => {
+const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: 'lgas',
+      url: `lgas?term_id=${props.termId}&session=${props.session}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -65,7 +74,7 @@ const fetchTerminalDetails = async () => {
     const responseData = await response.json()
 
     if (response.ok) {
-      lgas.value = Object.values(responseData.data)
+      lgas.value = Object.values(responseData.data.lgas)
       totalItems.value = lgas.value.length
     }
     else if (response.status === 401) {
@@ -193,7 +202,7 @@ watch(search, () => {
 })
 
 onMounted(() => {
-  fetchTerminalDetails()
+  fetchData()
 })
 
 onMounted(() => {
@@ -208,6 +217,14 @@ onMounted(() => {
     clearInterval(tokenCheckInterval)
   })
 })
+
+watch(
+  () => [props.termId, props.session],
+  () => {
+    fetchData()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

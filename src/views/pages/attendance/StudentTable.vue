@@ -17,14 +17,15 @@ const props = defineProps<{
   session: string
 }>()
 
+const Admin = ref(isAdmin())
 const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
 const selectedStudentId = ref<number | null>(null)
-
+const attendance = ref(0)
+const careGivers = ref(0)
 const route = useRoute()
 const user = useUserStore()
-const Admin = ref(isAdmin())
 
 token.value = user.getUserInfo().token
 
@@ -104,6 +105,7 @@ const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
+
 const verifyingBvn = ref<number | null>(null)
 
 const fetchData = async () => {
@@ -120,6 +122,8 @@ const fetchData = async () => {
 
     if (response.ok) {
       students.value = Object.values(responseData.data.students)
+      attendance.value = responseData.data.overall_attendance
+      careGivers.value = responseData.data.care_givers_count
       totalItems.value = students.value.length
     }
     else if (response.status === 401) {
@@ -341,6 +345,54 @@ watch(
 
   <!-- Main Layout -->
   <VRow>
+    <VCol
+      cols="12"
+      md="6"
+    >
+      <VCard
+        variant="tonal"
+        color="success"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-group"
+            />
+            <VCardTitle class="my-auto">
+              Overall Attendance
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ attendance }}
+        </VCardText>
+      </VCard>
+    </VCol>
+    <VCol
+      cols="12"
+      md="6"
+    >
+      <VCard
+        variant="tonal"
+        color="primary"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-donate-heart"
+            />
+            <VCardTitle class="my-auto">
+              Care Givers Count
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ careGivers }}
+        </VCardText>
+      </VCard>
+    </VCol>
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -354,7 +406,7 @@ watch(
           <!-- Title -->
           <VCol
             cols="12"
-            md="4"
+            md="6"
           >
             <VCardText>
               <VCardTitle>{{ name }} Students</VCardTitle>

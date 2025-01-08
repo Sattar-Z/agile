@@ -1,34 +1,46 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
-import StudentDetailsModal from './StudentDetailsModal.vue'
+import CareGiverStudentsModal from './CareGiverStudentsModal.vue'
 import { isAdmin } from '@/middlewares/auth'
-
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 
-// import { toNigerianCurrency } from '@/helpers/numbers'
-
-const props = defineProps<{
-  termId: string
-  session: string
-}>()
-
 const token = ref('')
 const router = useRouter()
-const showStudentDetails = ref(false)
-const selectedStudentId = ref<number | null>(null)
+const showStudentsModal = ref(false)
 
-const route = useRoute()
+// const selectedCaregiverId = ref<number | null>(null)
+
 const user = useUserStore()
 const Admin = ref(isAdmin())
 
 token.value = user.getUserInfo().token
 
-const { id, name } = route.params
+interface Student {
+  id: number
+  name: string
+  date_of_birth: string
+  student_admission_number: string
+  class: string
+  disabilities: string
+  school_distance: string
+  created_at: string
+  updated_at: string
+}
+
+interface Bvn {
+  id: number
+  bvn: string
+  is_approved: number
+  is_verified: number
+  created_at: string
+  updated_at: string
+  error_message: string
+}
 
 interface CareGiver {
   id: number
@@ -53,29 +65,9 @@ interface CareGiver {
   created_at: string
   updated_at: string
   lga_id: number
-}
-
-interface Students {
-  id: number | null
-  school_id: number | null
-  lga_id: number | null
-  care_giver_id: number | null
-  name: string | null
-  date_of_birth: string | null
-  student_admission_number: string | null
-  class: string | null
-  disabilities: string | null
-  biometrics_photo: string | null
-  uniform: number | null
-  text_book: number | null
-  school_distance: string | null
-  materials: number | null
-  photo: number | null
-  attendance: number | null
-  created_at: string | null
-  updated_at: string | null
-  care_giver: CareGiver
-  term_attendances: object | null
+  students_count: number
+  bvn: Bvn
+  students: Student[]
 }
 
 const alertInfo = reactive({
@@ -85,32 +77,35 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
-const currentItems = ref<Students[]>([])
-const selectedStudents = ref<Students | null>(null)
-const StudentManagementModal = ref(false)
+const currentItems = ref<CareGiver[]>([])
+const selectedCareGiver = ref<CareGiver | null>(null)
 
 const headers = ref([
-  { title: 'Students', align: 'start', sortable: false, key: 'name' },
-  { title: 'Admission No', key: 'student_admission_number', align: 'center' },
-  { title: 'DOB', key: 'date_of_birth', align: 'center' },
-  { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
+  { title: 'Name', align: 'start', sortable: true, key: 'name' },
+  { title: 'Phone', key: 'phone', align: 'center' },
+  { title: 'Community', key: 'community', align: 'center' },
+  { title: 'Students Count', key: 'students_count', align: 'center' },
+  { title: 'Gender', key: 'gender', align: 'center' },
+  { title: 'Income', key: 'income', align: 'center' },
+  { title: 'BVN Status', key: 'is_bvn_verfied', align: 'center' },
+  { title: 'Date Collected', key: 'date_collected', sortable: true, align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
-const students = ref<Students[]>([])
+const caregivers = ref<CareGiver[]>([])
 const isLoaded = ref(false)
 const totalItems = ref(0)
 const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
-const exportType = ref<'CSV' | 'Excel' | null>(null)
 const verifyingBvn = ref<number | null>(null)
 
+// Fetch caregivers
 const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}`,
+      url: 'care_givers',
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -119,8 +114,8 @@ const fetchData = async () => {
     const responseData = await response.json()
 
     if (response.ok) {
-      students.value = Object.values(responseData.data.students)
-      totalItems.value = students.value.length
+      caregivers.value = responseData.data
+      totalItems.value = caregivers.value.length
     }
     else if (response.status === 401) {
       user.removeUser()
@@ -167,18 +162,12 @@ const verifyBvn = async (bvnId: number) => {
     const responseData = await response.json()
 
     if (response.ok) {
-      // Update both the main students array and current items being displayed
-      const updateStudent = (studentArray: Students[]) => {
-        const studentIndex = studentArray.findIndex(
-          student => student.care_giver.bvn_id === bvnId,
-        )
+      const caregiverIndex = caregivers.value.findIndex(
+        caregiver => caregiver.bvn_id === bvnId,
+      )
 
-        if (studentIndex !== -1)
-          studentArray[studentIndex].care_giver.is_bvn_verfied = 1
-      }
-
-      updateStudent(students.value)
-      updateStudent(currentItems.value)
+      if (caregiverIndex !== -1)
+        caregivers.value[caregiverIndex].is_bvn_verfied = 1
 
       alertInfo.show = true
       alertInfo.title = 'Success'
@@ -203,48 +192,62 @@ const verifyBvn = async (bvnId: number) => {
   }
 }
 
-function openStudentDetails(student: Students) {
-  selectedStudentId.value = student.id
-  showStudentDetails.value = true
+function openStudentsModal(caregiver: CareGiver) {
+  selectedCareGiver.value = caregiver
+  showStudentsModal.value = true
 }
 
 // Filter items based on search
-const filterItems = (items: Students[], searchValue: string): Students[] => {
+const filterItems = (items: CareGiver[], searchValue: string): CareGiver[] => {
   return items.filter(item => {
-    if (!item.name)
-      return false
+    const nameMatch = item.name.toLowerCase().includes(searchValue.toLowerCase())
+    const phoneMatch = item.phone.toLowerCase().includes(searchValue.toLowerCase())
+    const communityMatch = item.community.toLowerCase().includes(searchValue.toLowerCase())
 
-    return item.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
+    return nameMatch || phoneMatch || communityMatch
   })
 }
 
 const openExportModal = () => {
   exportModal.value = true
-  exportType.value = null
 }
 
-// Sort items
-const sortItems = (items: Students[], sortBy: { key: string; order: string }[]): Students[] => {
-  if (sortBy.length === 0)
-    return items
+// Main sorting function
+const sortItems = (items: CareGiver[], sortBy: { key: string; order: string }[]): CareGiver[] => {
+  if (sortBy.length === 0) return items;
 
-  const [sortItem] = sortBy
+  const [sortItem] = sortBy;
+  const { key, order } = sortItem;
 
-  return [...items].sort((a, b) => {
-    const aValue = a[sortItem.key as keyof Students]
-    const bValue = b[sortItem.key as keyof Students]
+  const getComparisonValue = (a: CareGiver, b: CareGiver): number => {
+    const aValue = a[key as keyof CareGiver];
+    const bValue = b[key as keyof CareGiver];
 
-    if (typeof aValue === 'string' && typeof bValue === 'string')
-      return sortItem.order === 'desc' ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
-    if (typeof aValue === 'number' && typeof bValue === 'number')
-      return sortItem.order === 'desc' ? bValue - aValue : aValue - bValue
+    if (key === 'date_collected') {
+      return new Date(aValue as string).getTime() - new Date(bValue as string).getTime();
+    }
 
-    return 0
-  })
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return aValue.localeCompare(bValue);
+    }
+
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return aValue - bValue;
+    }
+
+    return 0;
+  };
+
+  const compare = (a: CareGiver, b: CareGiver): number => {
+    const comparisonValue = getComparisonValue(a, b);
+    return order === 'desc' ? -comparisonValue : comparisonValue;
+  };
+
+  return [...items].sort(compare);
 }
 
 const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
-  const filteredItems = filterItems(students.value, search.value)
+  const filteredItems = filterItems(caregivers.value, search.value)
   const sortedItems = sortItems(filteredItems, sortBy)
 
   const start = (page - 1) * itemsPerPageOption
@@ -257,7 +260,7 @@ const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
 }
 
 const exportCSV = () => {
-  if (students.value.length === 0) {
+  if (caregivers.value.length === 0) {
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = 'No data to export'
@@ -267,13 +270,13 @@ const exportCSV = () => {
   }
 
   const parser = new Parser()
-  const csv = parser.parse(students.value)
+  const csv = parser.parse(caregivers.value)
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')
 
   link.href = url
-  link.download = 'student_export.csv'
+  link.download = 'caregivers_export.csv'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -282,7 +285,7 @@ const exportCSV = () => {
 }
 
 const exportExcel = () => {
-  if (students.value.length === 0) {
+  if (caregivers.value.length === 0) {
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = 'No data to export'
@@ -291,11 +294,11 @@ const exportExcel = () => {
     return
   }
 
-  const ws = XLSX.utils.json_to_sheet(students.value)
+  const ws = XLSX.utils.json_to_sheet(caregivers.value)
   const wb = XLSX.utils.book_new()
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Student Export')
-  XLSX.writeFile(wb, 'student_export.xlsx')
+  XLSX.utils.book_append_sheet(wb, ws, 'Caregivers Export')
+  XLSX.writeFile(wb, 'caregivers_export.xlsx')
 
   exportModal.value = false
 }
@@ -305,20 +308,12 @@ onMounted(() => {
 })
 
 watch(search, () => {
-  totalItems.value = filterItems(students.value, search.value).length
+  totalItems.value = filterItems(caregivers.value, search.value).length
 })
 
 onMounted(() => {
   fetchData()
 })
-
-watch(
-  () => [props.termId, props.session],
-  () => {
-    fetchData()
-  },
-  { immediate: true },
-)
 </script>
 
 <template>
@@ -357,7 +352,7 @@ watch(
             md="4"
           >
             <VCardText>
-              <VCardTitle>{{ name }} Students</VCardTitle>
+              <VCardTitle>All Caregivers</VCardTitle>
             </VCardText>
           </VCol>
         </VRow>
@@ -366,7 +361,6 @@ watch(
           justify="space-between"
         >
           <!-- Actions -->
-
           <VCol
             cols="12"
             md="3"
@@ -375,7 +369,7 @@ watch(
               <VTextField
                 v-model="search"
                 prepend-inner-icon="bx-search"
-                label="Search for Students"
+                label="Search for Caregiver / Phone / Community"
                 density="compact"
                 hide-details
               />
@@ -414,26 +408,25 @@ watch(
             <VBtn
               density="compact"
               variant="tonal"
-              text="View"
-              @click="openStudentDetails(item.raw)"
+              text="View Students"
+              @click="openStudentsModal(item.raw)"
             />
           </template>
-
-          <template #item.care_giver.is_bvn_verfied="{ item }">
+          <template #item.is_bvn_verfied="{ item }">
             <VChip
-              v-if="item.raw.care_giver.is_bvn_verfied === 1"
+              v-if="item.raw.is_bvn_verfied === 1"
               density="compact"
               text="BVN Verified"
               color="success"
             />
 
             <VBtn
-              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
-              :loading="verifyingBvn === item.raw.care_giver.bvn_id"
+              v-else-if="Admin && item.raw.is_bvn_verfied === 0"
+              :loading="verifyingBvn === item.raw.bvn_id"
               density="compact"
               variant="outlined"
               text="Verify BVN"
-              @click="verifyBvn(item.raw.care_giver.bvn_id || 0)"
+              @click="verifyBvn(item.raw.bvn_id)"
             />
 
             <VChip
@@ -452,48 +445,9 @@ watch(
       v-else
       cols="12"
     >
-      <LoadingTable type="Students" />
+      <LoadingTable type="Caregivers" />
     </VCol>
   </VRow>
-  <VDialog
-    v-model="StudentManagementModal"
-    width="600"
-    persistent
-  >
-    <VCard
-      v-if="selectedStudents"
-      class="pa-4"
-    >
-      <VRow justify="space-between">
-        <VCol cols="auto">
-          <VCardTitle class="text-h5 text-center mb-4">
-            File Management
-          </VCardTitle>
-        </VCol>
-        <VCol cols="auto">
-          <VBtn
-            icon="bx-x"
-            variant="text"
-            @click="StudentManagementModal = false"
-          />
-        </VCol>
-      </VRow>
-
-      <VCardText>
-        <VRow>
-          <VCol
-            cols="12"
-            md="6"
-          />
-
-          <VCol
-            cols="12"
-            md="6"
-          />
-        </VRow>
-      </VCardText>
-    </VCard>
-  </VDialog>
   <VDialog
     v-model="exportModal"
     width="500"
@@ -552,9 +506,9 @@ watch(
       </VCardText>
     </VCard>
   </VDialog>
-  <StudentDetailsModal
-    v-model="showStudentDetails"
-    :student-id="selectedStudentId"
+  <CareGiverStudentsModal
+    v-model="showStudentsModal"
+    :caregiver="selectedCareGiver"
   />
 </template>
 

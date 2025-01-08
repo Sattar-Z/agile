@@ -15,11 +15,15 @@ const props = defineProps<{
 }>()
 
 const token = ref('')
+const attendance = ref(0)
+const careGivers = ref(0)
+const schoolCount = ref(0)
 
 const uploadFile = ref<File | null>(null)
 const uploadModal = ref(false)
 const loading = ref(false)
 const route = useRoute()
+const downloadingTemplate = ref(false)
 const router = useRouter()
 
 const user = useUserStore()
@@ -61,8 +65,6 @@ const headers = ref([
   { title: 'Schools', align: 'start', sortable: false, key: 'name' },
   { title: 'Education Level', key: 'education_level', align: 'center' },
   { title: 'NO of Students', key: 'students_count', align: 'center' },
-  { title: 'Verified Accounts', key: 'verified_care_givers_count', align: 'center' },
-  { title: 'Unverified Accounts', key: 'unverified_care_givers_count', align: 'center' },
   { title: 'Upload Records', key: 'upload', align: 'center' },
   { title: 'Action', key: 'view', align: 'center' },
 ] as const)
@@ -103,11 +105,10 @@ const submitStudent = async () => {
   const formData = new FormData()
 
   formData.append('file', uploadFile.value)
-  formData.append('file_type', 'students_per_school')
   formData.append('school_id', selectedSchools.value?.id?.toString() || '')
 
   try {
-    const response = await fetch('https://staging-agile.moneta.ng/api/enrolement/file/upload', {
+    const response = await fetch('https://staging-agile.moneta.ng/api/attendance/upload', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -156,6 +157,9 @@ const fetchData = async () => {
 
     if (response.ok) {
       schools.value = Object.values(responseData.data.schools)
+      attendance.value = responseData.data.overall_attendance
+      careGivers.value = responseData.data.care_givers_count
+      schoolCount.value = responseData.data.schools_count
       totalItems.value = schools.value.length
     }
     else if (response.status === 401) {
@@ -177,6 +181,52 @@ const fetchData = async () => {
   }
   finally {
     isLoaded.value = true
+  }
+}
+
+const downloadTemplate = async () => {
+  if (!selectedSchools.value?.id) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'School ID is required'
+    alertInfo.type = 'error'
+
+    return
+  }
+
+  downloadingTemplate.value = true
+
+  try {
+    const response = await callApi({
+      url: `attendance/school/template?school_id=${selectedSchools.value.id}&term_id=${props.termId}`,
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to download template')
+    }
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `${selectedSchools.value.name}_template.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = error instanceof Error ? error.message : 'Failed to download template'
+    alertInfo.type = 'error'
+  }
+  finally {
+    downloadingTemplate.value = false
   }
 }
 
@@ -313,6 +363,78 @@ watch(
 
   <!-- Main Layout -->
   <VRow>
+    <VCol
+      cols="12"
+      md="4"
+    >
+      <VCard
+        variant="tonal"
+        color="success"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-group"
+            />
+            <VCardTitle class="my-auto">
+              Overall Attendance
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ attendance }}
+        </VCardText>
+      </VCard>
+    </VCol>
+    <VCol
+      cols="12"
+      md="4"
+    >
+      <VCard
+        variant="tonal"
+        color="purple"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-book"
+            />
+            <VCardTitle class="my-auto">
+              No of Schools
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ schoolCount }}
+        </VCardText>
+      </VCard>
+    </VCol>
+    <VCol
+      cols="12"
+      md="4"
+    >
+      <VCard
+        variant="tonal"
+        color="primary"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-donate-heart"
+            />
+            <VCardTitle class="my-auto">
+              Care Givers Count
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ careGivers }}
+        </VCardText>
+      </VCard>
+    </VCol>
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -385,7 +507,7 @@ watch(
           <template #item.view="{ item }">
             <RouterLink
               :to="{
-                name: 'students',
+                name: 'attendance-students',
                 params: {
                   id: item.raw.id,
                   name: item.raw.name,
@@ -548,7 +670,7 @@ watch(
           </VCol>
           <VCol
             cols="12"
-            class="d-flex justify-center"
+            class="d-flex justify-center gap-4"
           >
             <VBtn
               color="primary"
@@ -556,6 +678,13 @@ watch(
               @click="submitStudent"
             >
               Upload
+            </VBtn>
+            <VBtn
+              color="secondary"
+              :loading="downloadingTemplate"
+              @click="downloadTemplate"
+            >
+              Download Sample
             </VBtn>
           </VCol>
         </VRow>

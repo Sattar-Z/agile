@@ -10,6 +10,11 @@ import { isAdmin } from '@/middlewares/auth'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 
+// const props = defineProps<{
+//   termId: string
+//   session: string
+// }>()
+
 // import { toNigerianCurrency } from '@/helpers/numbers'
 const token = ref('')
 const router = useRouter()
@@ -94,6 +99,7 @@ const alertInfo = reactive({
 const currentItems = ref<Students[]>([])
 const selectedStudents = ref<Students | null>(null)
 const StudentManagementModal = ref(false)
+const selectedStudentId = ref<number | null>(null)
 
 const headers = ref([
   { title: 'Students', align: 'start', sortable: true, key: 'name' },
@@ -116,8 +122,7 @@ const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
 const verifyingBvn = ref<number | null>(null)
 
-// Fetch merchant Transactions
-const fetchTerminalDetails = async () => {
+const fetcbData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
@@ -210,7 +215,7 @@ const verifyBvn = async (bvnId: number) => {
 }
 
 function openStudentDetails(student: Students) {
-  selectedStudents.value = student
+  selectedStudentId.value = student.id
   showStudentDetails.value = true
 }
 
@@ -352,7 +357,7 @@ watch(search, () => {
 })
 
 onMounted(() => {
-  fetchTerminalDetails()
+  fetcbData()
 })
 </script>
 
@@ -588,7 +593,7 @@ onMounted(() => {
   </VDialog>
   <StudentDetailsModal
     v-model="showStudentDetails"
-    :student="selectedStudents"
+    :student-id="selectedStudentId"
   />
 </template>
 
