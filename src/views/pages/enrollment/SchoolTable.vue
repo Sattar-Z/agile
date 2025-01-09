@@ -64,6 +64,7 @@ const headers = ref([
   { title: 'Verified Accounts', key: 'verified_care_givers_count', align: 'center' },
   { title: 'Unverified Accounts', key: 'unverified_care_givers_count', align: 'center' },
   { title: 'Upload Records', key: 'upload', align: 'center' },
+  { title: 'Verify Accounts', key: 'verify', align: 'center' },
   { title: 'Action', key: 'view', align: 'center' },
 ] as const)
 
@@ -177,6 +178,48 @@ const fetchData = async () => {
   }
   finally {
     isLoaded.value = true
+  }
+}
+
+const verificationLoading = ref<number | null>(null)
+
+// Add verification function
+const verifySchoolAccounts = async (schoolId: number) => {
+  verificationLoading.value = schoolId
+  try {
+    const response = await callApi({
+      url: `bvn/batch/verification?school_id=${schoolId}`,
+      method: 'POST',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = 'Verification process initiated successfully'
+      alertInfo.type = 'success'
+
+      // Refresh the data to show updated verification counts
+      await fetchData()
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Verification process failed'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'An unexpected error occurred during verification'
+    alertInfo.type = 'error'
+  }
+  finally {
+    verificationLoading.value = null
   }
 }
 
@@ -406,6 +449,22 @@ watch(
               icon="bx-upload"
               @click="openUploadModal(item.raw)"
             />
+          </template>
+          <template #item.verify="{ item }">
+            <VBtn
+              density="compact"
+              variant="tonal"
+              color="info"
+              :loading="verificationLoading === item.raw.id"
+              :disabled="verificationLoading !== null"
+              @click="verifySchoolAccounts(item.raw.id)"
+            >
+              <VIcon
+                start
+                icon="bx-check-shield"
+              />
+              Verify
+            </VBtn>
           </template>
         </VDataTableServer>
       </VCard>

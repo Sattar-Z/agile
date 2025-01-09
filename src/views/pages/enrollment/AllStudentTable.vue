@@ -19,9 +19,16 @@ import { useUserStore } from '@/stores/user'
 const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
+const errorMessageModal = ref(false)
+const selectedErrorMessage = ref('')
 
 const user = useUserStore()
 const Admin = ref(isAdmin())
+
+const showErrorMessage = (message: string) => {
+  selectedErrorMessage.value = message
+  errorMessageModal.value = true
+}
 
 token.value = user.getUserInfo().token
 
@@ -38,8 +45,8 @@ interface CareGiver {
   income: string | null
   is_employed: string | null
   certificate: number | null
-  is_bvn_verfied: string | null
-  is_nin_verfied: string | null
+  is_bvn_verfied: number | null
+  is_nin_verfied: number | null
   date_collected: string | null
   status: string | null
   created_at: string | null
@@ -183,13 +190,18 @@ const verifyBvn = async (bvnId: number) => {
     const responseData = await response.json()
 
     if (response.ok) {
-      // Update the specific student's care giver BVN verification status
-      const studentIndex = students.value.findIndex(
-        student => student.care_giver.bvn_id === bvnId,
-      )
+      // Update both the main students array and current items being displayed
+      const updateStudent = (studentArray: Students[]) => {
+        const studentIndex = studentArray.findIndex(
+          student => student.care_giver.bvn_id === bvnId,
+        )
 
-      if (studentIndex !== -1)
-        students.value[studentIndex].care_giver.is_bvn_verfied = 'true'
+        if (studentIndex !== -1)
+          studentArray[studentIndex].care_giver.is_bvn_verfied = 1
+      }
+
+      updateStudent(students.value)
+      updateStudent(currentItems.value)
 
       alertInfo.show = true
       alertInfo.title = 'Success'
@@ -458,27 +470,41 @@ onMounted(() => {
               @click="openStudentDetails(item.raw)"
             />
           </template>
-          <template #item.care_giver.is_bvn_verfied="{ item }">
+          <template #item.is_bvn_verfied="{ item }">
             <VChip
-              v-if="item.raw.care_giver.is_bvn_verfied === 1"
+              v-if="item.raw.is_bvn_verfied === 1"
               density="compact"
-              text="BVN Verified"
+              text="Account Verified"
               color="success"
             />
-
+            <VChip
+              v-else-if="item.raw.bvn?.is_pending === 1"
+              density="compact"
+              text="Processing"
+              color="info"
+            />
+            <template v-else-if="item.raw.bvn?.error_message">
+              <VBtn
+                density="compact"
+                variant="tonal"
+                color="error"
+                @click="showErrorMessage(item.raw.bvn.error_message)"
+              >
+                Verification Failed
+              </VBtn>
+            </template>
             <VBtn
-              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
-              :loading="verifyingBvn === item.raw.care_giver.bvn_id"
+              v-else-if="Admin && item.raw.is_bvn_verfied === 0"
+              :loading="verifyingBvn === item.raw.bvn_id"
               density="compact"
               variant="outlined"
-              text="Verify BVN"
-              @click="verifyBvn(item.raw.care_giver.bvn_id || 0)"
+              text="Verify Account"
+              @click="verifyBvn(item.raw.bvn_id)"
             />
-
             <VChip
               v-else
               density="compact"
-              text="BVN Not Verified"
+              text="Account Unverified"
               color="warning"
             />
           </template>
@@ -589,6 +615,41 @@ onMounted(() => {
           </VCol>
         </VRow>
       </VCardText>
+    </VCard>
+  </VDialog>
+  <VDialog
+    v-model="errorMessageModal"
+    width="500"
+  >
+    <VCard class="pa-6">
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Verification Error Details
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="errorMessageModal = false"
+          />
+        </VCol>
+      </VRow>
+      <VCardText>
+        <p class="text-body-1">
+          {{ selectedErrorMessage }}
+        </p>
+      </VCardText>
+      <VCardActions class="justify-end pt-4">
+        <VBtn
+          color="primary"
+          variant="tonal"
+          @click="errorMessageModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
     </VCard>
   </VDialog>
   <StudentDetailsModal

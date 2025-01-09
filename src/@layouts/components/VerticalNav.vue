@@ -64,7 +64,7 @@ const handleNavScroll = (evt: Event) => {
             class="mx-auto"
           />
 
-          <h1 class="leading-normal text-primary">
+          <h1 class="text-h5 leading-normal text-primary font-weight-bold mx-1">
             NAS-AGILE
           </h1>
         </RouterLink>

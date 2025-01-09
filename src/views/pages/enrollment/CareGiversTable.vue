@@ -3,20 +3,27 @@ import { Parser } from '@json2csv/plainjs'
 import { useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
-import LoadingTable from './LoadingTable.vue'
 import CareGiverStudentsModal from './CareGiverStudentsModal.vue'
+import LoadingTable from './LoadingTable.vue'
+import { useUserStore } from '@/stores/user'
 import { isAdmin } from '@/middlewares/auth'
 import { callApi } from '@/helpers/request'
-import { useUserStore } from '@/stores/user'
 
 const token = ref('')
 const router = useRouter()
 const showStudentsModal = ref(false)
+const errorMessageModal = ref(false)
+const selectedErrorMessage = ref('')
 
 // const selectedCaregiverId = ref<number | null>(null)
 
 const user = useUserStore()
 const Admin = ref(isAdmin())
+
+const showErrorMessage = (message: string) => {
+  selectedErrorMessage.value = message
+  errorMessageModal.value = true
+}
 
 token.value = user.getUserInfo().token
 
@@ -40,6 +47,7 @@ interface Bvn {
   created_at: string
   updated_at: string
   error_message: string
+  is_pending: number
 }
 
 interface CareGiver {
@@ -87,7 +95,7 @@ const headers = ref([
   { title: 'Students Count', key: 'students_count', align: 'center' },
   { title: 'Gender', key: 'gender', align: 'center' },
   { title: 'Income', key: 'income', align: 'center' },
-  { title: 'BVN Status', key: 'is_bvn_verfied', align: 'center' },
+  { title: 'Account Status', key: 'is_bvn_verfied', align: 'center' },
   { title: 'Date Collected', key: 'date_collected', sortable: true, align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
@@ -162,12 +170,17 @@ const verifyBvn = async (bvnId: number) => {
     const responseData = await response.json()
 
     if (response.ok) {
-      const caregiverIndex = caregivers.value.findIndex(
-        caregiver => caregiver.bvn_id === bvnId,
-      )
+      const updateCareGiver = (careGiverArray: CareGiver[]) => {
+        const caregiverIndex = careGiverArray.findIndex(
+          caregiver => caregiver.bvn_id === bvnId,
+        )
 
-      if (caregiverIndex !== -1)
-        caregivers.value[caregiverIndex].is_bvn_verfied = 1
+        if (caregiverIndex !== -1)
+          caregivers.value[caregiverIndex].is_bvn_verfied = 1
+      }
+
+      updateCareGiver(caregivers.value)
+      updateCareGiver(currentItems.value)
 
       alertInfo.show = true
       alertInfo.title = 'Success'
@@ -214,36 +227,35 @@ const openExportModal = () => {
 
 // Main sorting function
 const sortItems = (items: CareGiver[], sortBy: { key: string; order: string }[]): CareGiver[] => {
-  if (sortBy.length === 0) return items;
+  if (sortBy.length === 0)
+    return items
 
-  const [sortItem] = sortBy;
-  const { key, order } = sortItem;
+  const [sortItem] = sortBy
+  const { key, order } = sortItem
 
   const getComparisonValue = (a: CareGiver, b: CareGiver): number => {
-    const aValue = a[key as keyof CareGiver];
-    const bValue = b[key as keyof CareGiver];
+    const aValue = a[key as keyof CareGiver]
+    const bValue = b[key as keyof CareGiver]
 
-    if (key === 'date_collected') {
-      return new Date(aValue as string).getTime() - new Date(bValue as string).getTime();
-    }
+    if (key === 'date_collected')
+      return new Date(aValue as string).getTime() - new Date(bValue as string).getTime()
 
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return aValue.localeCompare(bValue);
-    }
+    if (typeof aValue === 'string' && typeof bValue === 'string')
+      return aValue.localeCompare(bValue)
 
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return aValue - bValue;
-    }
+    if (typeof aValue === 'number' && typeof bValue === 'number')
+      return aValue - bValue
 
-    return 0;
-  };
+    return 0
+  }
 
   const compare = (a: CareGiver, b: CareGiver): number => {
-    const comparisonValue = getComparisonValue(a, b);
-    return order === 'desc' ? -comparisonValue : comparisonValue;
-  };
+    const comparisonValue = getComparisonValue(a, b)
 
-  return [...items].sort(compare);
+    return order === 'desc' ? -comparisonValue : comparisonValue
+  }
+
+  return [...items].sort(compare)
 }
 
 const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
@@ -416,23 +428,37 @@ onMounted(() => {
             <VChip
               v-if="item.raw.is_bvn_verfied === 1"
               density="compact"
-              text="BVN Verified"
+              text="Account Verified"
               color="success"
             />
-
+            <VChip
+              v-else-if="item.raw.bvn?.is_pending === 1"
+              density="compact"
+              text="Processing"
+              color="info"
+            />
+            <template v-else-if="item.raw.bvn?.error_message">
+              <VBtn
+                density="compact"
+                variant="tonal"
+                color="error"
+                @click="showErrorMessage(item.raw.bvn.error_message)"
+              >
+                Verification Failed
+              </VBtn>
+            </template>
             <VBtn
               v-else-if="Admin && item.raw.is_bvn_verfied === 0"
               :loading="verifyingBvn === item.raw.bvn_id"
               density="compact"
               variant="outlined"
-              text="Verify BVN"
+              text="Verify Account"
               @click="verifyBvn(item.raw.bvn_id)"
             />
-
             <VChip
               v-else
               density="compact"
-              text="BVN Not Verified"
+              text="Account Unverified"
               color="warning"
             />
           </template>
@@ -504,6 +530,41 @@ onMounted(() => {
           </VCol>
         </VRow>
       </VCardText>
+    </VCard>
+  </VDialog>
+  <VDialog
+    v-model="errorMessageModal"
+    width="500"
+  >
+    <VCard class="pa-6">
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Verification Error Details
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="errorMessageModal = false"
+          />
+        </VCol>
+      </VRow>
+      <VCardText>
+        <p class="text-body-1">
+          {{ selectedErrorMessage }}
+        </p>
+      </VCardText>
+      <VCardActions class="justify-end pt-4">
+        <VBtn
+          color="primary"
+          variant="tonal"
+          @click="errorMessageModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
     </VCard>
   </VDialog>
   <CareGiverStudentsModal

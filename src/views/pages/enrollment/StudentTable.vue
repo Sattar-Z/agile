@@ -21,6 +21,13 @@ const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
 const selectedStudentId = ref<number | null>(null)
+const errorMessageModal = ref(false)
+const selectedErrorMessage = ref('')
+
+const showErrorMessage = (message: string) => {
+  selectedErrorMessage.value = message
+  errorMessageModal.value = true
+}
 
 const route = useRoute()
 const user = useUserStore()
@@ -29,6 +36,17 @@ const Admin = ref(isAdmin())
 token.value = user.getUserInfo().token
 
 const { id, name } = route.params
+
+interface Bvn {
+  id: number
+  bvn: string
+  is_approved: number
+  is_verified: number
+  created_at: string
+  updated_at: string
+  error_message: string
+  is_pending: number
+}
 
 interface CareGiver {
   id: number
@@ -53,6 +71,7 @@ interface CareGiver {
   created_at: string
   updated_at: string
   lga_id: number
+  bvn: Bvn
 }
 
 interface Students {
@@ -93,7 +112,7 @@ const headers = ref([
   { title: 'Students', align: 'start', sortable: false, key: 'name' },
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
-  { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
+  { title: 'Account', key: 'care_giver.bvn.is_verified', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -174,7 +193,7 @@ const verifyBvn = async (bvnId: number) => {
         )
 
         if (studentIndex !== -1)
-          studentArray[studentIndex].care_giver.is_bvn_verfied = 1
+          studentArray[studentIndex].care_giver.bvn.is_verified = 1
       }
 
       updateStudent(students.value)
@@ -419,16 +438,32 @@ watch(
             />
           </template>
 
-          <template #item.care_giver.is_bvn_verfied="{ item }">
+          <template #item.care_giver.bvn.is_verified="{ item }">
             <VChip
-              v-if="item.raw.care_giver.is_bvn_verfied === 1"
+              v-if="item.raw.care_giver.bvn.is_verified === 1"
               density="compact"
-              text="BVN Verified"
+              text="Account Verified"
               color="success"
             />
+            <VChip
+              v-else-if="item.raw.care_giver.bvn.is_pending === 1"
+              density="compact"
+              text="Processing"
+              color="info"
+            />
+            <template v-else-if="item.raw.care_giver.bvn?.error_message">
+              <VBtn
+                density="compact"
+                variant="tonal"
+                color="error"
+                @click="showErrorMessage(item.raw.care_giver.bvn.error_message)"
+              >
+                Verification Failed
+              </VBtn>
+            </template>
 
             <VBtn
-              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
+              v-else-if="Admin && item.raw.care_giver.bvn.is_verified === 0"
               :loading="verifyingBvn === item.raw.care_giver.bvn_id"
               density="compact"
               variant="outlined"
@@ -550,6 +585,41 @@ watch(
           </VCol>
         </VRow>
       </VCardText>
+    </VCard>
+  </VDialog>
+  <VDialog
+    v-model="errorMessageModal"
+    width="500"
+  >
+    <VCard class="pa-6">
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Verification Error Details
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="errorMessageModal = false"
+          />
+        </VCol>
+      </VRow>
+      <VCardText>
+        <p class="text-body-1">
+          {{ selectedErrorMessage }}
+        </p>
+      </VCardText>
+      <VCardActions class="justify-end pt-4">
+        <VBtn
+          color="primary"
+          variant="tonal"
+          @click="errorMessageModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
     </VCard>
   </VDialog>
   <StudentDetailsModal
