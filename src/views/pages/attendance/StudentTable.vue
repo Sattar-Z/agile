@@ -15,6 +15,7 @@ import { useUserStore } from '@/stores/user'
 const props = defineProps<{
   termId: string
   session: string
+  cohurt: string
 }>()
 
 const Admin = ref(isAdmin())
@@ -50,6 +51,7 @@ interface CareGiver {
   date_collected: string
   is_bvn_verfied: number
   is_nin_verfied: number
+  attendance: number
   status: number
   created_at: string
   updated_at: string
@@ -73,6 +75,7 @@ interface Students {
   materials: number | null
   photo: number | null
   attendance: number | null
+  cohurt: number | null
   created_at: string | null
   updated_at: string | null
   care_giver: CareGiver
@@ -95,6 +98,8 @@ const headers = ref([
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
   { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
+  { title: 'Cohort', key: 'cohurt', align: 'center' },
+  { title: 'Attendance', key: 'attendance', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -112,7 +117,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}`,
+      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -317,7 +322,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.termId, props.session],
+  () => [props.termId, props.session, props.cohurt],
   () => {
     fetchData()
   },
@@ -365,7 +370,7 @@ watch(
           </div>
         </VCardItem>
         <VCardText class="my-auto text-h5">
-          {{ attendance }}
+          {{ attendance }} %
         </VCardText>
       </VCard>
     </VCol>
@@ -470,7 +475,9 @@ watch(
               @click="openStudentDetails(item.raw)"
             />
           </template>
-
+          <template #item.attendance="{ item }">
+            {{ item.raw.attendance }} %
+          </template>
           <template #item.care_giver.is_bvn_verfied="{ item }">
             <VChip
               v-if="item.raw.care_giver.is_bvn_verfied === 1"

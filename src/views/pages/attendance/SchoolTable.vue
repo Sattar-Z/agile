@@ -3,6 +3,7 @@ import { Parser } from '@json2csv/plainjs'
 import { useRoute, useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
+import AttendanceFiles from '../enrollment/AttendanceFiles.vue'
 import LoadingTable from './LoadingTable.vue'
 import { useUserStore } from '@/stores/user'
 import { callApi } from '@/helpers/request'
@@ -12,14 +13,16 @@ import { callApi } from '@/helpers/request'
 const props = defineProps<{
   termId: string
   session: string
+  cohurt: string
 }>()
 
-const token = ref('')
+const usera = useUserStore().getUser()
+const token = usera.value.token
 const attendance = ref(0)
 const careGivers = ref(0)
 const schoolCount = ref(0)
 
-const uploadFile = ref<File | null>(null)
+const uploadFile = ref<File[]>([])
 const uploadModal = ref(false)
 const loading = ref(false)
 const route = useRoute()
@@ -27,8 +30,6 @@ const downloadingTemplate = ref(false)
 const router = useRouter()
 
 const user = useUserStore()
-
-token.value = user.getUserInfo().token
 
 const { id, name } = route.params
 
@@ -82,17 +83,15 @@ const openUploadModal = (school: Schools) => {
   uploadModal.value = true
 }
 
-const handleFileUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file)
-    uploadFile.value = file
+const handleFileUpload = (files: File[]) => {
+  uploadFile.value = files
+  console.log('File selected:', uploadFile.value[0])
 }
 
 const submitStudent = async () => {
   loading.value = true
 
-  if (!uploadFile.value) {
+  if (!uploadFile.value.length) {
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = 'Please select a file to upload'
@@ -104,7 +103,8 @@ const submitStudent = async () => {
 
   const formData = new FormData()
 
-  formData.append('file', uploadFile.value)
+  // Add the first file from the array to FormData
+  formData.append('file', uploadFile.value[0])
   formData.append('school_id', selectedSchools.value?.id?.toString() || '')
 
   try {
@@ -124,6 +124,7 @@ const submitStudent = async () => {
       alertInfo.message = responseData.message || 'File uploaded successfully'
       alertInfo.type = 'success'
       uploadModal.value = false
+      uploadFile.value = [] // Clear the file input by setting to empty array
     }
     else {
       alertInfo.show = true
@@ -133,6 +134,7 @@ const submitStudent = async () => {
     }
   }
   catch (error) {
+    console.error('Upload error:', error)
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = 'An unexpected error occurred'
@@ -147,7 +149,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `lga?lga_id=${id}term_id=${props.termId}&session=${props.session}`,
+      url: `lga?lga_id=${id}term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -335,7 +337,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.termId, props.session],
+  () => [props.termId, props.session, props.cohurt],
   () => {
     fetchData()
   },
@@ -383,7 +385,7 @@ watch(
           </div>
         </VCardItem>
         <VCardText class="my-auto text-h5">
-          {{ attendance }}
+          {{ attendance }} %
         </VCardText>
       </VCard>
     </VCol>
@@ -434,6 +436,9 @@ watch(
           {{ careGivers }}
         </VCardText>
       </VCard>
+    </VCol>
+    <VCol>
+      <AttendanceFiles />
     </VCol>
     <!-- Data Table Section -->
     <VCol
@@ -665,7 +670,7 @@ watch(
               v-model="uploadFile"
               label="Choose file"
               prepend-icon="bx-file"
-              @change="handleFileUpload"
+              @update:model-value="handleFileUpload"
             />
           </VCol>
           <VCol
@@ -684,7 +689,7 @@ watch(
               :loading="downloadingTemplate"
               @click="downloadTemplate"
             >
-              Download Sample
+              Download Template
             </VBtn>
           </VCol>
         </VRow>

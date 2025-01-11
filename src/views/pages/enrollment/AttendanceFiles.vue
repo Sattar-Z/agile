@@ -47,21 +47,31 @@ const isLoaded = ref(false)
 const selectedFile = ref<Files | null>(null)
 const fileManagementModal = ref(false)
 
-// New computed properties for file categories
+const showErrorDetails = (errorMessage: string) => {
+  currentErrorMessage.value = errorMessage
+  errorDetailsModal.value = true
+}
+
+// Filter for attendance files only
+const filteredFiles = computed(() =>
+  files.value.filter(file => file.file_type === 'attendance'),
+)
+
+// New computed properties for file categories using filtered files
 const approvedFiles = computed(() =>
-  files.value.filter(file => file.is_approved === 1),
+  filteredFiles.value.filter(file => file.is_approved === 1),
 )
 
 const pendingFiles = computed(() =>
-  files.value.filter(file => file.is_approved === 0 && !file.error_message),
+  filteredFiles.value.filter(file => file.is_approved === 0 && !file.error_message),
 )
 
 const rejectedFiles = computed(() =>
-  files.value.filter(file => file.error_message && file.is_approved === 0),
+  filteredFiles.value.filter(file => file.error_message && file.is_approved === 0),
 )
 
 const sortedFiles = computed(() => {
-  return [...files.value].sort((a, b) => {
+  return [...filteredFiles.value].sort((a, b) => {
     const dateA = new Date(a.created_at || 0).getTime()
     const dateB = new Date(b.created_at || 0).getTime()
 
@@ -75,98 +85,6 @@ const categoryMappings = {
   rejected: () => sortedFiles.value.filter(file => file.error_message && file.is_approved === 0),
 } as const
 
-const formatDate = (date: string | null): string => {
-  if (!date)
-    return ''
-
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-const isNewFile = (date: string | null): boolean => {
-  if (!date)
-    return false
-  const fileDate = new Date(date)
-  const today = new Date()
-
-  return fileDate.toDateString() === today.toDateString()
-}
-
-const currentFiles = computed(() => {
-  return selectedCategory.value
-    ? categoryMappings[selectedCategory.value]()
-    : []
-})
-
-// Format functions
-const formatFileName = (fileName: string): string => {
-  const parts = fileName.split('_')
-
-  parts.shift()
-
-  return parts.join('_').replace('.csv', '')
-}
-
-const formatFileSize = (sizeInBytes: number): string => {
-  if (sizeInBytes < 1024)
-    return `${sizeInBytes} bytes`
-  else if (sizeInBytes < 1024 ** 2)
-    return `${(sizeInBytes / 1024).toFixed(2)} KB`
-  else if (sizeInBytes < 1024 ** 3)
-    return `${(sizeInBytes / 1024 ** 2).toFixed(2)} MB`
-  else
-    return `${(sizeInBytes / 1024 ** 3).toFixed(2)} GB`
-}
-
-const fetchData = async () => {
-  isLoaded.value = false
-  try {
-    const response = await callApi({
-      url: 'enrolement/files',
-      method: 'GET',
-      authorized: true,
-      showAlert: false,
-    })
-
-    const responseData = await response.json()
-
-    if (response.ok) {
-      // Explicitly type the data as Files[] and then filter
-      const filesData = Object.values(responseData.data) as Files[]
-
-      files.value = filesData.filter(file => file.file_type !== 'attendance')
-    }
-    else if (response.status === 401) {
-      users.removeUser()
-      router.push({ name: 'login' })
-    }
-    else {
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = responseData.message || 'Something went wrong please try again later'
-      alertInfo.type = 'error'
-    }
-  }
-  catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Something went wrong please try again later'
-    alertInfo.type = 'error'
-  }
-  finally {
-    isLoaded.value = true
-  }
-}
-
-const showErrorDetails = (errorMessage: string) => {
-  currentErrorMessage.value = errorMessage
-  errorDetailsModal.value = true
-}
-
-// Helper to perform the API call
 const performApiCall = async (file: Files, action: 'approve' | 'reject') => {
   return callApi({
     url: `enrolement/file/${action}/${file.id}`,
@@ -291,6 +209,92 @@ const viewFile = async (file: Files) => {
   }
 }
 
+const formatDate = (date: string | null): string => {
+  if (!date)
+    return ''
+
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+const isNewFile = (date: string | null): boolean => {
+  if (!date)
+    return false
+  const fileDate = new Date(date)
+  const today = new Date()
+
+  return fileDate.toDateString() === today.toDateString()
+}
+
+const currentFiles = computed(() => {
+  return selectedCategory.value
+    ? categoryMappings[selectedCategory.value]()
+    : []
+})
+
+// Format functions
+const formatFileName = (fileName: string): string => {
+  const parts = fileName.split('_')
+
+  parts.shift()
+
+  return parts.join('_').replace('.csv', '')
+}
+
+const formatFileSize = (sizeInBytes: number): string => {
+  if (sizeInBytes < 1024)
+    return `${sizeInBytes} bytes`
+  else if (sizeInBytes < 1024 ** 2)
+    return `${(sizeInBytes / 1024).toFixed(2)} KB`
+  else if (sizeInBytes < 1024 ** 3)
+    return `${(sizeInBytes / 1024 ** 2).toFixed(2)} MB`
+  else
+    return `${(sizeInBytes / 1024 ** 3).toFixed(2)} GB`
+}
+
+const fetchData = async () => {
+  isLoaded.value = false
+  try {
+    const response = await callApi({
+      url: 'enrolement/files',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      // Explicitly type the data as Files[] and then filter
+      const filesData = Object.values(responseData.data) as Files[]
+
+      files.value = filesData.filter(file => file.file_type === 'attendance')
+    }
+    else if (response.status === 401) {
+      users.removeUser()
+      router.push({ name: 'login' })
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong please try again later'
+    alertInfo.type = 'error'
+  }
+  finally {
+    isLoaded.value = true
+  }
+}
+
 const deleteFile = async (file: Files) => {
   deleteLoad.value = true
 
@@ -337,7 +341,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- Snackbar -->
   <VSnackbar
     v-model="alertInfo.show"
     :color="alertInfo.type"
@@ -354,9 +357,7 @@ onMounted(() => {
     </template>
   </VSnackbar>
 
-  <!-- Main Layout -->
   <VRow v-if="isLoaded">
-    <!-- Summary Cards View (when no category is selected) -->
     <template v-if="!selectedCategory">
       <VCol
         cols="12"
@@ -374,7 +375,7 @@ onMounted(() => {
               color="success"
               size="48"
             />
-            <span class="mx-4">Approved Files</span>
+            <span class="mx-4">Approved Attendance Files</span>
           </VCardTitle>
           <VCardText class="text-h4">
             {{ approvedFiles.length }}
@@ -398,7 +399,7 @@ onMounted(() => {
               color="warning"
               size="48"
             />
-            <span class="mx-4">Pending Files</span>
+            <span class="mx-4">Pending Attendance Files</span>
           </VCardTitle>
           <VCardText class="text-h4">
             {{ pendingFiles.length }}
@@ -422,7 +423,7 @@ onMounted(() => {
               color="error"
               size="48"
             />
-            <span class="mx-4">Rejected Files</span>
+            <span class="mx-4">Rejected Attendance Files</span>
           </VCardTitle>
           <VCardText class="text-h4">
             {{ rejectedFiles.length }}
@@ -431,8 +432,8 @@ onMounted(() => {
       </VCol>
     </template>
 
-    <!-- Detailed Card View (when category is selected) -->
-    <template v-else>
+     <!-- Detailed Card View (when category is selected) -->
+     <template v-else>
       <VCol cols="12">
         <VCard class="mb-4">
           <VCardTitle class="d-flex align-center justify-space-between pa-4">
@@ -565,20 +566,17 @@ onMounted(() => {
     </template>
   </VRow>
 
-  <!-- Loading State -->
   <VRow v-else>
     <VCol cols="12">
-      <LoadingTable type="Files" />
+      <LoadingTable type="Attendance Files" />
     </VCol>
   </VRow>
 
-  <!-- Error Details Modal -->
   <ErrorDetailsModal
     v-model="errorDetailsModal"
     :error-message="currentErrorMessage"
   />
 
-  <!-- File Contents Dialog -->
   <FileContentsDialog
     v-model="fileContentsModal"
     :file-name="formatFileName(selectedFile?.file_name || '')"

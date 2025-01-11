@@ -15,6 +15,7 @@ import { useUserStore } from '@/stores/user'
 const props = defineProps<{
   termId: string
   session: string
+  cohurt: string
 }>()
 
 const token = ref('')
@@ -91,6 +92,7 @@ interface Students {
   materials: number | null
   photo: number | null
   attendance: number | null
+  cohurt: number | null
   created_at: string | null
   updated_at: string | null
   care_giver: CareGiver
@@ -113,6 +115,7 @@ const headers = ref([
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
   { title: 'Account', key: 'care_giver.bvn.is_verified', align: 'center' },
+  { title: 'Cohort', key: 'cohurt', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -129,7 +132,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}`,
+      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -332,7 +335,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.termId, props.session],
+  () => [props.termId, props.session, props.cohurt],
   () => {
     fetchData()
   },

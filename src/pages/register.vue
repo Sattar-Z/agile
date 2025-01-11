@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, minLength, required, sameAs } from '@vuelidate/validators'
-import config from '@/config'
 import { useUserStore } from '@/stores/user'
+import { callApi } from '@/helpers/request'
 import router from '@/router'
 
 // import { useUserStore } from '@/stores/user'
 import logo from '@images/logo.jpeg'
 
-const baseURL: string = config.baseURL
 const user = useUserStore()
 const loading = ref(false)
 
@@ -90,13 +89,11 @@ async function submit() {
   loading.value = true
 
   try {
-    const response = await fetch(`${baseURL}/user/onboard`, {
+    const response = await callApi({
+      url: 'user/onboard',
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(form),
+      authorized: true,
+      data: form,
     })
 
     const responseData = await response.json()

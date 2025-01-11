@@ -13,6 +13,7 @@ import { useUserStore } from '@/stores/user'
 const props = defineProps<{
   termId: string
   session: string
+  cohurt: string
 }>()
 
 const token = ref('')
@@ -66,7 +67,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `lgas?term_id=${props.termId}&session=${props.session}`,
+      url: `lgas?term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -221,7 +222,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.termId, props.session],
+  () => [props.termId, props.session, props.cohurt],
   () => {
     fetchData()
   },
@@ -266,7 +267,7 @@ watch(
           </div>
         </VCardItem>
         <VCardText class="my-auto text-h5">
-          {{ attendance }}
+          {{ attendance }} %
         </VCardText>
       </VCard>
     </VCol>

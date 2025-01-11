@@ -122,7 +122,6 @@ watch(() => props.modelValue, newValue => {
               </h3>
               <div class="d-flex flex-column gap-2">
                 <div><strong>Attendance Rate:</strong> {{ studentData.attendance }}%</div>
-                <div><strong>Lateness Rate:</strong> {{ studentData.lateness }}%</div>
               </div>
             </VCol>
 

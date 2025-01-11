@@ -48,6 +48,7 @@
     ],
     // Extension: Spell Checker
     "cSpell.words": [
+        "cohurt",
         "Composables",
         "Customizer",
         "flagpack",

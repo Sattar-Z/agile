@@ -12,6 +12,7 @@ import { callApi } from '@/helpers/request'
 const props = defineProps<{
   termId: string
   session: string
+  cohurt: string
 }>()
 
 const token = ref('')
@@ -147,7 +148,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `lga?lga_id=${id}term_id=${props.termId}&session=${props.session}`,
+      url: `lga?lga_id=${id}term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -328,7 +329,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.termId, props.session],
+  () => [props.termId, props.session, props.cohurt],
   () => {
     fetchData()
   },

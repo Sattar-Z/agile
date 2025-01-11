@@ -470,9 +470,9 @@ onMounted(() => {
               @click="openStudentDetails(item.raw)"
             />
           </template>
-          <template #item.is_bvn_verfied="{ item }">
+          <template #item.care_giver.is_bvn_verfied="{ item }">
             <VChip
-              v-if="item.raw.is_bvn_verfied === 1"
+              v-if="item.raw.care_giver.is_bvn_verfied === 1"
               density="compact"
               text="Account Verified"
               color="success"
@@ -494,12 +494,12 @@ onMounted(() => {
               </VBtn>
             </template>
             <VBtn
-              v-else-if="Admin && item.raw.is_bvn_verfied === 0"
+              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
               :loading="verifyingBvn === item.raw.bvn_id"
               density="compact"
               variant="outlined"
               text="Verify Account"
-              @click="verifyBvn(item.raw.bvn_id)"
+              @click="verifyBvn(item.raw.care_giver.bvn_id)"
             />
             <VChip
               v-else
