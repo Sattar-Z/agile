@@ -58,6 +58,28 @@ interface CareGiver {
   lga_id: number
 }
 
+// "id": 388,
+//                 "school_id": 322,
+//                 "lga_id": 8,
+//                 "care_giver_id": 377,
+//                 "name": "ISMAIL RABI ABDULLAHI",
+//                 "date_of_birth": "21/01/2010",
+//                 "student_admission_number": "98",
+//                 "class": "JSS 1",
+//                 "disabilities": "NONE  ",
+//                 "biometrics_photo": "signature-9_32_18.png",
+//                 "uniform": 0,
+//                 "text_book": 0,
+//                 "school_distance": "0 - 1km",
+//                 "materials": 0,
+//                 "photo": "1730363501687415231105831504887-9_31_59.jpg",
+//                 "created_at": "2025-01-10T10:47:02.000000Z",
+//                 "updated_at": "2025-01-10T10:47:02.000000Z",
+//                 "cohurt": "1",
+//                 "term_id": null,
+//                 "is_eligible": false,
+//                 "note": "[\"Attendance Criteria not met\"]"
+
 interface Students {
   id: number | null
   school_id: number | null

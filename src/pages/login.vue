@@ -2,6 +2,7 @@
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, minLength, required } from '@vuelidate/validators'
 import config from '@/config'
+import { isAccountant, isCoordinator } from '@/middlewares/auth'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
 import logo from '@images/logo.jpeg'
@@ -82,7 +83,14 @@ async function submit(data: LoginFormData) {
 
       user.setUser(profileData)
       localStorage.setItem('user', JSON.stringify(profileData))
-      router.push('/enrollment')
+      if (isAccountant())
+        router.push('/dashboard')
+
+      else if (isCoordinator())
+        router.push('/dashboard')
+
+      else
+        router.push('/enrollment')
     }
     else {
       // Handle error response

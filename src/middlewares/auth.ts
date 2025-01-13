@@ -1,31 +1,72 @@
-import { userRoles } from '@/stores/user'
+import { type User, userRoles } from '@/stores/user'
 
-function isAuthenticated() {
-  const userObjectString = localStorage.getItem('user')
+const STORAGE_KEY = 'user'
 
-  return !!userObjectString
+/**
+ * Get the stored user object from localStorage
+ * @returns User object or null if not found/invalid
+ */
+function getStoredUser(): User | null {
+  try {
+    const userString = localStorage.getItem(STORAGE_KEY)
+    if (!userString)
+      return null
+
+    return JSON.parse(userString) as User
+  }
+  catch (error) {
+    console.error('Error parsing user data:', error)
+
+    return null
+  }
 }
 
-function isAdmin() {
+/**
+ * Check if user is authenticated
+ */
+export function isAuthenticated(): boolean {
+  return getStoredUser() !== null
+}
+
+/**
+ * Check if user has a specific role
+ * @param roleIndex Index in userRoles array
+ */
+function hasRole(roleIndex: number): boolean {
   if (!isAuthenticated())
     return false
 
-  const userObjectString = JSON.parse(localStorage.getItem('user') as string)
-  const admin = userRoles[1]
-  const userRole = userRoles[userObjectString.role_id]
+  const user = getStoredUser()
+  if (!user)
+    return false
 
-  return userRole === admin
+  const targetRole = userRoles[roleIndex]
+  const userRole = userRoles[user.role_id - 1] // Adjust for 1-based IDs from API
+
+  return userRole === targetRole
 }
 
-function isOfficer() {
+// Role-specific checks
+export const isAdmin = () => hasRole(0)
+export const isOfficer = () => hasRole(1)
+export const isAccountant = () => hasRole(2)
+export const isCoordinator = () => hasRole(3)
+
+/**
+ * Generic role check by name
+ * @param roleName Name of the role to check
+ */
+export function hasRoleByName(roleName: typeof userRoles[number]): boolean {
   if (!isAuthenticated())
     return false
 
-  const userObjectString = JSON.parse(localStorage.getItem('user') as string)
-  const officer = userRoles[0]
-  const userRole = userRoles[userObjectString.role_id]
+  const user = getStoredUser()
+  if (!user)
+    return false
 
-  return userRole === officer
+  const roleIndex = userRoles.indexOf(roleName)
+  if (roleIndex === -1)
+    return false
+
+  return user.role_id === roleIndex + 1 // Adjust for 1-based IDs from API
 }
-
-export { isAuthenticated, isOfficer, isAdmin }

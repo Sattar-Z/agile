@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
 import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
-import { isAdmin } from '@/middlewares/auth'
+import { isAccountant, isAdmin, isCoordinator } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
@@ -14,6 +14,8 @@ const route = useRoute()
 const router = useRouter()
 const currentRouteTitle = ref('Search') // Default to 'Search'
 const Admin = ref(isAdmin())
+const Accountant = ref(isAccountant())
+const coordinator = ref(isCoordinator())
 
 // Define the navigation links with their corresponding routes and titles
 const navLinks = [
@@ -107,10 +109,27 @@ function logout() {
         }"
       />
       <VerticalNavLink
+        v-if="Admin"
         :item="{
           title: 'Financial Incentives',
-          icon: 'bx-camera',
-          to: '/',
+          icon: 'bxs-bank',
+          to: '/financial-incentive',
+        }"
+      />
+      <VerticalNavLink
+        v-if="Accountant"
+        :item="{
+          title: 'Financial Incentives',
+          icon: 'bxs-bank',
+          to: '/financial-incentive-accountant',
+        }"
+      />
+      <VerticalNavLink
+        v-if="coordinator"
+        :item="{
+          title: 'Financial Incentives',
+          icon: 'bxs-bank',
+          to: '/financial-incentive-coordinator',
         }"
       />
       <VerticalNavLink
@@ -126,6 +145,14 @@ function logout() {
           title: 'User Management',
           icon: 'bx-user',
           to: '/register',
+        }"
+      />
+      <VerticalNavLink
+        v-if="coordinator"
+        :item="{
+          title: 'Settings',
+          icon: 'bx-cog',
+          to: '/account-settings',
         }"
       />
       <!--

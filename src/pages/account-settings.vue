@@ -13,7 +13,7 @@ const activeTab = ref(route.params.tab)
 const tabs = [
   { title: 'Account', icon: 'bx-user', tab: 'account' },
   { title: 'Security', icon: 'bx-lock-open', tab: 'security' },
-  { title: 'Notifications', icon: 'bx-bell', tab: 'notification' },
+  { title: 'Disbursements', icon: 'bxs-bank', tab: 'Disbursements' },
 ]
 </script>
 
@@ -52,8 +52,8 @@ const tabs = [
         <AccountSettingsSecurity />
       </VWindowItem>
 
-      <!-- Notification -->
-      <VWindowItem value="notification">
+      <!-- Disbursements -->
+      <VWindowItem value="Disbursements">
         <AccountSettingsNotification />
       </VWindowItem>
     </VWindow>

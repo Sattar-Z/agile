@@ -30,8 +30,10 @@ export interface User {
 
 // Do not change the order of these. It is used to map the user role to the index of the array
 export const userRoles = [
-  'Desk Officer',
   'Admin',
+  'Desk Officer',
+  'Accountant',
+  'Project Coordinator',
 ]
 
 export const useUserStore = defineStore('user', () => {

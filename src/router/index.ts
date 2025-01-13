@@ -64,6 +64,21 @@ const router = createRouter({
           component: () => import('../pages/enrollment.vue'),
         },
         {
+          name: 'financial-incentive',
+          path: 'financial-incentive',
+          component: () => import('../pages/financial-incentive.vue'),
+        },
+        {
+          name: 'financial-incentive-accountant',
+          path: 'financial-incentive-accountant',
+          component: () => import('../pages/financial-incentive-accountant.vue'),
+        },
+        {
+          name: 'financial-incentive-coordinator',
+          path: 'financial-incentive-coordinator',
+          component: () => import('../pages/financial-incentive-coordinator.vue'),
+        },
+        {
           name: 'attendance',
           path: 'attendance',
           component: () => import('../pages/attendance.vue'),
@@ -95,7 +110,6 @@ const router = createRouter({
         {
           path: 'account-settings',
           component: () => import('../pages/account-settings.vue'),
-          beforeEnter: adminOnly,
         },
         {
           path: 'typography',
