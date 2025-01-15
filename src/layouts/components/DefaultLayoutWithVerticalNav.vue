@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
 import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
-import { isAccountant, isAdmin, isCoordinator } from '@/middlewares/auth'
+import { isAccountant, isAdmin, isCoordinator, isHeadOfFinance } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
@@ -15,6 +15,7 @@ const router = useRouter()
 const currentRouteTitle = ref('Search') // Default to 'Search'
 const Admin = ref(isAdmin())
 const Accountant = ref(isAccountant())
+const Finance = ref(isHeadOfFinance())
 const coordinator = ref(isCoordinator())
 
 // Define the navigation links with their corresponding routes and titles
@@ -117,7 +118,7 @@ function logout() {
         }"
       />
       <VerticalNavLink
-        v-if="Accountant"
+        v-if="Accountant || Finance"
         :item="{
           title: 'Financial Incentives',
           icon: 'bxs-bank',

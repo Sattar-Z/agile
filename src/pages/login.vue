@@ -2,7 +2,6 @@
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, minLength, required } from '@vuelidate/validators'
 import config from '@/config'
-import { isAccountant, isCoordinator, isHeadOfFinance } from '@/middlewares/auth'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
 import logo from '@images/logo.jpeg'
@@ -83,17 +82,18 @@ async function submit(data: LoginFormData) {
 
       user.setUser(profileData)
       localStorage.setItem('user', JSON.stringify(profileData))
-      if (isAccountant())
-        router.push('/financial-incentive-accountant')
 
-      else if (isHeadOfFinance())
-        router.push('/financial-incentive-accountant')
+      // if (isAccountant())
+      //   router.push('/')
 
-      else if (isCoordinator())
-        router.push('/financial-incentive-coordinator')
+      // else if (isHeadOfFinance())
+      //   router.push('/')
 
-      else
-        router.push('/enrollment')
+      // else if (isCoordinator())
+      //   router.push('/')
+
+      // else
+      router.push('/')
     }
     else {
       // Handle error response
