@@ -280,7 +280,7 @@ onMounted(() => {
             size="small"
             @click="openStudentModal(item.raw)"
           >
-            {{ item.raw.student_count || 0 }} Students
+            {{ item.raw.student_count }} Students
           </VChip>
         </template>
         <template #item.status="{ item }">

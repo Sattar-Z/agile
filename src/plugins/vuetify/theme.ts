@@ -8,7 +8,7 @@ const theme: VuetifyOptions['theme'] = {
     light: {
       dark: false,
       colors: {
-        'primary': '#2563eb',
+        'primary': '#722b9e',
         'white': '#ffffff',
         'on-primary': '#fff',
         'yellow': '#d1c10d',
@@ -61,7 +61,7 @@ const theme: VuetifyOptions['theme'] = {
     dark: {
       dark: true,
       colors: {
-        'primary': '#2563eb',
+        'primary': '#722b9e',
         'on-primary': '#fff',
         'secondary': '#8592A3',
         'on-secondary': '#fff',

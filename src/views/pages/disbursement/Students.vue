@@ -15,6 +15,7 @@ const props = defineProps<{
   termId: number | null
   school: number | null
   payment: number | null
+  cohurt: string | null
 }>()
 
 const token = ref('')
@@ -48,6 +49,8 @@ interface Student {
   updated_at: string | null
   term_attendances: object | null
   term_id: number | null
+  is_bvn_verified: number | null
+  overall_attendance: number | null
   is_eligible: boolean
   note: string | null
 }
@@ -86,6 +89,8 @@ const headers = [
   { title: 'Student Name', align: 'start', key: 'name' },
   { title: 'Class', key: 'class', align: 'center' },
   { title: 'Date of Birth', key: 'date_of_birth', align: 'center' },
+  { title: 'Attendance', key: 'overall_attendance', align: 'center' },
+  { title: 'Account Status', key: 'is_bvn_verified', align: 'center' },
   { title: 'Eligibility', key: 'is_eligible', align: 'center' },
 ]
 
@@ -107,7 +112,7 @@ const fetchData = async () => {
   showLoadingTable.value = true
   isLoaded.value = false
 
-  if (!props.termId || !props.school || !props.payment) {
+  if (!props.termId || !props.school || !props.payment || !props.cohurt) {
     showLoadingTable.value = true
     alertInfo.show = true
     alertInfo.title = 'Info'
@@ -119,7 +124,7 @@ const fetchData = async () => {
 
   try {
     const response = await callApi({
-      url: `disbursement/query?term_id=${props.termId}&school_id=${props.school}&payment_type_id=${props.payment}`,
+      url: `disbursement/query?term_id=${props.termId}&school_id=${props.school}&payment_type_id=${props.payment}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -512,6 +517,25 @@ watch(
               >
                 Ineligible
               </VChip>
+            </template>
+            <template #item.is_bvn_verified="{ item }">
+              <VChip
+                v-if="item.raw.is_bvn_verified === 1"
+                color="success"
+                size="small"
+              >
+                Verified
+              </VChip>
+              <VChip
+                v-else
+                color="error"
+                size="small"
+              >
+                Unverified
+              </VChip>
+            </template>
+            <template #item.overall_attendance="{ item }">
+              {{ item.raw.overall_attendance }}%
             </template>
           </VDataTableServer>
         </VCardText>

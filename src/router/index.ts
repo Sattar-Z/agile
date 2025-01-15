@@ -108,6 +108,11 @@ const router = createRouter({
           component: () => import('../pages/register.vue'),
         },
         {
+          name: 'account-settings-admin',
+          path: 'account-settings-admin',
+          component: () => import('../pages/account-settings-admin.vue'),
+        },
+        {
           path: 'account-settings',
           component: () => import('../pages/account-settings.vue'),
         },

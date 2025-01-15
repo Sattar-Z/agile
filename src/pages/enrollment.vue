@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { callApi } from '@/helpers/request'
 import { isAdmin } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import AllStudentTable from '@/views/pages/enrollment/AllStudentTable.vue'
@@ -11,6 +12,7 @@ const isCardSelected = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
 const uploadedFile = ref<File | null>(null)
+const termLoading = ref(false)
 const Admin = ref(isAdmin())
 const user = useUserStore().getUser()
 const showPreviewModal = ref(false)
@@ -18,24 +20,24 @@ const csvData = ref<any[]>([])
 
 const token = user.value.token
 
-const form = ref({
-  session: '2024',
-  term: '1',
-  cohurt: '1',
-})
-
-interface Types {
-  name: string
-  value: string
+interface Term {
+  id: number
+  term: string
+  session: string
+  start_date: string
+  end_date: string
+  cohurt: string | null
 }
 
-const termSelect = ref<Types[]>([
-  { name: '1st', value: '1' },
-])
+const form = ref({
+  session: '',
+  term: null as number | null,
+  cohurt: null as string | null,
+})
 
-const cohortSelect = ref<Types[]>([
-  { name: '1', value: '1' },
-])
+const terms = ref<Term[]>([])
+const cohurts = ref<string[]>([])
+const sessions = ref<string[]>([])
 
 const alertInfo = reactive({
   show: false,
@@ -43,6 +45,52 @@ const alertInfo = reactive({
   title: '',
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
+
+const fetchTermData = async () => {
+  termLoading.value = true
+  try {
+    const response = await callApi({
+      url: 'attendance/terms',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Terms list failed'
+      alertInfo.type = 'error'
+    }
+    else {
+      terms.value = responseData.data
+
+      // Extract unique cohurts and sessions
+      cohurts.value = [...new Set(terms.value.map(t => t.cohurt).filter(Boolean))]
+      sessions.value = [...new Set(terms.value.map(t => t.session))]
+
+      // Set initial values
+      if (terms.value.length > 0) {
+        form.value.term = terms.value[0].id
+        form.value.session = terms.value[0].session
+      }
+      if (cohurts.value.length > 0)
+        form.value.cohurt = cohurts.value[0]
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Terms list error'
+    alertInfo.type = 'error'
+    if (useUserStore().isTokenExpired())
+      useUserStore().removeUser()
+  }
+  finally {
+    termLoading.value = false
+  }
+}
 
 const handleCardClick = () => {
   fileInput.value?.click()
@@ -159,6 +207,10 @@ async function submitStudent() {
     showPreviewModal.value = false
   }
 }
+
+onMounted(() => {
+  fetchTermData()
+})
 </script>
 
 <template>
@@ -189,31 +241,32 @@ async function submitStudent() {
       <span class="text-caption">Cohort</span>
       <VSelect
         v-model="form.cohurt"
-        :items="cohortSelect"
-        item-title="name"
-        item-value="value"
+        :items="cohurts"
         density="compact"
         variant="solo-filled"
+        :loading="termLoading"
       />
     </VCol>
     <VCol cols="auto">
       <span class="text-caption">Session</span>
       <VSelect
         v-model="form.session"
-        :items="['2024', '2025']"
+        :items="sessions"
         density="compact"
         variant="solo-filled"
+        :loading="termLoading"
       />
     </VCol>
     <VCol cols="auto">
       <span class="text-caption">Term</span>
       <VSelect
         v-model="form.term"
-        :items="termSelect"
-        item-title="name"
-        item-value="value"
+        :items="terms"
+        item-title="term"
+        item-value="id"
         density="compact"
         variant="solo-filled"
+        :loading="termLoading"
       />
     </VCol>
   </VRow>
@@ -313,8 +366,7 @@ async function submitStudent() {
       <CareGiversTable />
     </VCol>
     <VCol cols="12">
-      <AllStudentTable
-      />
+      <AllStudentTable />
     </VCol>
     <VCol cols="12">
       <LgasTable

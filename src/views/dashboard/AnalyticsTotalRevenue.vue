@@ -8,8 +8,7 @@ const vuetifyTheme = useTheme()
 const display = useDisplay()
 
 const series = [
-  { name: `${new Date().getFullYear() - 1}`, data: [18, 7, 15, 29, 18, 12, 9] },
-  { name: `${new Date().getFullYear() - 2}`, data: [-13, -18, -9, -14, -5, -17, -15] },
+  { name: `${new Date().getFullYear() - 1}`, data: [1, 1, 1, 1, 1, 1, 1] },
 ]
 
 const chartOptions = computed(() => {
@@ -215,22 +214,21 @@ const chartOptions = computed(() => {
 })
 
 const balanceData = [
-  { icon: 'bx-dollar', amount: '$32.5k', year: '2023', color: 'primary' },
-  { icon: 'bx-wallet', amount: '$41.2k', year: '2022', color: 'info' },
+  { icon: 'bxs-graduation', amount: '₦0.00', year: '2025', color: 'primary' },
+  { icon: 'bxs-school', amount: '₦0.00', year: '2025', color: 'info' },
 ]
 </script>
 
 <template>
-  <VCard>
-    <VRow no-gutters>
-      <VCol
-        cols="12"
-        sm="7"
-        xl="8"
-        :class="$vuetify.display.smAndUp ? 'border-e' : 'border-b'"
-      >
+  <VRow>
+    <VCol
+      cols="12"
+      sm="7"
+      xl="8"
+    >
+      <VCard>
         <VCardItem class="pb-0">
-          <VCardTitle>Total Revenue</VCardTitle>
+          <VCardTitle>Attendance compliance rate (%)</VCardTitle>
 
           <template #append>
             <div class="me-n3">
@@ -247,13 +245,15 @@ const balanceData = [
           :options="chartOptions.bar"
           :series="series"
         />
-      </VCol>
+      </VCard>
+    </VCol>
 
-      <VCol
-        cols="12"
-        sm="5"
-        xl="4"
-      >
+    <VCol
+      cols="12"
+      sm="5"
+      xl="4"
+    >
+      <VCard>
         <VCardText class="text-center">
           <VBtn
             size="small"
@@ -261,11 +261,11 @@ const balanceData = [
             append-icon="bx-chevron-down"
             class="mt-4"
           >
-            2023
+            2025
             <VMenu activator="parent">
               <VList>
                 <VListItem
-                  v-for="(item, index) in ['2023', '2022', '2021']"
+                  v-for="(item, index) in ['2025']"
                   :key="index"
                   :value="item"
                 >
@@ -280,14 +280,14 @@ const balanceData = [
             type="radialBar"
             :height="200"
             :options="chartOptions.radial"
-            :series="[78]"
+            :series="[100]"
             class="mt-6"
           />
 
           <p class="font-weight-medium text-high-emphasis mb-7">
-            62% Company Growth
+            Disbursement success
           </p>
-          <div class="d-flex align-center justify-center gap-x-8 gap-y-4 flex-wrap">
+          <div class="d-flex align-center justify-center gap-x-8 gap-y-4 py-2 flex-wrap">
             <div
               v-for="data in balanceData"
               :key="data.year"
@@ -310,9 +310,9 @@ const balanceData = [
             </div>
           </div>
         </VCardText>
-      </VCol>
-    </VRow>
-  </VCard>
+      </VCard>
+    </VCol>
+  </VRow>
 </template>
 
 <style lang="scss">

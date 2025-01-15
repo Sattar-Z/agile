@@ -155,6 +155,14 @@ function logout() {
           to: '/account-settings',
         }"
       />
+      <VerticalNavLink
+        v-if="Admin"
+        :item="{
+          title: 'Settings',
+          icon: 'bx-cog',
+          to: '/account-settings-admin',
+        }"
+      />
       <!--
         👉 Pages
         <VerticalNavSectionTitle

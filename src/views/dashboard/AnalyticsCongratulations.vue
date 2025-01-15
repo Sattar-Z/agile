@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
+import { isAccountant, isAdmin, isCoordinator } from '@/middlewares/auth'
+import { useUserStore } from '@/stores/user'
 import illustrationJohnDark from '@images/cards/illustration-john-dark.png'
 import illustrationJohnLight from '@images/cards/illustration-john-light.png'
 
+const Admin = ref(isAdmin())
+const Accountant = ref(isAccountant())
+const coordinator = ref(isCoordinator())
 const { global } = useTheme()
+const user = useUserStore().getUser()
 const illustrationJohn = computed(() => global.name.value === 'dark' ? illustrationJohnDark : illustrationJohnLight)
 </script>
 
@@ -18,24 +24,47 @@ const illustrationJohn = computed(() => global.name.value === 'dark' ? illustrat
       >
         <VCardItem>
           <VCardTitle class="text-md-h5 text-primary">
-            Congratulations John! 🎉
+            Welcome {{ user.name }}
           </VCardTitle>
         </VCardItem>
 
         <VCardText>
           <span>
-            You have done 72% 🤩 more sales today.
-            <br>
-            Check your new raising badge in your profile.
+            Summaries and activities across all LGAs
           </span>
           <br>
           <VBtn
+            v-if="Accountant"
+            to="/financial-incentive-accountant"
             variant="tonal"
             class="mt-4"
             size="small"
-          >
-            View Badges
-          </VBtn>
+            text="Payment requests"
+          />
+          <VBtn
+            v-else-if="coordinator"
+            to="/financial-incentive-coordinator"
+            variant="tonal"
+            class="mt-4"
+            size="small"
+            text="Finalize Payments"
+          />
+          <VBtn
+            v-else-if="Admin"
+            to="/financial-incentive"
+            variant="tonal"
+            class="mt-4"
+            size="small"
+            text="Initiate Payments"
+          />
+          <VBtn
+            v-else
+            to="/enrollment"
+            variant="tonal"
+            class="mt-4"
+            size="small"
+            text="View Students"
+          />
         </VCardText>
       </VCol>
 

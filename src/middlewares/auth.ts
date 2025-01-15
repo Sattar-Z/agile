@@ -51,6 +51,7 @@ export const isAdmin = () => hasRole(0)
 export const isOfficer = () => hasRole(1)
 export const isAccountant = () => hasRole(2)
 export const isCoordinator = () => hasRole(3)
+export const isHeadOfFinance = () => hasRole(4)
 
 /**
  * Generic role check by name

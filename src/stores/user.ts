@@ -34,6 +34,7 @@ export const userRoles = [
   'Desk Officer',
   'Accountant',
   'Project Coordinator',
+  'Head Of Finance',
 ]
 
 export const useUserStore = defineStore('user', () => {

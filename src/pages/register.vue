@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, minLength, required, sameAs } from '@vuelidate/validators'
-import { useUserStore } from '@/stores/user'
 import { callApi } from '@/helpers/request'
 import router from '@/router'
-
-// import { useUserStore } from '@/stores/user'
+import { useUserStore } from '@/stores/user'
 import logo from '@images/logo.jpeg'
 
 const user = useUserStore()
 const loading = ref(false)
-
-// const user = useUserStore()
-
+const loadingRoles = ref(false)
 const token = ref('')
 
 token.value = user.getUserInfo().token
@@ -23,6 +19,13 @@ const alertInfo = reactive({
   title: '',
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
+
+interface Role {
+  id: number
+  name: string
+  status: number
+  created_at: string
+}
 
 interface LoginFormData {
   name: string
@@ -39,8 +42,10 @@ const form = reactive<LoginFormData>({
   phone: '',
   password: '',
   password_confirmation: '',
-  role_id: '2',
+  role_id: '',
 })
+
+const roles = ref<Role[]>([])
 
 const loginFormRules = computed(() => {
   const min = 8
@@ -52,7 +57,7 @@ const loginFormRules = computed(() => {
       email: helpers.withMessage('Email is invalid', email),
     },
     phone: { required },
-    role_id: { required },
+    role_id: { required: helpers.withMessage('Please select a role', required) },
     password: {
       required,
       minLength: helpers.withMessage(
@@ -74,11 +79,56 @@ const loginFormRules = computed(() => {
 
 const v$ = useVuelidate(loginFormRules, form)
 
-// const errors = ref<{
-//   status: string
-//   message: string
-//   data: []
-// } | undefined>()
+// Fetch roles when component is mounted
+
+async function fetchRoles() {
+  loadingRoles.value = true
+  try {
+    const response = await callApi({
+      url: 'roles',
+      method: 'GET',
+      authorized: true,
+    })
+
+    const responseData = await response.json()
+
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = 'Failed to fetch roles'
+      alertInfo.type = 'error'
+
+      return
+    }
+
+    // Ensure responseData is an array
+    if (Array.isArray(responseData)) {
+      roles.value = responseData.filter(role => role.status === 1) // Only get active roles
+    }
+    else if (responseData.data && Array.isArray(responseData.data)) {
+      roles.value = responseData.data.filter((role: Role) => role.status === 1)
+    }
+    else {
+      // If response is a single object, wrap it in an array
+      roles.value = [responseData].filter(role => role.status === 1)
+    }
+  }
+  catch (error) {
+    console.error('Error fetching roles:', error)
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Failed to load roles'
+    alertInfo.type = 'error'
+    roles.value = [] // Ensure roles is an array even on error
+  }
+  finally {
+    loadingRoles.value = false
+  }
+}
+
+onMounted(() => {
+  fetchRoles()
+})
 
 async function submit() {
   const isFormValid = await v$.value.$validate()
@@ -108,13 +158,11 @@ async function submit() {
       return
     }
 
-    // Successful registration
     alertInfo.show = true
     alertInfo.title = 'Success'
     alertInfo.message = 'Registration successful!'
     alertInfo.type = 'success'
 
-    // Optional: Redirect after a short delay
     setTimeout(() => {
       router.push('/')
     }, 2000)
@@ -227,6 +275,24 @@ const isPasswordVisible = ref(false)
                 color="primary"
                 clearable
                 :error-messages="v$.phone.$errors.map(e => e.$message)"
+              />
+            </VCol>
+
+            <!-- Role Selection -->
+            <VCol cols="12">
+              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+                Select Role
+              </div>
+              <VSelect
+                v-model="form.role_id"
+                :items="roles"
+                item-title="name"
+                item-value="id"
+                density="compact"
+                placeholder="Select your role"
+                :loading="loadingRoles"
+                :error-messages="v$.role_id.$errors.map(e => e.$message)"
+                clearable
               />
             </VCol>
 

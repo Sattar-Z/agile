@@ -200,7 +200,7 @@ const downloadTemplate = async () => {
 
   try {
     const response = await callApi({
-      url: `attendance/school/template?school_id=${selectedSchools.value.id}&term_id=${props.termId}`,
+      url: `attendance/school/template?school_id=${selectedSchools.value.id}&term_id=${props.termId}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
