@@ -90,7 +90,8 @@ const headers = [
   { title: 'Class', key: 'class', align: 'center' },
   { title: 'Date of Birth', key: 'date_of_birth', align: 'center' },
   { title: 'Attendance', key: 'overall_attendance', align: 'center' },
-  { title: 'Account Status', key: 'is_bvn_verified', align: 'center' },
+
+  // { title: 'Account Status', key: 'is_bvn_verified', align: 'center' },
   { title: 'Eligibility', key: 'is_eligible', align: 'center' },
 ]
 
@@ -518,25 +519,27 @@ watch(
                 Ineligible
               </VChip>
             </template>
-            <template #item.is_bvn_verified="{ item }">
+            <!--
+              <template #item.is_bvn_verified="{ item }">
               <VChip
-                v-if="item.raw.is_bvn_verified === 1"
-                color="success"
-                size="small"
+              v-if="item.raw.is_bvn_verified === 1"
+              color="success"
+              size="small"
               >
-                Verified
+              Verified
               </VChip>
               <VChip
-                v-else
-                color="error"
-                size="small"
+              v-else
+              color="error"
+              size="small"
               >
-                Unverified
+              Unverified
               </VChip>
-            </template>
-            <template #item.overall_attendance="{ item }">
+              </template>
+              <template #item.overall_attendance="{ item }">
               {{ item.raw.overall_attendance }}%
-            </template>
+              </template>
+            -->
           </VDataTableServer>
         </VCardText>
       </VCard>
