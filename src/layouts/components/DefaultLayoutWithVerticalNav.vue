@@ -125,7 +125,7 @@ function logout() {
         }"
       />
       <VerticalNavLink
-        v-if="Accountant || coordinator"
+        v-if="Accountant"
         :item="{
           title: 'Disbursement',
           icon: 'bxs-bank',
@@ -133,11 +133,19 @@ function logout() {
         }"
       />
       <VerticalNavLink
+        v-if="coordinator"
+        :item="{
+          title: 'Disbursement',
+          icon: 'bxs-bank',
+          to: '/financial-incentive-pc',
+        }"
+      />
+      <VerticalNavLink
         v-if="Finance"
         :item="{
           title: 'Disbursement',
           icon: 'bxs-bank',
-          to: '/financial-incentive-coordinator',
+          to: '/financial-incentive-finance',
         }"
       />
       <VerticalNavLink

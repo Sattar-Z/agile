@@ -69,14 +69,19 @@ const router = createRouter({
           component: () => import('../pages/financial-incentive.vue'),
         },
         {
+          name: 'financial-incentive-pc',
+          path: 'financial-incentive-pc',
+          component: () => import('../pages/financial-incentive-pc.vue'),
+        },
+        {
           name: 'financial-incentive-accountant',
           path: 'financial-incentive-accountant',
           component: () => import('../pages/financial-incentive-accountant.vue'),
         },
         {
-          name: 'financial-incentive-coordinator',
-          path: 'financial-incentive-coordinator',
-          component: () => import('../pages/financial-incentive-coordinator.vue'),
+          name: 'financial-incentive-finance',
+          path: 'financial-incentive-finance',
+          component: () => import('../pages/financial-incentive-finance.vue'),
         },
         {
           name: 'attendance',

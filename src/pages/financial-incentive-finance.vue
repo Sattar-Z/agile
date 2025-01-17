@@ -35,8 +35,12 @@ const headers = [
   { title: 'School', key: 'school.name', align: 'start' },
   { title: 'Payment Type', key: 'payment_type.name', align: 'start' },
   { title: 'Amount', key: 'payment_type.amount', align: 'end' },
+  { title: 'Total Amount', key: 'total_amount', align: 'end' },
   { title: 'Status', key: 'status', align: 'center' },
   { title: 'Students', key: 'student_count', align: 'center' },
+  { title: 'Created By', key: 'uploaded_by.name', align: 'start' },
+  { title: 'Reviewed By', key: 'reviewed_by.name', align: 'start' },
+  { title: 'Notes', key: 'notes', align: 'start' },
   { title: 'Created At', key: 'created_at', align: 'center' },
   { title: 'Actions', key: 'actions', align: 'center' },
 ]
@@ -47,6 +51,7 @@ const studentHeaders = [
   { title: 'Admission No.', key: 'student.student_admission_number', align: 'start' },
   { title: 'Guardian', key: 'student.care_giver.name', align: 'start' },
   { title: 'Guardian Phone', key: 'student.care_giver.phone', align: 'start' },
+  { title: 'Amount', key: 'amount', align: 'end' },
   { title: 'Status', key: 'note', align: 'center' },
 ]
 
@@ -223,8 +228,23 @@ onMounted(() => {
           {{ formatAmount(item.raw.payment_type.amount) }}
         </template>
 
+        <template #item.total_amount="{ item }">
+          {{ formatAmount(item.raw.total_amount) }}
+        </template>
+
         <template #item.created_at="{ item }">
           {{ formatDate(item.raw.created_at) }}
+        </template>
+
+        <template #item.notes="{ item }">
+          <span
+            v-if="item.raw.notes"
+            class="text-caption"
+          >{{ item.raw.notes }}</span>
+          <span
+            v-else
+            class="text-caption text-disabled"
+          >No notes</span>
         </template>
 
         <template #item.status="{ item }">
@@ -244,6 +264,9 @@ onMounted(() => {
           >
             {{ item.raw.student_count }} Students
           </VChip>
+        </template>
+        <template #item.reviewed_by.name="{ item }">
+          {{ item.raw.reviewed_by?.name || '-' }}
         </template>
 
         <template #item.actions="{ item }">
@@ -296,6 +319,37 @@ onMounted(() => {
               </p>
               <p class="font-weight-medium">
                 Total Amount: {{ selectedRequest?.total_amount ? formatAmount(selectedRequest.total_amount) : '' }}
+              </p>
+              <VDivider class="my-4" />
+              <p class="font-weight-medium">
+                Uploaded By: {{ selectedRequest?.uploaded_by?.name }}
+                <span class="text-caption">
+                  ({{ selectedRequest?.uploaded_by?.email }})
+                </span>
+              </p>
+              <p
+                v-if="selectedRequest?.approved_by"
+                class="font-weight-medium"
+              >
+                Approved By: {{ selectedRequest.approved_by.name }}
+              </p>
+              <p
+                v-if="selectedRequest?.reviewed_by"
+                class="font-weight-medium"
+              >
+                Reviewed By: {{ selectedRequest.reviewed_by.name }}
+              </p>
+              <p
+                v-if="selectedRequest?.finance_approved_by"
+                class="font-weight-medium"
+              >
+                Finance Approved By: {{ selectedRequest.finance_approved_by.name }}
+              </p>
+              <p
+                v-if="selectedRequest?.notes"
+                class="font-weight-medium"
+              >
+                Previous Notes: {{ selectedRequest.notes }}
               </p>
             </div>
 

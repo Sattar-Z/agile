@@ -11,8 +11,8 @@ const activeTab = ref(route.params.tab)
 
 // tabs
 const tabs = [
-  { title: 'Account', icon: 'bx-user', tab: 'account' },
-  { title: 'Security', icon: 'bx-lock-open', tab: 'security' },
+  // { title: 'Account', icon: 'bx-user', tab: 'account' },
+  // { title: 'Security', icon: 'bx-lock-open', tab: 'security' },
   { title: 'Disbursements', icon: 'bxs-bank', tab: 'Disbursements' },
 ]
 </script>
@@ -42,16 +42,6 @@ const tabs = [
       v-model="activeTab"
       class="mt-5 disable-tab-transition"
     >
-      <!-- Account -->
-      <VWindowItem value="account">
-        <AccountSettingsAccount />
-      </VWindowItem>
-
-      <!-- Security -->
-      <VWindowItem value="security">
-        <AccountSettingsSecurity />
-      </VWindowItem>
-
       <!-- Disbursements -->
       <VWindowItem value="Disbursements">
         <AccountSettingsNotification />

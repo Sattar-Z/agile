@@ -1,6 +1,5 @@
 <!-- financial-incentive-accountant.vue -->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import { callApi } from '@/helpers/request'
 
@@ -47,6 +46,7 @@ const headers = [
   { title: 'Status', key: 'status', align: 'center' },
   { title: 'Students', key: 'student_count', align: 'center' },
   { title: 'Uploaded By', key: 'uploaded_by.name', align: 'start' },
+  { title: 'Reviewed By', key: 'reviewed_by.name', align: 'start' },
   { title: 'Notes', key: 'notes', align: 'start' },
   { title: 'Created At', key: 'created_at', align: 'center' },
   { title: 'Actions', key: 'actions', align: 'center' },
@@ -58,6 +58,7 @@ const studentHeaders = [
   { title: 'Admission No.', key: 'student.student_admission_number', align: 'start' },
   { title: 'Guardian', key: 'student.care_giver.name', align: 'start' },
   { title: 'Guardian Phone', key: 'student.care_giver.phone', align: 'start' },
+  { title: 'Amount', key: 'amount', align: 'end' },
   { title: 'Status', key: 'note', align: 'center' },
 ]
 
@@ -306,6 +307,9 @@ onMounted(() => {
           >
             {{ item.raw.status }}
           </VChip>
+        </template>
+        <template #item.reviewed_by.name="{ item }">
+          {{ item.raw.reviewed_by?.name || '-' }}
         </template>
 
         <template #item.actions="{ item }">
