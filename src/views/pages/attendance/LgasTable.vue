@@ -11,9 +11,9 @@ import { useUserStore } from '@/stores/user'
 // import { toNigerianCurrency } from '@/helpers/numbers'
 
 const props = defineProps<{
-  termId: string
+  termId: number | null
   session: string
-  cohurt: string
+  cohurt: string | null
 }>()
 
 const token = ref('')

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
 import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
-import { isAccountant, isAdmin, isCoordinator, isHeadOfFinance } from '@/middlewares/auth'
+import { isAccountant, isAdmin, isCoordinator, isHeadOfFinance, isOfficer } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
@@ -17,13 +17,18 @@ const Admin = ref(isAdmin())
 const Accountant = ref(isAccountant())
 const Finance = ref(isHeadOfFinance())
 const coordinator = ref(isCoordinator())
+const officer = ref(isOfficer())
 
 // Define the navigation links with their corresponding routes and titles
 const navLinks = [
   { title: 'Dashboard', to: '/dashboard' },
   { title: 'Enrollment', to: '/enrollment' },
   { title: 'Attendance', to: '/attendance' },
-  { title: 'Financial Incentives', to: '/financial-incentives' },
+  { title: 'Disbursement', to: '/financial-incentives' },
+  { title: 'Disbursement', to: '/financial-incentives-coordinator' },
+  { title: 'Disbursement', to: '/financial-incentives-accountant' },
+  { title: 'Settings', to: '/account-settings' },
+  { title: 'Settings', to: '/account-settings-admin' },
   { title: 'Report', to: '/report' },
   { title: 'User Management', to: '/user-management' },
 ]
@@ -96,6 +101,7 @@ function logout() {
         }"
       />
       <VerticalNavLink
+        v-if="Admin || officer"
         :item="{
           title: 'Enrollment',
           icon: 'bx-download',
@@ -103,6 +109,7 @@ function logout() {
         }"
       />
       <VerticalNavLink
+        v-if="Admin || officer"
         :item="{
           title: 'Attendance',
           icon: 'bx-check-circle',
@@ -112,23 +119,23 @@ function logout() {
       <VerticalNavLink
         v-if="Admin"
         :item="{
-          title: 'Financial Incentives',
+          title: 'Disbursement',
           icon: 'bxs-bank',
           to: '/financial-incentive',
         }"
       />
       <VerticalNavLink
-        v-if="Accountant || Finance"
+        v-if="Accountant || coordinator"
         :item="{
-          title: 'Financial Incentives',
+          title: 'Disbursement',
           icon: 'bxs-bank',
           to: '/financial-incentive-accountant',
         }"
       />
       <VerticalNavLink
-        v-if="coordinator"
+        v-if="Finance"
         :item="{
-          title: 'Financial Incentives',
+          title: 'Disbursement',
           icon: 'bxs-bank',
           to: '/financial-incentive-coordinator',
         }"

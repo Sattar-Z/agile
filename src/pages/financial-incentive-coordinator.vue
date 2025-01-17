@@ -247,16 +247,19 @@ onMounted(() => {
         </template>
 
         <template #item.actions="{ item }">
-          <div class="d-flex gap-2">
-            <VBtn
-              v-if="item.raw.status === 'pending'"
-              color="primary"
-              size="small"
-              @click="openApprovalModal(item.raw)"
-            >
-              Review
-            </VBtn>
-          </div>
+          <VBtn
+            v-if="item.raw.status === 'pending'"
+            color="primary"
+            size="small"
+            text="Review"
+            @click="openApprovalModal(item.raw)"
+          />
+          <VChip
+            v-else
+            color="primary"
+            size="small"
+            text="Reviewed"
+          />
         </template>
       </VDataTableServer>
     </VCardText>
@@ -288,8 +291,11 @@ onMounted(() => {
               <p class="font-weight-medium mb-1">
                 Payment: {{ selectedRequest?.payment_type?.name }}
               </p>
-              <p class="font-weight-medium">
+              <p class="font-weight-medium mb-1">
                 Amount: {{ selectedRequest?.payment_type?.amount ? formatAmount(selectedRequest.payment_type.amount) : '' }}
+              </p>
+              <p class="font-weight-medium">
+                Total Amount: {{ selectedRequest?.total_amount ? formatAmount(selectedRequest.total_amount) : '' }}
               </p>
             </div>
 

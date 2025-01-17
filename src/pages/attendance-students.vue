@@ -1,30 +1,84 @@
 <script setup lang="ts">
 import StudentTable from '@/views/pages/attendance/StudentTable.vue'
+import { useUserStore } from '@/stores/user'
+import { callApi } from '@/helpers/request'
 
-const form = ref({
-  session: '2024',
-  term: '1',
-  cohurt: '1',
-})
-
-interface Types {
-  name: string
-  value: string
+interface Term {
+  id: number
+  term: string
+  session: string
+  start_date: string
+  end_date: string
+  cohurt: string | null
 }
 
-const termSelect = ref<Types[]>([
-  { name: '1st', value: '1' },
-])
+const termLoading = ref(false)
 
-const cohortSelect = ref<Types[]>([
-  { name: '1', value: '1' },
-])
+const form = ref({
+  session: '',
+  term: null as number | null,
+  cohurt: null as string | null,
+})
+
+const terms = ref<Term[]>([])
+const cohurts = ref<string[]>([])
+const sessions = ref<string[]>([])
 
 const alertInfo = reactive({
   show: false,
   message: '',
   title: '',
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
+})
+
+const fetchTermData = async () => {
+  termLoading.value = true
+  try {
+    const response = await callApi({
+      url: 'attendance/terms',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Terms list failed'
+      alertInfo.type = 'error'
+    }
+    else {
+      terms.value = responseData.data
+
+      // Extract unique cohurts and sessions
+      cohurts.value = [...new Set(terms.value.map(t => t.cohurt).filter(Boolean))]
+      sessions.value = [...new Set(terms.value.map(t => t.session))]
+
+      // Set initial values
+      if (terms.value.length > 0) {
+        form.value.term = terms.value[0].id
+        form.value.session = terms.value[0].session
+      }
+      if (cohurts.value.length > 0)
+        form.value.cohurt = cohurts.value[0]
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Terms list error'
+    alertInfo.type = 'error'
+    if (useUserStore().isTokenExpired())
+      useUserStore().removeUser()
+  }
+  finally {
+    termLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchTermData()
 })
 </script>
 
@@ -52,31 +106,32 @@ const alertInfo = reactive({
       <span class="text-caption">Cohort</span>
       <VSelect
         v-model="form.cohurt"
-        :items="cohortSelect"
-        item-title="name"
-        item-value="value"
+        :items="cohurts"
         density="compact"
         variant="solo-filled"
+        :loading="termLoading"
       />
     </VCol>
     <VCol cols="auto">
       <span class="text-caption">Session</span>
       <VSelect
         v-model="form.session"
-        :items="['2024', '2025']"
+        :items="sessions"
         density="compact"
         variant="solo-filled"
+        :loading="termLoading"
       />
     </VCol>
     <VCol cols="auto">
       <span class="text-caption">Term</span>
       <VSelect
         v-model="form.term"
-        :items="termSelect"
-        item-title="name"
-        item-value="value"
+        :items="terms"
+        item-title="term"
+        item-value="id"
         density="compact"
         variant="solo-filled"
+        :loading="termLoading"
       />
     </VCol>
   </VRow>
