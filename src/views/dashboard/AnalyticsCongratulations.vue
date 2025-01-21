@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { useTheme } from 'vuetify'
 import { isAccountant, isAdmin, isCoordinator, isHeadOfFinance } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
-import illustrationJohnDark from '@images/cards/illustration-john-dark.png'
-import illustrationJohnLight from '@images/cards/illustration-john-light.png'
+import Girl from '@images/cards/muslim_girl.png'
 
 const Admin = ref(isAdmin())
 const Accountant = ref(isAccountant())
 const Finance = ref(isHeadOfFinance())
 const coordinator = ref(isCoordinator())
-const { global } = useTheme()
 const user = useUserStore().getUser()
-const illustrationJohn = computed(() => global.name.value === 'dark' ? illustrationJohnDark : illustrationJohnLight)
 </script>
 
 <template>
@@ -77,7 +73,7 @@ const illustrationJohn = computed(() => global.name.value === 'dark' ? illustrat
         class="text-center"
       >
         <img
-          :src="illustrationJohn"
+          :src="Girl"
           :height="$vuetify.display.xs ? '150' : '175'"
           :class="$vuetify.display.xs ? 'mt-6 mb-n2' : 'position-absolute'"
           class="john-illustration flip-in-rtl"
