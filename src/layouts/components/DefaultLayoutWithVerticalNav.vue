@@ -24,9 +24,9 @@ const navLinks = [
   { title: 'Dashboard', to: '/dashboard' },
   { title: 'Enrollment', to: '/enrollment' },
   { title: 'Attendance', to: '/attendance' },
-  { title: 'Disbursement', to: '/financial-incentives' },
-  { title: 'Disbursement', to: '/financial-incentives-coordinator' },
-  { title: 'Disbursement', to: '/financial-incentives-accountant' },
+  { title: 'Disbursement', to: '/disbursements' },
+  { title: 'Disbursement', to: '/disbursements-coordinator' },
+  { title: 'Disbursement', to: '/disbursements-accountant' },
   { title: 'Settings', to: '/account-settings' },
   { title: 'Settings', to: '/account-settings-admin' },
   { title: 'Report', to: '/report' },
@@ -121,7 +121,7 @@ function logout() {
         :item="{
           title: 'Disbursement',
           icon: 'bxs-bank',
-          to: '/financial-incentive',
+          to: '/disbursement',
         }"
       />
       <VerticalNavLink
@@ -129,7 +129,7 @@ function logout() {
         :item="{
           title: 'Disbursement',
           icon: 'bxs-bank',
-          to: '/financial-incentive-accountant',
+          to: '/disbursement-accountant',
         }"
       />
       <VerticalNavLink
@@ -137,7 +137,7 @@ function logout() {
         :item="{
           title: 'Disbursement',
           icon: 'bxs-bank',
-          to: '/financial-incentive-pc',
+          to: '/disbursement-pc',
         }"
       />
       <VerticalNavLink
@@ -145,7 +145,7 @@ function logout() {
         :item="{
           title: 'Disbursement',
           icon: 'bxs-bank',
-          to: '/financial-incentive-finance',
+          to: '/disbursement-finance',
         }"
       />
       <VerticalNavLink

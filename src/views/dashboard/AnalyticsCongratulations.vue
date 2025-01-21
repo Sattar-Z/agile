@@ -32,7 +32,7 @@ const user = useUserStore().getUser()
           <br>
           <VBtn
             v-if="Accountant || Finance"
-            to="/financial-incentive-accountant"
+            to="/disbursement-accountant"
             variant="tonal"
             class="mt-4"
             size="small"
@@ -40,7 +40,7 @@ const user = useUserStore().getUser()
           />
           <VBtn
             v-else-if="coordinator"
-            to="/financial-incentive-coordinator"
+            to="/disbursement-coordinator"
             variant="tonal"
             class="mt-4"
             size="small"
@@ -48,7 +48,7 @@ const user = useUserStore().getUser()
           />
           <VBtn
             v-else-if="Admin"
-            to="/financial-incentive"
+            to="/disbursement"
             variant="tonal"
             class="mt-4"
             size="small"
