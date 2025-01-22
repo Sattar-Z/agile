@@ -215,7 +215,7 @@ const chartOptions = computed(() => {
 
 const balanceData = [
   { icon: 'bxs-graduation', amount: '₦0.00', year: '2025', color: 'primary' },
-  { icon: 'bxs-school', amount: '₦0.00', year: '2025', color: 'info' },
+  { icon: 'bxs-school', amount: '₦0.00', year: '2025', color: 'primary' },
 ]
 </script>
 

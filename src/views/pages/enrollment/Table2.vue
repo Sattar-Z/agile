@@ -365,13 +365,13 @@ onMounted(() => {
         <VCard
           class="h-100"
           variant="tonal"
-          color="success"
+          color="primary"
           @click="selectedCategory = 'approved'"
         >
           <VCardTitle class="d-flex align-center pa-4">
             <VIcon
               icon="bx-check-circle"
-              color="success"
+              color="primary"
               size="48"
             />
             <span class="mx-4">Approved Files</span>
@@ -389,13 +389,13 @@ onMounted(() => {
         <VCard
           class="h-100"
           variant="tonal"
-          color="warning"
+          color="primary"
           @click="selectedCategory = 'pending'"
         >
           <VCardTitle class="d-flex align-center pa-4">
             <VIcon
               icon="bx-time"
-              color="warning"
+              color="primary"
               size="48"
             />
             <span class="mx-4">Pending Files</span>
@@ -413,13 +413,13 @@ onMounted(() => {
         <VCard
           class="h-100"
           variant="tonal"
-          color="error"
+          color="primary"
           @click="selectedCategory = 'rejected'"
         >
           <VCardTitle class="d-flex align-center pa-4">
             <VIcon
               icon="bx-x-circle"
-              color="error"
+              color="primary"
               size="48"
             />
             <span class="mx-4">Rejected Files</span>

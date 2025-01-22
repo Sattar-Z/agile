@@ -371,7 +371,7 @@ watch(
     >
       <VCard
         variant="tonal"
-        color="success"
+        color="primary"
       >
         <VCardItem>
           <div class="d-flex">
@@ -395,7 +395,7 @@ watch(
     >
       <VCard
         variant="tonal"
-        color="purple"
+        color="primary"
       >
         <VCardItem>
           <div class="d-flex">

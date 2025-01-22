@@ -310,10 +310,13 @@ watch(search, () => {
           cols="12"
           md="4"
         >
-          <VCard>
+          <VCard
+            variant="tonal"
+            color="primary"
+          >
             <VCardTitle class="d-flex align-center pa-4">
               <VIcon
-                icon="bx-school"
+                icon="bxs-school"
                 size="32"
                 color="primary"
                 class="me-2"
@@ -334,12 +337,15 @@ watch(search, () => {
           cols="12"
           md="4"
         >
-          <VCard>
+          <VCard
+            variant="tonal"
+            color="primary"
+          >
             <VCardTitle class="d-flex align-center pa-4">
               <VIcon
                 icon="bx-user"
                 size="32"
-                color="success"
+                color="primary"
                 class="me-2"
               />
               <div>
@@ -358,12 +364,15 @@ watch(search, () => {
           cols="12"
           md="4"
         >
-          <VCard>
+          <VCard
+            variant="tonal"
+            color="primary"
+          >
             <VCardTitle class="d-flex align-center pa-4">
               <VIcon
                 icon="bx-group"
                 size="32"
-                color="info"
+                color="primary"
                 class="me-2"
               />
               <div>
@@ -373,7 +382,10 @@ watch(search, () => {
                 <div class="text-subtitle-2">
                   Total Caregivers
                 </div>
-                <div class="text-caption">
+                <div
+                  hidden
+                  class="text-caption"
+                >
                   Verified: {{ lgaData.verified_care_givers_count }} | Unverified: {{ lgaData.unverified_care_givers_count }}
                 </div>
               </div>

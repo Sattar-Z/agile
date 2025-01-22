@@ -109,8 +109,14 @@ const router = createRouter({
           component: () => import('../pages/attendance-students.vue'),
         },
         {
+          name: 'register',
           path: 'register',
           component: () => import('../pages/register.vue'),
+        },
+        {
+          name: 'user-management',
+          path: 'user-management',
+          component: () => import('../pages/user-management.vue'),
         },
         {
           name: 'account-settings-admin',

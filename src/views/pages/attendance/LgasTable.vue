@@ -253,7 +253,7 @@ watch(
     <VCol>
       <VCard
         variant="tonal"
-        color="purple"
+        color="primary"
       >
         <VCardItem>
           <div class="d-flex">

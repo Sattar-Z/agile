@@ -160,7 +160,7 @@ function logout() {
         :item="{
           title: 'User Management',
           icon: 'bx-user',
-          to: '/register',
+          to: '/user-management',
         }"
       />
       <VerticalNavLink
@@ -263,7 +263,7 @@ function logout() {
       <VBtn
         style="margin-bottom: 27px;"
         prepend-icon="bx-exit"
-        text="Exit"
+        text="Logout"
         size="small"
         variant="outlined"
         color="error"

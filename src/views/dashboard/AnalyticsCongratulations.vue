@@ -21,7 +21,7 @@ const user = useUserStore().getUser()
       >
         <VCardItem>
           <VCardTitle class="text-md-h5 text-primary">
-            Welcome {{ user.name }}
+            Welcome {{ user.role.name }}
           </VCardTitle>
         </VCardItem>
 
@@ -66,6 +66,7 @@ const user = useUserStore().getUser()
       </VCol>
 
       <VCol
+        hidden
         cols="12"
         sm="4"
         order="1"

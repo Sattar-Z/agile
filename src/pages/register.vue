@@ -349,28 +349,6 @@ const isPasswordVisible = ref(false)
                 Register
               </VBtn>
             </VCol>
-
-            <!-- Terms of Service -->
-            <VCol
-              cols="12"
-              class="text-center text-base font-weight-medium"
-              style="font-weight: 500;"
-            >
-              <span class="text-grey-5">By clicking continue, you agree to our </span>
-              <RouterLink
-                class="text-primary ms-0"
-                to="#"
-              >
-                Terms of Service
-              </RouterLink>
-              <span class="text-grey-5"> and</span>
-              <RouterLink
-                class="text-primary ms-0"
-                to="#"
-              >
-                Privacy Policy
-              </RouterLink>
-            </VCol>
           </VRow>
         </VForm>
       </VCardText>

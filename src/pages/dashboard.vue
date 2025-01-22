@@ -86,7 +86,7 @@ onMounted(() => {
     >
       <VCard
         variant="tonal"
-        color="info"
+        color="primary"
       >
         <VCardItem>
           <div class="d-flex">
@@ -100,7 +100,7 @@ onMounted(() => {
           </div>
         </VCardItem>
         <VCardText class="my-auto text-h5">
-          {{ student }}
+          {{ student || 0 }}
         </VCardText>
       </VCard>
     </VCol>
@@ -110,7 +110,7 @@ onMounted(() => {
     >
       <VCard
         variant="tonal"
-        color="purple"
+        color="primary"
       >
         <VCardItem>
           <div class="d-flex">
@@ -134,7 +134,7 @@ onMounted(() => {
     >
       <VCard
         variant="tonal"
-        color="info"
+        color="primary"
       >
         <VCardItem>
           <div class="d-flex">

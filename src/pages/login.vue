@@ -161,106 +161,117 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <div class="auth-wrapper d-flex align-center justify-center pa-4">
-    <VCard
-      class="auth-card pa-2 pt-7"
-      max-width="448"
+  <VRow>
+    <VCol
+      cols="12"
+      md="6"
     >
-      <VCardItem class="justify-center pb-1.5">
-        <VImg
-          :src="logo"
-          max-width="145"
-          class="mx-auto my-2 mb-0"
-        />
-      </VCardItem>
+      <div class="auth-wrapper d-flex align-center justify-center pa-4">
+        <VCard
+          class="auth-card pa-2 pt-7"
+          max-width="448"
+        >
+          <VCardItem class="justify-center pb-1.5">
+            <VImg
+              :src="logo"
+              max-width="145"
+              class="mx-auto my-2 mb-0"
+            />
+          </VCardItem>
 
-      <VCardText class="pt-0">
-        <h5 class="text-h4 mb-3 text-center font-weight-semibold text-heading">
-          Login
-        </h5>
-        <p class="mb-8 text-center text-subtitle-1 text-subheading font-weight-medium">
-          Welcome. Login to get started
-        </p>
-      </VCardText>
+          <VCardText class="pt-0">
+            <h5 class="text-h4 mb-3 text-center font-weight-semibold text-heading">
+              Login
+            </h5>
+            <p class="mb-8 text-center text-subtitle-1 text-subheading font-weight-medium">
+              Welcome. Login to get started
+            </p>
+          </VCardText>
 
-      <VCardText>
-        <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-          Your email address
-        </div>
-        <VForm @submit.prevent="submit(form)">
-          <VRow>
-            <!-- email -->
-            <VCol cols="12">
-              <VTextField
-                v-model="form.email"
-                autofocus
-                placeholder="johndoe@email.com"
-                type="email"
-                density="compact"
-                class="mb-0"
-                color="primary"
-                clearable
-                :error-messages="emailErrorMessage"
-              />
-            </VCol>
+          <VCardText>
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Your email address
+            </div>
+            <VForm @submit.prevent="submit(form)">
+              <VRow>
+                <!-- email -->
+                <VCol cols="12">
+                  <VTextField
+                    v-model="form.email"
+                    autofocus
+                    placeholder="johndoe@email.com"
+                    type="email"
+                    density="compact"
+                    class="mb-0"
+                    color="primary"
+                    clearable
+                    :error-messages="emailErrorMessage"
+                  />
+                </VCol>
 
-            <!-- password -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Your password
-              </div>
-              <VTextField
-                v-model="form.password"
-                placeholder="****"
-                class="mb-8"
-                color="primary"
-                density="compact"
-                :type="isPasswordVisible ? 'text' : 'password'"
-                clearable
-                :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
-                :error-messages="passwordErrorMessage"
-                @click:append-inner="isPasswordVisible = !isPasswordVisible"
-              />
+                <!-- password -->
+                <VCol cols="12">
+                  <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+                    Your password
+                  </div>
+                  <VTextField
+                    v-model="form.password"
+                    placeholder="****"
+                    class="mb-8"
+                    color="primary"
+                    density="compact"
+                    :type="isPasswordVisible ? 'text' : 'password'"
+                    clearable
+                    :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
+                    :error-messages="passwordErrorMessage"
+                    @click:append-inner="isPasswordVisible = !isPasswordVisible"
+                  />
 
-              <!-- login button -->
-              <VBtn
-                block
-                size="large"
-                type="submit"
-                :loading="loading"
-                class="text-subtitle-1 font-weight-medium"
-                color="primary"
-              >
-                Login
-              </VBtn>
-            </VCol>
+                  <!-- login button -->
+                  <VBtn
+                    block
+                    size="large"
+                    type="submit"
+                    :loading="loading"
+                    class="text-subtitle-1 font-weight-medium"
+                    color="primary"
+                  >
+                    Login
+                  </VBtn>
+                </VCol>
 
-            <!-- create account -->
-            <VCol
-              cols="12"
-              class="text-center text-base font-weight-medium"
-              style="font-weight: 500;"
-            >
-              <span class="text-grey-5">By clicking continue, you agree to our </span>
-              <RouterLink
-                class="text-primary ms-0"
-                to="#"
-              >
-                Terms of Service
-              </RouterLink>
-              <span class="text-grey-5"> and</span>
-              <RouterLink
-                class="text-primary ms-0"
-                to="#"
-              >
-                Privacy Policy
-              </RouterLink>
-            </VCol>
-          </VRow>
-        </VForm>
-      </VCardText>
-    </VCard>
-  </div>
+                <!-- create account -->
+                <VCol
+                  cols="12"
+                  class="text-center text-base font-weight-medium"
+                  style="font-weight: 500;"
+                >
+                  <span class="text-grey-5">By clicking continue, you agree to our </span>
+                  <RouterLink
+                    class="text-primary ms-0"
+                    to="#"
+                  >
+                    Terms of Service
+                  </RouterLink>
+                  <span class="text-grey-5"> and</span>
+                  <RouterLink
+                    class="text-primary ms-0"
+                    to="#"
+                  >
+                    Privacy Policy
+                  </RouterLink>
+                </VCol>
+              </VRow>
+            </VForm>
+          </VCardText>
+        </VCard>
+      </div>
+    </VCol>
+    <VCol
+      cols="12"
+      md="6"
+    />
+  </VRow>
 </template>
 
 <style lang="scss">
