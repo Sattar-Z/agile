@@ -459,19 +459,35 @@ onMounted(() => {
             lg="4"
           >
             <VCard>
-              <VCardTitle class="d-flex align-center justify-space-between pa-4">
-                <div class="text-truncate">
-                  {{ formatFileName(file.file_name || '') }}
-                </div>
-                <VChip
-                  v-if="isNewFile(file.created_at)"
-                  color="primary"
-                  size="small"
-                  class="ms-2"
+              <VRow justify="space-between">
+                <VCol cols="auto">
+                  <VCardTitle class="d-flex align-center justify-space-between pa-4">
+                    <div class="text-truncate">
+                      {{ formatFileName(file.file_name || '') }}
+                    </div>
+                    <VChip
+                      v-if="isNewFile(file.created_at)"
+                      color="primary"
+                      size="small"
+                      class="ms-2"
+                    >
+                      New
+                    </VChip>
+                  </VCardTitle>
+                </VCol>
+                <VCol
+                  v-if="file.error_message"
+                  cols="auto"
                 >
-                  New
-                </VChip>
-              </VCardTitle>
+                  <VBtn
+                    color="error"
+                    variant="text"
+                    density="compact"
+                    icon="bx-error-circle"
+                    @click="showErrorDetails(file.error_message)"
+                  />
+                </VCol>
+              </VRow>
               <VCardText>
                 <VRow>
                   <VCol cols="6">
@@ -498,22 +514,6 @@ onMounted(() => {
                       Date Added
                     </div>
                     <div>{{ formatDate(file.created_at) }}</div>
-                  </VCol>
-                </VRow>
-                <VRow
-                  v-if="file.error_message"
-                  class="mt-2"
-                >
-                  <VCol cols="12">
-                    <VBtn
-                      color="error"
-                      variant="text"
-                      density="compact"
-                      block
-                      @click="showErrorDetails(file.error_message)"
-                    >
-                      View Error Details
-                    </VBtn>
                   </VCol>
                 </VRow>
               </VCardText>
