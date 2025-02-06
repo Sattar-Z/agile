@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { isAccountant, isAdmin, isCoordinator, isHeadOfFinance } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import Girl from '@images/cards/muslim_girl.png'
 
-const Admin = ref(isAdmin())
-const Accountant = ref(isAccountant())
-const Finance = ref(isHeadOfFinance())
-const coordinator = ref(isCoordinator())
+// import { isAccountant, isAdmin, isCoordinator, isHeadOfFinance } from '@/middlewares/auth'
+
+// const Admin = ref(isAdmin())
+// const Accountant = ref(isAccountant())
+// const Finance = ref(isHeadOfFinance())
+// const coordinator = ref(isCoordinator())
 const user = useUserStore().getUser()
 </script>
 
@@ -29,39 +30,6 @@ const user = useUserStore().getUser()
           <span>
             Summaries and activities across all LGAs
           </span>
-          <br>
-          <VBtn
-            v-if="Accountant || Finance"
-            to="/disbursement-accountant"
-            variant="tonal"
-            class="mt-4"
-            size="small"
-            text="Payment requests"
-          />
-          <VBtn
-            v-else-if="coordinator"
-            to="/disbursement-coordinator"
-            variant="tonal"
-            class="mt-4"
-            size="small"
-            text="Finalize Payments"
-          />
-          <VBtn
-            v-else-if="Admin"
-            to="/disbursement"
-            variant="tonal"
-            class="mt-4"
-            size="small"
-            text="Initiate Payments"
-          />
-          <VBtn
-            v-else
-            to="/enrollment"
-            variant="tonal"
-            class="mt-4"
-            size="small"
-            text="View Students"
-          />
         </VCardText>
       </VCol>
 
