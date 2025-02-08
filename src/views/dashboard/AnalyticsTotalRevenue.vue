@@ -280,7 +280,7 @@ const balanceData = [
             type="radialBar"
             :height="200"
             :options="chartOptions.radial"
-            :series="[100]"
+            :series="[0]"
             class="mt-6"
           />
 
