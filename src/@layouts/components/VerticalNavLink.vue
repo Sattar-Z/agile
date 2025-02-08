@@ -33,6 +33,7 @@ defineProps<{
   .nav-link a {
     display: flex;
     align-items: center;
+    color: #fff;
     cursor: pointer;
   }
 }

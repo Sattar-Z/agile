@@ -108,6 +108,31 @@ export default defineComponent({
   // TODO(v2): Check why we need height in vertical nav & min-height in horizontal nav
   block-size: 100%;
 
+  // Add styles for vertical nav background and text colors
+  .layout-vertical-nav {
+    background-color: rgb(var(--v-theme-primary));
+
+    .nav-header,
+    .nav-items,
+    .nav-item-title,
+    .app-title-wrapper {
+      color: white;
+    }
+
+    .v-icon {
+      color: white !important;
+    }
+
+    .nav-link {
+      color: white;
+
+      &:hover,
+      &.active {
+        background: rgba(255, 255, 255, 10%);
+      }
+    }
+  }
+
   .layout-content-wrapper {
     display: flex;
     flex-direction: column;

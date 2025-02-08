@@ -148,8 +148,12 @@ const handleFileAction = async (file: Files, action: 'approve' | 'reject') => {
 }
 
 const viewFileLoad = ref(false)
+const viewingFileId = ref<number | null>(null)
 
 const viewFile = async (file: Files) => {
+  if (!file.id)
+    return
+  viewingFileId.value = file.id
   viewFileLoad.value = true
   try {
     const response = await callApi({
@@ -185,7 +189,6 @@ const viewFile = async (file: Files) => {
             }, {} as any)
           })
 
-        viewFileLoad.value = false
         fileContents.value = data
         fileContentSearch.value = ''
         fileContentsModal.value = true
@@ -194,18 +197,19 @@ const viewFile = async (file: Files) => {
       parseCSV(csvData)
     }
     else {
-      viewFileLoad.value = false
-
       const responseData = await response.json()
       throw new Error(responseData.message || 'Failed to download the file')
     }
   }
   catch (error) {
-    viewFileLoad.value = false
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
     alertInfo.type = 'error'
+  }
+  finally {
+    viewFileLoad.value = false
+    viewingFileId.value = null
   }
 }
 
@@ -295,7 +299,10 @@ const fetchData = async () => {
   }
 }
 
+const deleteFileId = ref<number | null>(null)
+
 const deleteFile = async (file: Files) => {
+  deleteFileId.value = file.id
   deleteLoad.value = true
 
   try {
@@ -309,8 +316,6 @@ const deleteFile = async (file: Files) => {
     const responseData = await response.json()
 
     if (response.ok) {
-      deleteLoad.value = false
-
       alertInfo.show = true
       alertInfo.title = 'Success'
       alertInfo.message = responseData.message || 'File Deleted'
@@ -318,8 +323,6 @@ const deleteFile = async (file: Files) => {
       fetchData()
     }
     else {
-      deleteLoad.value = false
-
       alertInfo.show = true
       alertInfo.title = 'Error'
       alertInfo.message = responseData.message || 'Something went wrong please try again later'
@@ -327,11 +330,14 @@ const deleteFile = async (file: Files) => {
     }
   }
   catch (error) {
-    deleteLoad.value = false
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
     alertInfo.type = 'error'
+  }
+  finally {
+    deleteLoad.value = false
+    deleteFileId.value = null
   }
 }
 
@@ -432,8 +438,8 @@ onMounted(() => {
       </VCol>
     </template>
 
-     <!-- Detailed Card View (when category is selected) -->
-     <template v-else>
+    <!-- Detailed Card View (when category is selected) -->
+    <template v-else>
       <VCol cols="12">
         <VCard class="mb-4">
           <VCardTitle class="d-flex align-center justify-space-between pa-4">
@@ -460,19 +466,35 @@ onMounted(() => {
             lg="4"
           >
             <VCard>
-              <VCardTitle class="d-flex align-center justify-space-between pa-4">
-                <div class="text-truncate">
-                  {{ formatFileName(file.file_name || '') }}
-                </div>
-                <VChip
-                  v-if="isNewFile(file.created_at)"
-                  color="primary"
-                  size="small"
-                  class="ms-2"
+              <VRow justify="space-between">
+                <VCol cols="auto">
+                  <VCardTitle class="d-flex align-center justify-space-between pa-4">
+                    <div class="text-truncate">
+                      {{ formatFileName(file.file_name || '') }}
+                    </div>
+                    <VChip
+                      v-if="isNewFile(file.created_at)"
+                      color="primary"
+                      size="small"
+                      class="ms-2"
+                    >
+                      New
+                    </VChip>
+                  </VCardTitle>
+                </VCol>
+                <VCol
+                  v-if="file.error_message"
+                  cols="auto"
                 >
-                  New
-                </VChip>
-              </VCardTitle>
+                  <VBtn
+                    color="error"
+                    variant="text"
+                    density="compact"
+                    icon="bx-error-circle"
+                    @click="showErrorDetails(file.error_message)"
+                  />
+                </VCol>
+              </VRow>
               <VCardText>
                 <VRow>
                   <VCol cols="6">
@@ -501,29 +523,13 @@ onMounted(() => {
                     <div>{{ formatDate(file.created_at) }}</div>
                   </VCol>
                 </VRow>
-                <VRow
-                  v-if="file.error_message"
-                  class="mt-2"
-                >
-                  <VCol cols="12">
-                    <VBtn
-                      color="error"
-                      variant="text"
-                      density="compact"
-                      block
-                      @click="showErrorDetails(file.error_message)"
-                    >
-                      View Error Details
-                    </VBtn>
-                  </VCol>
-                </VRow>
               </VCardText>
               <VDivider class="my-3" />
               <VCardActions>
                 <VBtn
                   variant="outlined"
                   color="primary"
-                  :loading="viewFileLoad"
+                  :loading="viewingFileId === file.id"
                   density="compact"
                   @click="viewFile(file)"
                 >
@@ -543,7 +549,7 @@ onMounted(() => {
                   v-if="file.is_approved || file.error_message"
                   variant="outlined"
                   color="error"
-                  :loading="deleteLoad"
+                  :loading="deleteFileId === file.id"
                   density="compact"
                   @click="deleteFile(file)"
                 >

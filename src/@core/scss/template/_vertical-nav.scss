@@ -9,6 +9,7 @@ $divider-gap: 0.75rem;
   .layout-vertical-nav {
     @include elevation.elevation(3);
 
+    background-color: #196b57;
 
     // 👉 Nav header
     .nav-header {
@@ -26,6 +27,7 @@ $divider-gap: 0.75rem;
 
       // ℹ️ Reduce with width of the thumb in vertical nav menu so we can clearly see active indicator
       .ps__thumb-y {
+        color: #fff;
         inline-size: 0.125rem;
       }
 
@@ -57,7 +59,7 @@ $divider-gap: 0.75rem;
     .nav-group.active:not(.nav-group .nav-group) > :first-child {
       &::after {
         position: absolute;
-        background-color: rgb(var(--v-global-theme-on-primary));
+        background-color: rgb(var(--v-global-theme-on-wh));
         block-size: 2.625rem;
         border-end-start-radius: 0.375rem;
         border-start-start-radius: 0.375rem;

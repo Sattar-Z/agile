@@ -4,7 +4,7 @@ import { email, helpers, minLength, required } from '@vuelidate/validators'
 import config from '@/config'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
-import logo from '@images/logo.jpeg'
+import logo from '@images/logo.png'
 
 const baseURL: string = config.baseURL
 const loading = ref(false)

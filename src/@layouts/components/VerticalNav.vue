@@ -2,7 +2,7 @@
 import type { Component } from 'vue'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
-import logo from '@images/logo.jpeg'
+import logo from '@images/logo.png'
 
 interface Props {
   tag?: string | Component
@@ -64,7 +64,7 @@ const handleNavScroll = (evt: Event) => {
             class="mx-auto"
           />
 
-          <h1 class="text-h5 leading-normal text-primary font-weight-bold mx-1">
+          <h1 class="text-h5 leading-normal text-white font-weight-bold mx-1">
             NAS-AGILE
           </h1>
         </RouterLink>
@@ -101,6 +101,7 @@ const handleNavScroll = (evt: Event) => {
   z-index: variables.$layout-vertical-nav-z-index;
   display: flex;
   flex-direction: column;
+  background-color: rgb(var(--v-theme-primary)); // Green background
   block-size: 100%;
   inline-size: variables.$layout-vertical-nav-width;
   inset-block-start: 0;
@@ -118,24 +119,39 @@ const handleNavScroll = (evt: Event) => {
   }
 
   .app-title-wrapper {
+    color: white; // Make the title white
     margin-inline-end: auto;
   }
 
   .nav-items {
     block-size: 100%;
-
-    // ℹ️ We no loner needs this overflow styles as perfect scrollbar applies it
-    // overflow-x: hidden;
-
-    // // ℹ️ We used `overflow-y` instead of `overflow` to mitigate overflow x. Revert back if any issue found.
-    // overflow-y: auto;
+    color: white; // Make all nav items white by default
   }
 
+  // Make all navigation links white
+  .nav-link {
+    color: white !important;
+  }
+
+  // Make nav item titles white
   .nav-item-title {
     overflow: hidden;
+    color: white;
     margin-inline-end: auto;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // Make icons white
+  .v-icon {
+    color: white !important;
+  }
+
+  // Optional: Make the hover/active states slightly transparent white
+  .nav-link:hover,
+  .nav-link.active {
+    background: rgba(255, 255, 255, 10%) !important;
+    color: #fff;
   }
 
   // 👉 Collapsed

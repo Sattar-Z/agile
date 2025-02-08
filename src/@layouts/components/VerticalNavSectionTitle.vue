@@ -8,13 +8,14 @@ defineProps<{
 
 <template>
   <li class="nav-section-title">
-    <div class="title-wrapper">
+    <div class="title-wrapper text-white">
       <!-- eslint-disable vue/no-v-text-v-html-on-component -->
       <span
-        class="title-text"
+        class="title-text text-white"
         v-text="item.heading"
       />
       <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </div>
   </li>
 </template>
+

@@ -231,7 +231,12 @@ const handleFileAction = async (file: Files, action: 'approve' | 'reject') => {
 
 const viewFileLoad = ref(false)
 
+const viewingFileId = ref<number | null>(null)
+
 const viewFile = async (file: Files) => {
+  if (!file.id)
+    return
+  viewingFileId.value = file.id
   viewFileLoad.value = true
   try {
     const response = await callApi({
@@ -267,7 +272,6 @@ const viewFile = async (file: Files) => {
             }, {} as any)
           })
 
-        viewFileLoad.value = false
         fileContents.value = data
         fileContentSearch.value = ''
         fileContentsModal.value = true
@@ -276,22 +280,26 @@ const viewFile = async (file: Files) => {
       parseCSV(csvData)
     }
     else {
-      viewFileLoad.value = false
-
       const responseData = await response.json()
       throw new Error(responseData.message || 'Failed to download the file')
     }
   }
   catch (error) {
-    viewFileLoad.value = false
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
     alertInfo.type = 'error'
   }
+  finally {
+    viewFileLoad.value = false
+    viewingFileId.value = null
+  }
 }
 
+const deleteFileId = ref<number | null>(null)
+
 const deleteFile = async (file: Files) => {
+  deleteFileId.value = file.id
   deleteLoad.value = true
 
   try {
@@ -305,8 +313,6 @@ const deleteFile = async (file: Files) => {
     const responseData = await response.json()
 
     if (response.ok) {
-      deleteLoad.value = false
-
       alertInfo.show = true
       alertInfo.title = 'Success'
       alertInfo.message = responseData.message || 'File Deleted'
@@ -314,8 +320,6 @@ const deleteFile = async (file: Files) => {
       fetchData()
     }
     else {
-      deleteLoad.value = false
-
       alertInfo.show = true
       alertInfo.title = 'Error'
       alertInfo.message = responseData.message || 'Something went wrong please try again later'
@@ -323,11 +327,14 @@ const deleteFile = async (file: Files) => {
     }
   }
   catch (error) {
-    deleteLoad.value = false
     alertInfo.show = true
     alertInfo.title = 'Error'
     alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
     alertInfo.type = 'error'
+  }
+  finally {
+    deleteLoad.value = false
+    deleteFileId.value = null
   }
 }
 
@@ -522,7 +529,7 @@ onMounted(() => {
                 <VBtn
                   variant="outlined"
                   color="primary"
-                  :loading="viewFileLoad"
+                  :loading="viewingFileId === file.id"
                   density="compact"
                   @click="viewFile(file)"
                 >
@@ -542,7 +549,7 @@ onMounted(() => {
                   v-if="file.is_approved || file.error_message"
                   variant="outlined"
                   color="error"
-                  :loading="deleteLoad"
+                  :loading="deleteFileId === file.id"
                   density="compact"
                   @click="deleteFile(file)"
                 >

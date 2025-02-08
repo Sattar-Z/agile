@@ -4,7 +4,7 @@ import { email, helpers, minLength, required, sameAs } from '@vuelidate/validato
 import { callApi } from '@/helpers/request'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
-import logo from '@images/logo.jpeg'
+import logo from '@images/logo.png'
 
 const user = useUserStore()
 const loading = ref(false)
