@@ -265,8 +265,8 @@ function logout() {
         prepend-icon="bx-exit"
         text="Logout"
         size="small"
-        variant="outlined"
         color="error"
+        class="mx-4"
         @click="logout"
       />
     </template>

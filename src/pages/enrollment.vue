@@ -98,21 +98,70 @@ const handleCardClick = () => {
 
 const parseCSV = async (file: File) => {
   const text = await file.text()
-  const lines = text.split('\n')
-  const headers = lines[0].split(',').map(header => header.trim())
+  const lines = text.split(/\r?\n/)
 
-  const parsedData = lines.slice(1).map(line => {
-    const values = line.split(',')
+  // Parse header line
+  const headers = parseCSVLine(lines[0])
 
-    return headers.reduce((obj, header, index) => {
-      obj[header] = values[index]?.trim()
+  // Parse data lines
+  const parsedData = lines
+    .slice(1)
+    .map(line => {
+      if (!line.trim())
+        return null
 
-      return obj
-    }, {} as any)
-  }).filter(row => Object.values(row).some(value => value))
+      const values = parseCSVLine(line)
+
+      return headers.reduce((obj, header, index) => {
+        obj[header.trim()] = values[index]?.trim() ?? ''
+
+        return obj
+      }, {} as Record<string, string>)
+    })
+    .filter((row): row is Record<string, string> =>
+      row !== null && Object.values(row).some(value => value),
+    )
 
   csvData.value = parsedData
   showPreviewModal.value = true
+}
+
+const parseCSVLine = (line: string): string[] => {
+  const values: string[] = []
+  let currentValue = ''
+  let isWithinQuotes = false
+  let i = 0
+
+  while (i < line.length) {
+    const char = line[i]
+
+    if (char === '"') {
+      // Handle escaped quotes ("") within quoted strings
+      if (isWithinQuotes && line[i + 1] === '"') {
+        currentValue += '"'
+        i += 2
+        continue
+      }
+      isWithinQuotes = !isWithinQuotes
+      i++
+      continue
+    }
+
+    if (char === ',' && !isWithinQuotes) {
+      values.push(currentValue)
+      currentValue = ''
+      i++
+      continue
+    }
+
+    currentValue += char
+    i++
+  }
+
+  // Push the last value
+  values.push(currentValue)
+
+  return values
 }
 
 const handleFileUpload = async (event: Event) => {

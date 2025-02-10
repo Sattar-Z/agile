@@ -142,11 +142,6 @@ const handleNavScroll = (evt: Event) => {
     white-space: nowrap;
   }
 
-  // Make icons white
-  .v-icon {
-    color: white !important;
-  }
-
   // Optional: Make the hover/active states slightly transparent white
   .nav-link:hover,
   .nav-link.active {
