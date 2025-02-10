@@ -46,6 +46,44 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
+const parseCSVLine = (line: string): string[] => {
+  const values: string[] = []
+  let currentValue = ''
+  let isWithinQuotes = false
+  let i = 0
+
+  while (i < line.length) {
+    const char = line[i]
+
+    if (char === '"') {
+      // Handle escaped quotes ("") within quoted strings
+      if (isWithinQuotes && line[i + 1] === '"') {
+        currentValue += '"'
+        i += 2
+        continue
+      }
+      isWithinQuotes = !isWithinQuotes
+      i++
+      continue
+    }
+
+    if (char === ',' && !isWithinQuotes) {
+      values.push(currentValue)
+      currentValue = ''
+      i++
+      continue
+    }
+
+    currentValue += char
+    i++
+  }
+
+  // Push the last value
+  values.push(currentValue)
+
+  return values
+}
+
 const fetchTermData = async () => {
   termLoading.value = true
   try {
@@ -124,44 +162,6 @@ const parseCSV = async (file: File) => {
 
   csvData.value = parsedData
   showPreviewModal.value = true
-}
-
-const parseCSVLine = (line: string): string[] => {
-  const values: string[] = []
-  let currentValue = ''
-  let isWithinQuotes = false
-  let i = 0
-
-  while (i < line.length) {
-    const char = line[i]
-
-    if (char === '"') {
-      // Handle escaped quotes ("") within quoted strings
-      if (isWithinQuotes && line[i + 1] === '"') {
-        currentValue += '"'
-        i += 2
-        continue
-      }
-      isWithinQuotes = !isWithinQuotes
-      i++
-      continue
-    }
-
-    if (char === ',' && !isWithinQuotes) {
-      values.push(currentValue)
-      currentValue = ''
-      i++
-      continue
-    }
-
-    currentValue += char
-    i++
-  }
-
-  // Push the last value
-  values.push(currentValue)
-
-  return values
 }
 
 const handleFileUpload = async (event: Event) => {

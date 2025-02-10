@@ -47,8 +47,6 @@ const isValidAccountNumber = (account: string) => /^\d{10}$/.test(account)
 const validateRow = (row: any) => {
   const errorMap: { [key: string]: string } = {}
 
-  if (row['Date of Birth'] && !isValidDate(row['Date of Birth']))
-    errorMap['Date of Birth'] = 'Invalid Date of Birth format (DD/MM/YYYY)'
   if (row['Caregiver Phone Number'] && !isValidPhoneNumber(row['Caregiver Phone Number']))
     errorMap['Caregiver Phone Number'] = 'Invalid phone number format'
   if (row['Caregiver BVN'] && !isValidBVN(row['Caregiver BVN']))
