@@ -108,7 +108,7 @@ const submitStudent = async () => {
   formData.append('school_id', selectedSchools.value?.id?.toString() || '')
 
   try {
-    const response = await fetch('https://staging-agile.moneta.ng/api/attendance/upload', {
+    const response = await fetch('https://nas-agile.com.ng/api/attendance/upload', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

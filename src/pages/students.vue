@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { isAdmin } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
-import StudentTable from '@/views/pages/enrollment/StudentTable.vue'
 import CsvPreviewModal from '@/views/pages/enrollment/modals/CsvPreviewModal.vue'
+import StudentTable from '@/views/pages/enrollment/StudentTable.vue'
 import Table from '@/views/pages/enrollment/Table2.vue'
 
 const isCardSelected = ref(false)
@@ -113,7 +113,7 @@ async function submitStudent() {
   formData.append('file_type', 'students')
 
   try {
-    const response = await fetch('https://staging-agile.moneta.ng/api/enrolement/file/upload', {
+    const response = await fetch('https://nas-agile.com.ng/api/enrolement/file/upload', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

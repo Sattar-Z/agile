@@ -249,34 +249,7 @@ const viewFile = async (file: Files) => {
     if (response.ok) {
       const csvData = await response.text()
 
-      const parseCSV = (csv: string) => {
-        const lines = csv.split('\n')
-        const header1 = lines[0].split(',')
-
-        fileContentHeaders.value = header1.map(header => ({
-          title: header.trim(),
-          key: header.trim(),
-          sortable: true,
-          align: 'start',
-        }))
-
-        const data = lines.slice(1)
-          .filter(line => line.trim() !== '')
-          .map(line => {
-            const values = line.split(',')
-
-            return header1.reduce((obj, header, index) => {
-              obj[header.trim()] = values[index] ? values[index].trim() : ''
-
-              return obj
-            }, {} as any)
-          })
-
-        fileContents.value = data
-        fileContentSearch.value = ''
-        fileContentsModal.value = true
-      }
-
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       parseCSV(csvData)
     }
     else {
@@ -294,6 +267,75 @@ const viewFile = async (file: Files) => {
     viewFileLoad.value = false
     viewingFileId.value = null
   }
+}
+
+const parseCSVLine = (line: string): string[] => {
+  const values: string[] = []
+  let currentValue = ''
+  let isWithinQuotes = false
+  let i = 0
+
+  while (i < line.length) {
+    const char = line[i]
+
+    if (char === '"') {
+      // Handle escaped quotes ("") within quoted strings
+      if (isWithinQuotes && line[i + 1] === '"') {
+        currentValue += '"'
+        i += 2
+        continue
+      }
+      isWithinQuotes = !isWithinQuotes
+      i++
+      continue
+    }
+
+    if (char === ',' && !isWithinQuotes) {
+      values.push(currentValue)
+      currentValue = ''
+      i++
+      continue
+    }
+
+    currentValue += char
+    i++
+  }
+
+  // Push the last value
+  values.push(currentValue)
+
+  return values
+}
+
+const parseCSV = (csv: string) => {
+  const lines = csv.split(/\r?\n/)
+
+  // Parse headers
+  const headers = parseCSVLine(lines[0])
+
+  fileContentHeaders.value = headers.map(header => ({
+    title: header.trim(),
+    key: header.trim(),
+    sortable: true,
+    align: 'start',
+  }))
+
+  // Parse data lines
+  fileContents.value = lines
+    .slice(1)
+    .filter(line => line.trim() !== '')
+    .map(line => {
+      const values = parseCSVLine(line)
+
+      return headers.reduce((obj, header, index) => {
+        obj[header.trim()] = values[index]?.trim() ?? ''
+
+        return obj
+      }, {} as Record<string, string>)
+    })
+
+  fileContentSearch.value = ''
+  fileContentsModal.value = true
 }
 
 const deleteFileId = ref<number | null>(null)
@@ -470,7 +512,7 @@ onMounted(() => {
                 <VCol cols="auto">
                   <VCardTitle class="d-flex align-center justify-space-between pa-4">
                     <div class="text-truncate">
-                      {{ formatFileName(file.file_name || '') }}
+                      {{ formatFileName(file.file_name || '').slice(0, 20) }}
                     </div>
                     <VChip
                       v-if="isNewFile(file.created_at)"

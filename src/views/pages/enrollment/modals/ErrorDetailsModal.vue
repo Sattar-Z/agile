@@ -46,10 +46,10 @@ watch(() => props.errorMessage, newMessage => {
 <template>
   <VDialog
     :model-value="modelValue"
-    max-width="600"
+    max-width="900"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <VCard>
+    <VCard class="mx-4">
       <VCardTitle class="text-h6 pa-4">
         File Error Details
       </VCardTitle>

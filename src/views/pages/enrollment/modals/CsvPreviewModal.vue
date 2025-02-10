@@ -26,19 +26,6 @@ const currentItems = ref<any[]>([])
 const hasErrors = ref(false)
 
 // Required fields
-const requiredFields = [
-  'Name of LGA',
-  'Name of Current School',
-  'School Code',
-  'Name of Student (Beneficiary)',
-  'Student Admission Number',
-  'Date of Birth',
-  'Grade/ Class',
-  'Caregiver Phone Number',
-  'Caregiver Bank Account Number',
-  'Caregiver BVN',
-  'Caregiver NIN',
-]
 
 // Validation functions
 const isValidDate = (dateStr: string) => {
@@ -59,11 +46,6 @@ const isValidAccountNumber = (account: string) => /^\d{10}$/.test(account)
 // Validate row and return errors
 const validateRow = (row: any) => {
   const errorMap: { [key: string]: string } = {}
-
-  requiredFields.forEach(field => {
-    if (!row[field] || row[field].trim() === '')
-      errorMap[field] = `Missing ${field}`
-  })
 
   if (row['Date of Birth'] && !isValidDate(row['Date of Birth']))
     errorMap['Date of Birth'] = 'Invalid Date of Birth format (DD/MM/YYYY)'

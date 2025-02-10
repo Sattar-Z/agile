@@ -209,7 +209,7 @@ async function uploadFile() {
   formData.append('file_type', 'school')
 
   try {
-    const response = await fetch(`https://staging-agile.moneta.ng/api/enrolement/file/reupload/${selectedFile.value?.id}`, {
+    const response = await fetch(`https://nas-agile.com.ng/api/enrolement/file/reupload/${selectedFile.value?.id}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -260,6 +260,7 @@ const viewFile = async () => {
 
     return
   }
+
   try {
     const response = await callApi({
       url: `enrolement/file/download/${selectedFile.value.id}`,
@@ -269,40 +270,9 @@ const viewFile = async () => {
     })
 
     if (response.ok) {
-      const csvData = await response.text() // Parse CSV data as text
+      const csvData = await response.text()
 
-      // Parse CSV data into an array of objects
-      const parseCSV = (csv: string) => {
-        const lines = csv.split('\n')
-        const header1 = lines[0].split(',')
-
-        // Generate headers for the table
-        fileContentHeaders.value = header1.map(header => ({
-          title: header.trim(),
-          key: header.trim(),
-          sortable: true,
-          align: 'start',
-        }))
-
-        // Parse data rows
-        const data = lines.slice(1)
-          .filter(line => line.trim() !== '') // Remove empty lines
-          .map(line => {
-            const values = line.split(',')
-
-            return header1.reduce((obj, header, index) => {
-              obj[header.trim()] = values[index] ? values[index].trim() : ''
-
-              return obj
-            }, {} as any)
-          })
-
-        fileContents.value = data
-        fileContentSearch.value = '' // Reset search
-        fileContentsModal.value = true
-      }
-
-      // Call the CSV parsing function
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       parseCSV(csvData)
     }
     else {
@@ -316,6 +286,80 @@ const viewFile = async () => {
     alertInfo.message = error instanceof Error ? error.message : 'Something went wrong'
     alertInfo.type = 'error'
   }
+}
+
+// Helper function to parse a single CSV line handling quoted values
+const parseCSVLine = (line: string): string[] => {
+  const values: string[] = []
+  let currentValue = ''
+  let isWithinQuotes = false
+  let i = 0
+
+  while (i < line.length) {
+    const char = line[i]
+
+    if (char === '"') {
+      // Handle escaped quotes ("") within quoted strings
+      if (isWithinQuotes && line[i + 1] === '"') {
+        currentValue += '"'
+        i += 2
+        continue
+      }
+      isWithinQuotes = !isWithinQuotes
+      i++
+      continue
+    }
+
+    if (char === ',' && !isWithinQuotes) {
+      values.push(currentValue)
+      currentValue = ''
+      i++
+      continue
+    }
+
+    currentValue += char
+    i++
+  }
+
+  // Push the last value
+  values.push(currentValue)
+
+  return values
+}
+
+// Main CSV parsing function
+const parseCSV = (csv: string) => {
+  const lines = csv.split(/\r?\n/)
+  if (lines.length === 0)
+    return
+
+  // Parse headers
+  const headerz = parseCSVLine(lines[0])
+
+  // Generate headers for the table
+  fileContentHeaders.value = headerz.map(header => ({
+    title: header.trim(),
+    key: header.trim(),
+    sortable: true,
+    align: 'start',
+  }))
+
+  // Parse data rows
+  fileContents.value = lines
+    .slice(1)
+    .filter(line => line.trim() !== '') // Remove empty lines
+    .map(line => {
+      const values = parseCSVLine(line)
+
+      return headerz.reduce((obj, header, index) => {
+        obj[header.trim()] = values[index] ? values[index].trim() : ''
+
+        return obj
+      }, {} as Record<string, string>)
+    })
+
+  fileContentSearch.value = '' // Reset search
+  fileContentsModal.value = true
 }
 
 // Sort items
@@ -529,7 +573,7 @@ onMounted(() => {
         >
           <template #item.file_name="{ item }">
             <div class="d-flex align-center">
-              {{ formatFileName(item.raw.file_name) }}
+              {{ formatFileName(item.raw.file_name).slice(0, 20) }}
               <VChip
                 v-if="item.raw.error_message"
                 color="error"
@@ -723,9 +767,9 @@ onMounted(() => {
   </VDialog>
   <VDialog
     v-model="errorDetailsModal"
-    max-width="500"
+    max-width="900"
   >
-    <VCard>
+    <VCard class="mx-4">
       <VCardTitle class="text-h6">
         File Error Details
       </VCardTitle>
