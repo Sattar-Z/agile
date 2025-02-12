@@ -28,20 +28,21 @@ const hasErrors = ref(false)
 // Required fields
 
 // Validation functions
-const isValidDate = (dateStr: string) => {
-  const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/
-  if (!regex.test(dateStr))
-    return false
-  const [day, month, year] = dateStr.split('/').map(Number)
-  const date = new Date(year, month - 1, day)
+// const isValidDate = (dateStr: string) => {
+//   const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/
+//   if (!regex.test(dateStr))
+//     return false
+//   const [day, month, year] = dateStr.split('/').map(Number)
+//   const date = new Date(year, month - 1, day)
 
-  return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year
-}
+//   return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year
+// }
 
 const isValidPhoneNumber = (phone: string) => /^\d{10,11}$/.test(phone.replace(/\D/g, ''))
 const isValidBVN = (bvn: string) => /^\d{11}$/.test(bvn)
 const isValidNIN = (nin: string) => /^\d{11}$/.test(nin)
-const isValidAccountNumber = (account: string) => /^\d{10}$/.test(account)
+
+// const isValidAccountNumber = (account: string) => /^\d{10}$/.test(account)
 
 // Validate row and return errors
 const validateRow = (row: any) => {
@@ -53,8 +54,6 @@ const validateRow = (row: any) => {
     errorMap['Caregiver BVN'] = 'Invalid BVN format (11 digits)'
   if (row['Caregiver NIN'] && !isValidNIN(row['Caregiver NIN']))
     errorMap['Caregiver NIN'] = 'Invalid NIN format (11 digits)'
-  if (row['Caregiver Bank Account Number'] && !isValidAccountNumber(row['Caregiver Bank Account Number']))
-    errorMap['Caregiver Bank Account Number'] = 'Invalid account number format (10 digits)'
 
   return errorMap
 }

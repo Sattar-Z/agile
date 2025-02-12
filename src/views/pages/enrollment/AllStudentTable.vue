@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Parser } from '@json2csv/plainjs'
+import moment from 'moment'
 import { useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
@@ -29,6 +30,8 @@ const showErrorMessage = (message: string) => {
   selectedErrorMessage.value = message
   errorMessageModal.value = true
 }
+
+const formatDate = (date: string) => moment(date).format('YYYY-MM-DD')
 
 token.value = user.getUserInfo().token
 
@@ -92,6 +95,7 @@ interface Students {
   care_giver: CareGiver
   created_at: string | null
   updated_at: string | null
+  error_message: string | null
   school: Schools
   lga: Lgas
 }
@@ -116,7 +120,8 @@ const headers = ref([
   { title: 'Class', key: 'class', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center' },
-  { title: 'Uploaded', key: 'care_giver.date_collected', sortable: true, align: 'center' },
+  { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center' },
+  { title: 'Date Uploaded', key: 'created_at', sortable: true, align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
@@ -237,7 +242,7 @@ const filterItems = (items: Students[], searchValue: string): Students[] => {
     if (!item.name)
       return false
     const nameMatch = item.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
-    const schoolMatch = item.school.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
+    const schoolMatch = item.school?.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
     const lgaMatch = item.lga.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
 
     return nameMatch || schoolMatch || lgaMatch
@@ -469,6 +474,26 @@ onMounted(() => {
               text="View"
               @click="openStudentDetails(item.raw)"
             />
+          </template>
+          <template #item.created_at="{ item }">
+            {{ formatDate(item.raw.created_at) }}
+          </template>
+          <template #item.error_message="{ item }">
+            <VTooltip :text="item.raw.error_message">
+              <template #activator="{ props }">
+                <VChip
+                  v-if="item.raw.error_message"
+                  v-bind="props"
+                  text="False Record"
+                  color="error"
+                />
+                <VChip
+                  v-else
+                  text="Eligible"
+                  color="success"
+                />
+              </template>
+            </VTooltip>
           </template>
           <template #item.care_giver.is_bvn_verfied="{ item }">
             <VChip

@@ -96,7 +96,6 @@ const headers = ref([
   { title: 'Gender', key: 'gender', align: 'center' },
   { title: 'Income', key: 'income', align: 'center' },
   { title: 'Account Status', key: 'is_bvn_verfied', align: 'center' },
-  { title: 'Date Collected', key: 'date_collected', sortable: true, align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
 ] as const)
 
