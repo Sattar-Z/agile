@@ -550,30 +550,30 @@ onMounted(() => {
           @update:options="loadItems"
         >
           <template #item.action="{ item }">
-            <VBtn
-              density="compact"
-              variant="tonal"
-              text="View Students"
-              class="me-2"
-              @click="openStudentsModal(item.raw)"
-            />
-            <VBtn
-              v-if="Admin"
-              density="compact"
-              variant="tonal"
-              color="primary"
-              class="me-2"
-              text="Edit"
-              @click="openEditModal(item.raw)"
-            />
-            <VBtn
-              v-if="Admin"
-              density="compact"
-              variant="tonal"
-              color="error"
-              text="Delete"
-              @click="openDeleteModal(item.raw)"
-            />
+            <div class="d-flex flex-column flex-sm-row gap-2">
+              <VBtn
+                density="compact"
+                variant="tonal"
+                text="View Students"
+                @click="openStudentsModal(item.raw)"
+              />
+              <VBtn
+                v-if="Admin"
+                density="compact"
+                variant="tonal"
+                color="primary"
+                text="Edit"
+                @click="openEditModal(item.raw)"
+              />
+              <VBtn
+                v-if="Admin"
+                density="compact"
+                variant="tonal"
+                color="error"
+                text="Delete"
+                @click="openDeleteModal(item.raw)"
+              />
+            </div>
           </template>
           <template #item.is_bvn_verfied="{ item }">
             <VChip

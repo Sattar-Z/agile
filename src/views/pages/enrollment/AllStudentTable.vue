@@ -85,6 +85,7 @@ interface Students {
   lga_id: number | null
   care_giver_id: number | null
   name: string | null
+  cohurt: string | null
   date_of_birth: string | null
   student_admission_number: string | null
   class: string | null
@@ -182,9 +183,9 @@ const openEditModal = (student: Students) => {
   selectedStudent.value = student
   formData.value = {
     name: student.name || '',
-    cohurt: '',
-    lga_id: student.lga_id?.toString() || '',
-    school_id: student.school_id?.toString() || '',
+    cohurt: student.cohurt || '',
+    lga_id: student.lga.name?.toString() || '',
+    school_id: student.school.name?.toString() || '',
     care_giver_id: student.care_giver_id?.toString() || '',
     date_of_birth: student.date_of_birth || '',
     class: student.class || '',
@@ -694,30 +695,30 @@ onMounted(() => {
           @update:options="loadItems"
         >
           <template #item.action="{ item }">
-            <VBtn
-              density="compact"
-              variant="tonal"
-              class="me-2"
-              text="View"
-              @click="openStudentDetails(item.raw)"
-            />
-            <VBtn
-              v-if="Admin"
-              density="compact"
-              variant="tonal"
-              color="primary"
-              class="me-2"
-              text="Edit"
-              @click="openEditModal(item.raw)"
-            />
-            <VBtn
-              v-if="Admin"
-              density="compact"
-              variant="tonal"
-              color="error"
-              text="Delete"
-              @click="openDeleteModal(item.raw)"
-            />
+            <div class="d-flex flex-column flex-sm-row gap-2">
+              <VBtn
+                density="compact"
+                variant="tonal"
+                text="View"
+                @click="openStudentDetails(item.raw)"
+              />
+              <VBtn
+                v-if="Admin"
+                density="compact"
+                variant="tonal"
+                color="primary"
+                text="Edit"
+                @click="openEditModal(item.raw)"
+              />
+              <VBtn
+                v-if="Admin"
+                density="compact"
+                variant="tonal"
+                color="error"
+                text="Delete"
+                @click="openDeleteModal(item.raw)"
+              />
+            </div>
           </template>
           <template #item.created_at="{ item }">
             {{ formatDate(item.raw.created_at) }}

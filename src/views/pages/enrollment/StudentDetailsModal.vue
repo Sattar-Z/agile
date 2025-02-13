@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { callApi } from '@/helpers/request'
+import { isAdmin } from '@/middlewares/auth'
 
 const props = defineProps<{
   modelValue: boolean
@@ -10,6 +11,16 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
+const errorMessageModal = ref(false)
+const verifyingBvn = ref<number | null>(null)
+const selectedErrorMessage = ref('')
+
+const showErrorMessage = (message: string) => {
+  selectedErrorMessage.value = message
+  errorMessageModal.value = true
+}
+
+const Admin = ref(isAdmin())
 const loading = ref(false)
 const studentData = ref<any>(null)
 
@@ -19,6 +30,62 @@ const alertInfo = reactive({
   title: '',
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
+
+const verifyBvn = async (bvnId: number) => {
+  if (!bvnId) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'No BVN ID available'
+    alertInfo.type = 'error'
+
+    return
+  }
+
+  verifyingBvn.value = bvnId
+
+  try {
+    const response = await callApi({
+      url: `bvn/verify/${bvnId}`,
+      method: 'POST',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      // Update both the main students array and current items being displayed
+      // const updateStudent = (studentArray: Students[]) => {
+      //   const studentIndex = studentArray.findIndex(
+      //     student => student.care_giver.bvn_id === bvnId,
+      //   )
+
+      //   if (studentIndex !== -1)
+      //     studentArray[studentIndex].care_giver.is_bvn_verfied = 1
+      // }
+
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = responseData.message || 'BVN verified successfully'
+      alertInfo.type = 'success'
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'BVN verification failed'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong during BVN verification'
+    alertInfo.type = 'error'
+  }
+  finally {
+    verifyingBvn.value = null
+  }
+}
 
 const fetchStudentDetails = async () => {
   if (!props.studentId)
@@ -101,7 +168,7 @@ watch(() => props.modelValue, newValue => {
               class="text-center"
             >
               <VAvatar
-                size="50"
+                size="150"
                 :image="studentData.photo"
                 class="mb-4"
               >
@@ -157,6 +224,45 @@ watch(() => props.modelValue, newValue => {
                 <div><strong>Phone:</strong> {{ studentData.care_giver.phone }}</div>
                 <div><strong>Address:</strong> {{ studentData.care_giver.address }}</div>
                 <div><strong>Community:</strong> {{ studentData.care_giver.community }}</div>
+                <div>
+                  <strong class="me-2">Verification Status:</strong>
+                  <VChip
+                    v-if="studentData.care_giver.is_bvn_verfied === 1"
+                    density="compact"
+                    text="Account Verified"
+                    color="success"
+                  />
+                  <VChip
+                    v-else-if="studentData.bvn?.is_pending === 1"
+                    density="compact"
+                    text="Processing"
+                    color="info"
+                  />
+                  <template v-else-if="studentData.bvn?.error_message">
+                    <VBtn
+                      density="compact"
+                      variant="tonal"
+                      color="error"
+                      @click="showErrorMessage(studentData.bvn.error_message)"
+                    >
+                      Verification Failed
+                    </VBtn>
+                  </template>
+                  <VBtn
+                    v-else-if="Admin && studentData.care_giver.is_bvn_verfied === 0"
+                    :loading="verifyingBvn === studentData.bvn_id"
+                    density="compact"
+                    variant="outlined"
+                    text="Verify Account"
+                    @click="verifyBvn(studentData.care_giver.bvn_id)"
+                  />
+                  <VChip
+                    v-else
+                    density="compact"
+                    text="Account Unverified"
+                    color="warning"
+                  />
+                </div>
               </div>
             </VCol>
 
@@ -193,5 +299,40 @@ watch(() => props.modelValue, newValue => {
         />
       </template>
     </VSnackbar>
+  </VDialog>
+  <VDialog
+    v-model="errorMessageModal"
+    width="500"
+  >
+    <VCard class="pa-6">
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Verification Error Details
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="errorMessageModal = false"
+          />
+        </VCol>
+      </VRow>
+      <VCardText>
+        <p class="text-body-1">
+          {{ selectedErrorMessage }}
+        </p>
+      </VCardText>
+      <VCardActions class="justify-end pt-4">
+        <VBtn
+          color="primary"
+          variant="tonal"
+          @click="errorMessageModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
+    </VCard>
   </VDialog>
 </template>
