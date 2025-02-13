@@ -95,6 +95,24 @@ watch(() => props.modelValue, newValue => {
 
         <template v-else-if="studentData">
           <VRow>
+            <!-- Student Photo -->
+            <VCol
+              cols="12"
+              class="text-center"
+            >
+              <VAvatar
+                size="50"
+                :image="studentData.photo"
+                class="mb-4"
+              >
+                <VIcon
+                  v-if="!studentData.photo"
+                  size="48"
+                  icon="bx-user"
+                />
+              </VAvatar>
+            </VCol>
+
             <!-- Basic Information -->
             <VCol
               cols="12"

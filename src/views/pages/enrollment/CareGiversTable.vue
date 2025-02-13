@@ -78,6 +78,32 @@ interface CareGiver {
   students: Student[]
 }
 
+interface CGFormData {
+  name: string
+  bvn: string
+  phone: string
+  address: string
+  community: string
+  gender: string
+  date_of_birth: string
+  qualification: string
+  income: string
+  is_employed: boolean
+}
+
+const formData = ref<CGFormData>({
+  name: '',
+  bvn: '',
+  phone: '',
+  address: '',
+  community: '',
+  gender: '',
+  date_of_birth: '',
+  qualification: '',
+  income: '',
+  is_employed: false,
+})
+
 const alertInfo = reactive({
   show: false,
   message: '',
@@ -87,6 +113,8 @@ const alertInfo = reactive({
 
 const currentItems = ref<CareGiver[]>([])
 const selectedCareGiver = ref<CareGiver | null>(null)
+const deleteModal = ref(false)
+const editModal = ref(false)
 
 const headers = ref([
   { title: 'Name', align: 'start', sortable: true, key: 'name' },
@@ -106,6 +134,29 @@ const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
 const verifyingBvn = ref<number | null>(null)
+
+// Add new functions
+const openDeleteModal = (careGiver: CareGiver) => {
+  selectedCareGiver.value = careGiver
+  deleteModal.value = true
+}
+
+const openEditModal = (caregiver: CareGiver) => {
+  selectedCareGiver.value = caregiver
+  formData.value = {
+    name: caregiver.name || '',
+    bvn: caregiver.bvn.bvn || '',
+    phone: caregiver.phone || '',
+    community: caregiver.community || '',
+    date_of_birth: caregiver.date_of_birth || '',
+    address: caregiver.address || '',
+    gender: caregiver.gender || '',
+    qualification: caregiver.qualification || '',
+    income: caregiver.income || '',
+    is_employed: !!caregiver.is_employed,
+  }
+  editModal.value = true
+}
 
 // Fetch caregivers
 const fetchData = async () => {
@@ -314,6 +365,89 @@ const exportExcel = () => {
   exportModal.value = false
 }
 
+const deleteCaregiver = async () => {
+  if (!selectedCareGiver.value?.id)
+    return
+
+  try {
+    const response = await callApi({
+      url: `care_giver/delete/${selectedCareGiver.value.id}`,
+      method: 'DELETE',
+      authorized: true,
+      showAlert: false,
+    })
+
+    if (response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = 'Caregiver deleted successfully'
+      alertInfo.type = 'success'
+
+      // Refresh data
+      await fetchData()
+    }
+    else {
+      const data = await response.json()
+
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = data.message || 'Failed to delete caregiver'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong'
+    alertInfo.type = 'error'
+  }
+  finally {
+    deleteModal.value = false
+  }
+}
+
+const updateCareGiver = async () => {
+  if (!selectedCareGiver.value?.id)
+    return
+
+  try {
+    const response = await callApi({
+      url: `care_giver/update/${selectedCareGiver.value.id}`,
+      method: 'POST',
+      data: formData.value,
+      authorized: true,
+      showAlert: false,
+    })
+
+    if (response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = 'Care Giver updated successfully'
+      alertInfo.type = 'success'
+
+      // Refresh data
+      await fetchData()
+    }
+    else {
+      const data = await response.json()
+
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = data.message || 'Failed to update Care Giver'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong'
+    alertInfo.type = 'error'
+  }
+  finally {
+    editModal.value = false
+  }
+}
+
 onMounted(() => {
   loadItems({ page: 1, itemsPerPage: itemsPerPage.value, sortBy: [] })
 })
@@ -420,7 +554,25 @@ onMounted(() => {
               density="compact"
               variant="tonal"
               text="View Students"
+              class="me-2"
               @click="openStudentsModal(item.raw)"
+            />
+            <VBtn
+              v-if="Admin"
+              density="compact"
+              variant="tonal"
+              color="primary"
+              class="me-2"
+              text="Edit"
+              @click="openEditModal(item.raw)"
+            />
+            <VBtn
+              v-if="Admin"
+              density="compact"
+              variant="tonal"
+              color="error"
+              text="Delete"
+              @click="openDeleteModal(item.raw)"
             />
           </template>
           <template #item.is_bvn_verfied="{ item }">
@@ -570,6 +722,190 @@ onMounted(() => {
     v-model="showStudentsModal"
     :caregiver="selectedCareGiver"
   />
+
+  <VDialog
+    v-model="deleteModal"
+    width="400"
+    persistent
+  >
+    <VCard class="pa-4">
+      <VCardTitle class="text-h6">
+        Confirm Delete
+      </VCardTitle>
+      <VCardText>
+        Are you sure you want to delete this care giver?
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          variant="text"
+          @click="deleteModal = false"
+        >
+          Cancel
+        </VBtn>
+        <VBtn
+          color="error"
+          variant="elevated"
+          @click="deleteCaregiver"
+        >
+          Delete
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
+
+  <!-- Edit Care Giver Modal -->
+  <VDialog
+    v-model="editModal"
+    width="800"
+    persistent
+  >
+    <VCard class="pa-4">
+      <VCardTitle class="text-h6">
+        Edit Care Giver
+      </VCardTitle>
+      <VCardText>
+        <VRow>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.name"
+              label="Name"
+              density="compact"
+              variant="solo-filled"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.bvn"
+              label="BVN"
+              density="compact"
+              variant="solo-filled"
+              type="number"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.phone"
+              label="Phone Number"
+              density="compact"
+              variant="solo-filled"
+              type="number"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VSelect
+              v-model="formData.income"
+              label="Income"
+              density="compact"
+              variant="solo-filled"
+              required
+              :items="[]"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.date_of_birth"
+              label="Date of Birth"
+              density="compact"
+              variant="solo-filled"
+              type="date"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.address"
+              label="Address"
+              density="compact"
+              variant="solo-filled"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VSelect
+              v-model="formData.gender"
+              label="Gender"
+              density="compact"
+              variant="solo-filled"
+              required
+              :items="['Male', 'Female']"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.community"
+              label="Community"
+              density="compact"
+              variant="solo-filled"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.qualification"
+              label="Qualification"
+              density="compact"
+              variant="solo-filled"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VCheckbox
+              v-model="formData.is_employed"
+              label="Is employed"
+            />
+          </VCol>
+        </VRow>
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          variant="text"
+          @click="editModal = false"
+        >
+          Cancel
+        </VBtn>
+        <VBtn
+          color="primary"
+          variant="elevated"
+          @click="updateCareGiver"
+        >
+          Save
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
 </template>
 
 <style scoped>
