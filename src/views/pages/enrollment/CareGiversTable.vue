@@ -39,6 +39,20 @@ interface Student {
   updated_at: string
 }
 
+interface Accounts {
+  id: number
+  care_giver_id: number
+  account_name: string
+  account_number: string
+  bank_code: number | null
+  created_at: string | null
+  updated_at: string | null
+  bvn_id: number | null
+  is_verified: number | null
+  kyc_level: number | null
+  error_message: string | null
+}
+
 interface Bvn {
   id: number
   bvn: string
@@ -75,6 +89,7 @@ interface CareGiver {
   lga_id: number
   students_count: number
   bvn: Bvn
+  accounts: Accounts
   students: Student[]
 }
 
@@ -90,6 +105,22 @@ interface CGFormData {
   income: string
   is_employed: boolean
 }
+
+// "accounts": [
+//                 {
+//                     "id": 425,
+//                     "care_giver_id": 421,
+//                     "account_name": "POLINA HELEN ABA",
+//                     "account_number": "0053419537",
+//                     "bank_code": null,
+//                     "created_at": "2025-02-08T14:52:28.000000Z",
+//                     "updated_at": "2025-02-08T14:52:28.000000Z",
+//                     "bvn_id": 425,
+//                     "is_verified": 0,
+//                     "kyc_level": null,
+//                     "error_message": null
+//                 }
+//             ]
 
 const formData = ref<CGFormData>({
   name: '',
