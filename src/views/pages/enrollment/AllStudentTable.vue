@@ -182,15 +182,15 @@ const openDeleteModal = (student: Students) => {
 const openEditModal = (student: Students) => {
   selectedStudent.value = student
   formData.value = {
-    name: student.name || '',
-    cohurt: student.cohurt || '',
-    lga_id: student.lga.name?.toString() || '',
-    school_id: student.school.name?.toString() || '',
-    care_giver_id: student.care_giver_id?.toString() || '',
-    date_of_birth: student.date_of_birth || '',
-    class: student.class || '',
+    name: student?.name || '',
+    cohurt: student?.cohurt || '',
+    lga_id: student?.lga?.name?.toString() || '',
+    school_id: student?.school?.name?.toString() || '',
+    care_giver_id: student?.care_giver_id?.toString() || '',
+    date_of_birth: student?.date_of_birth || '',
+    class: student?.class || '',
     gender: '',
-    disabilities: student.disabilities || '',
+    disabilities: student?.disabilities || '',
     uniform: !!student.uniform,
     text_book: !!student.text_book,
     school_distance: student.school_distance || '',
