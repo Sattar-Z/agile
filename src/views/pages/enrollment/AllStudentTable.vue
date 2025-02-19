@@ -105,8 +105,8 @@ interface Students {
 interface StudentFormData {
   name: string
   cohurt: string
-  lga_id: string
-  school_id: string
+  lga_id: number | string
+  school_id: number | string
   care_giver_id: string
   date_of_birth: string
   class: string
@@ -184,8 +184,8 @@ const openEditModal = (student: Students) => {
   formData.value = {
     name: student?.name || '',
     cohurt: student?.cohurt || '',
-    lga_id: student?.lga?.name?.toString() || '',
-    school_id: student?.school?.name?.toString() || '',
+    lga_id: student?.lga?.id || '',
+    school_id: student?.school?.id || '',
     care_giver_id: student?.care_giver_id?.toString() || '',
     date_of_birth: student?.date_of_birth || '',
     class: student?.class || '',
