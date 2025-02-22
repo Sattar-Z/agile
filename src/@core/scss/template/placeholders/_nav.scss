@@ -12,9 +12,10 @@
 %nav-link-active {
   --v-activated-opacity: 0.16;
 
-  background-color: rgba(var(--v-theme-primary), var(--v-activated-opacity));
+  background-color: white;
   box-shadow: none;
   color: rgb(var(--v-theme-primary));
+  font-weight: 700;
 }
 
 // style for vertical nav nested icon

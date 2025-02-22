@@ -112,23 +112,28 @@ export default defineComponent({
   .layout-vertical-nav {
     background-color: rgb(var(--v-theme-primary));
 
-    .nav-header,
-    .nav-items,
-    .nav-item-title,
-    .app-title-wrapper {
-      color: white;
-    }
+    // .nav-header,
+    // .nav-items,
+    // .nav-item-title,
+    // .app-title-wrapper {
+    //   color: white;
+    // }
 
-    .v-icon {
-      color: white !important;
-    }
+    // .v-icon {
+    //   color: white;
+    // }
 
     .nav-link {
       color: white;
 
-      &:hover,
+      &:hover {
+        background: rgba(255, 255, 255, 10%);
+        color: white;  // Keep hover state white
+      }
+
       &.active {
         background: rgba(255, 255, 255, 10%);
+        color: rgb(var(--v-theme-primary));  // Active state uses primary theme color
       }
     }
   }

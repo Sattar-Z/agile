@@ -130,13 +130,14 @@ const handleNavScroll = (evt: Event) => {
 
   // Make all navigation links white
   .nav-link {
-    color: white !important;
+    color: white;
   }
 
   // Make nav item titles white
   .nav-item-title {
     overflow: hidden;
-    color: white;
+
+    // color: white;
     margin-inline-end: auto;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -145,8 +146,8 @@ const handleNavScroll = (evt: Event) => {
   // Optional: Make the hover/active states slightly transparent white
   .nav-link:hover,
   .nav-link.active {
-    background: rgba(255, 255, 255, 10%) !important;
-    color: #fff;
+    background: rgba(255, 255, 255, 10%);
+    color: rgb(var(--v-theme-primary));
   }
 
   // 👉 Collapsed
