@@ -14,6 +14,8 @@ const emit = defineEmits<{
 const errorMessageModal = ref(false)
 const verifyingBvn = ref<number | null>(null)
 const selectedErrorMessage = ref('')
+const paymentsData = ref<any[]>([])
+const loadingPayments = ref(false)
 
 const showErrorMessage = (message: string) => {
   selectedErrorMessage.value = message
@@ -123,15 +125,67 @@ const fetchStudentDetails = async () => {
   }
 }
 
+const fetchStudentPayments = async () => {
+  if (!props.studentId)
+    return
+
+  loadingPayments.value = true
+  try {
+    const response = await callApi({
+      url: `student/payments/${props.studentId}`,
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      paymentsData.value = responseData.data
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Failed to fetch payment details'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong while fetching payment details'
+    alertInfo.type = 'error'
+  }
+  finally {
+    loadingPayments.value = false
+  }
+}
+
 watch(() => props.studentId, newId => {
-  if (newId)
+  if (newId) {
     fetchStudentDetails()
+    fetchStudentPayments()
+  }
 })
 
 watch(() => props.modelValue, newValue => {
-  if (!newValue)
+  if (!newValue) {
     studentData.value = null
+    paymentsData.value = []
+  }
 })
+
+const statusColorMap = {
+  success: 'success',
+  failed: 'error',
+  pending: 'warning',
+} as const
+
+type StatusKey = keyof typeof statusColorMap
+
+const getStatusColor = (status: string) => {
+  return (statusColorMap[status.toLowerCase() as StatusKey] || 'info')
+}
 </script>
 
 <template>
@@ -280,6 +334,83 @@ watch(() => props.modelValue, newValue => {
                 <div><strong>Education Level:</strong> {{ studentData.school.education_level }}</div>
                 <div><strong>LGA:</strong> {{ studentData.lga.name }}</div>
               </div>
+            </VCol>
+
+            <VCol cols="12">
+              <h3 class="text-h6 mb-4">
+                Payment Information
+              </h3>
+              <VProgressCircular
+                v-if="loadingPayments"
+                indeterminate
+                class="d-flex mx-auto my-4"
+              />
+              <template v-else>
+                <div
+                  v-if="paymentsData.length"
+                  class="d-flex flex-column gap-4"
+                >
+                  <VCard
+                    v-for="payment in paymentsData"
+                    :key="payment.id"
+                    variant="outlined"
+                    class="pa-4"
+                  >
+                    <div class="d-flex flex-column gap-2">
+                      <div
+                        hidden
+                        class="d-flex justify-space-between align-center"
+                      >
+                        <strong>Disbursement Request ID:</strong>
+                        <span>{{ payment.disbursement_request_id }}</span>
+                      </div>
+                      <div class="d-flex justify-space-between align-center">
+                        <strong>Term:</strong>
+                        <span>{{ payment.term_id }}</span>
+                      </div>
+                      <div class="d-flex justify-space-between align-center">
+                        <strong>Date:</strong>
+                        <span>{{ new Date(payment.created_at).toLocaleDateString() }}</span>
+                      </div>
+                      <div class="d-flex justify-space-between align-center">
+                        <strong>Note:</strong>
+                        <span>{{ payment.note }}</span>
+                      </div>
+                      <div
+                        v-if="payment.disbursement_payments"
+                        class="d-flex justify-space-between align-center"
+                      >
+                        <strong>Payment Status:</strong>
+                        <VChip
+                          :color="getStatusColor(payment.disbursement_payments.transaction_status)"
+                          density="compact"
+                        >
+                          {{ payment.disbursement_payments.transaction_status }}
+                        </VChip>
+                      </div>
+                      <div
+                        v-if="payment.disbursement_payments?.failure_reason"
+                        class="d-flex justify-space-between align-center"
+                      >
+                        <strong>Failure Reason:</strong>
+                        <VBtn
+                          density="compact"
+                          variant="text"
+                          color="error"
+                          @click="showErrorMessage(payment.disbursement_payments.failure_reason)"
+                        >
+                          View Details
+                        </VBtn>
+                      </div>
+                    </div>
+                  </VCard>
+                </div>
+                <VAlert
+                  v-else
+                  type="info"
+                  text="No payment records found"
+                />
+              </template>
             </VCol>
           </VRow>
         </template>

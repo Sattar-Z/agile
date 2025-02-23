@@ -42,7 +42,6 @@ interface CareGiver {
   nin_id: number | null
   name: number | null
   phone: string | null
-  address: string | null
   date_of_birth: string | null
   community: string | null
   gender: string | null
@@ -93,7 +92,6 @@ interface Students {
   disabilities: string | null
   uniform: number | null
   text_book: number | null
-  school_bag: number | null
   school_distance: string | null
   materials: number | null
   care_giver: CareGiver
@@ -465,140 +463,48 @@ const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
   return { items: currentItems.value, total: totalItems.value }
 }
 
-interface ExportFormat {
-  [key: string]: string | number | null
-}
-
-const getYesNoValue = (value: boolean | number | null): string =>
-  value ? 'Yes' : 'No'
-
-const getDisabilityInfo = (disability: string | null): {
-  isDisabled: string
-  type: string
-} => {
-  const normalizedDisability = disability?.toUpperCase() || 'NONE'
-
-  return {
-    isDisabled: normalizedDisability === 'NONE' ? 'No' : 'Yes',
-    type: normalizedDisability === 'NONE' ? 'N/A' : (disability || ''),
-  }
-}
-
-const safeAccess = <T>(obj: T | undefined, fallback: T = {} as T): T => obj ?? fallback;
-
-const formatCaregiverEmployment = (isEmployed?: boolean): string => isEmployed ? 'Employed' : 'Unemployed';
-
-const formatStudentForExport = (student: Students): ExportFormat => {
-  const careGiver = safeAccess(student.care_giver);
-  const school = safeAccess(student.school);
-  const alga = safeAccess(student.lga);
-  const disability = getDisabilityInfo(student.disabilities);
-
-  return {
-    'Cohort': student.cohurt || '',
-    'LGA': alga.name || '',
-    'Name of Current School': school.name || '',
-    'School Code': school.code || '',
-    'Name of Student (Beneficiary)': student.name || '',
-    'Student Admission Number': student.student_admission_number || '',
-    'Date of Birth': student.date_of_birth || '',
-    'Grade/Class': student.class || '',
-    'Disabled': disability.isDisabled,
-    'Type of Disability': disability.type,
-    'Distance from School (in KMs)': student.school_distance || '',
-    'Textbooks': getYesNoValue(student.text_book),
-    'Uniform': getYesNoValue(student.uniform),
-    'Writing Materials': getYesNoValue(student.materials),
-    'School Bag': getYesNoValue(student.school_bag),
-    ...formatCaregiverDetails(careGiver),
-  };
-}
-
-const formatCaregiverDetails = (careGiver: CareGiver) => ({
-  'Name of Caregiver': careGiver.name || '',
-  'Caregiver Phone Number': careGiver.phone || '',
-  'Address of Caregiver': careGiver.address || '',
-  'Caregiver Community': careGiver.community || '',
-  'Gender of Caregiver': careGiver.gender || '',
-  'Caregiver Date of Birth': careGiver.date_of_birth || '',
-  'Caregiver Highest Qualification': careGiver.qualification || '',
-  'Caregiver Employment Status': formatCaregiverEmployment(!!careGiver.is_employed),
-  'Caregiver Average Monthly Income': careGiver.income || '',
-});
-
-
 const exportCSV = () => {
-  if (!students.value || students.value.length === 0) {
-    return {
-      success: false,
-      message: 'No data to export',
-    }
+  if (students.value.length === 0) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'No data to export'
+    alertInfo.type = 'error'
+
+    return
   }
 
-  try {
-    const formattedData = students.value.map(formatStudentForExport)
-    const parser = new Parser()
-    const csv = parser.parse(formattedData)
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
+  const parser = new Parser()
+  const csv = parser.parse(students.value)
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
 
-    link.href = url
-    link.download = `students_export_${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+  link.href = url
+  link.download = 'student_export.csv'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 
-    return {
-      success: true,
-      message: 'Export completed successfully',
-    }
-  }
-  catch (error) {
-    console.error('Export error:', error)
-
-    return {
-      success: false,
-      message: 'Failed to export data',
-    }
-  }
+  exportModal.value = false
 }
 
 const exportExcel = () => {
-  if (!students.value || students.value.length === 0) {
-    return {
-      success: false,
-      message: 'No data to export',
-    }
+  if (students.value.length === 0) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'No data to export'
+    alertInfo.type = 'error'
+
+    return
   }
 
-  try {
-    const formattedData = students.value.map(formatStudentForExport)
-    const ws = XLSX.utils.json_to_sheet(formattedData)
-    const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.json_to_sheet(students.value)
+  const wb = XLSX.utils.book_new()
 
-    // Add column widths for better readability
-    const colWidths = Object.keys(formattedData[0]).map(() => ({ wch: 20 }))
+  XLSX.utils.book_append_sheet(wb, ws, 'Student Export')
+  XLSX.writeFile(wb, 'student_export.xlsx')
 
-    ws['!cols'] = colWidths
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Students Export')
-    XLSX.writeFile(wb, `students_export_${new Date().toISOString().split('T')[0]}.xlsx`)
-
-    return {
-      success: true,
-      message: 'Export completed successfully',
-    }
-  }
-  catch (error) {
-    console.error('Export error:', error)
-
-    return {
-      success: false,
-      message: 'Failed to export data',
-    }
-  }
+  exportModal.value = false
 }
 
 const deleteStudent = async () => {
