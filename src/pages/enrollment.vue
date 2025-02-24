@@ -412,7 +412,7 @@ onMounted(() => {
       </VCard>
     </VCol>
     <VCol cols="12">
-      <CareGiversTable />
+     <!-- <CareGiversTable /> -->
     </VCol>
     <VCol cols="12">
       <AllStudentTable />

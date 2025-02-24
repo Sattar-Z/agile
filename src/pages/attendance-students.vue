@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import StudentTable from '@/views/pages/attendance/StudentTable.vue'
-import { useUserStore } from '@/stores/user'
 import { callApi } from '@/helpers/request'
+import { useUserStore } from '@/stores/user'
+import StudentTable from '@/views/pages/attendance/StudentTable.vue'
 
 interface Term {
   id: number
@@ -101,8 +101,14 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <VRow justify="end">
-    <VCol cols="auto">
+  <VRow
+    hidden
+    justify="end"
+  >
+    <VCol
+      hidden
+      cols="auto"
+    >
       <span class="text-caption">Cohort</span>
       <VSelect
         v-model="form.cohurt"
@@ -112,7 +118,10 @@ onMounted(() => {
         :loading="termLoading"
       />
     </VCol>
-    <VCol cols="auto">
+    <VCol
+      hidden
+      cols="auto"
+    >
       <span class="text-caption">Session</span>
       <VSelect
         v-model="form.session"
@@ -122,7 +131,10 @@ onMounted(() => {
         :loading="termLoading"
       />
     </VCol>
-    <VCol cols="auto">
+    <VCol
+      hidden
+      cols="auto"
+    >
       <span class="text-caption">Term</span>
       <VSelect
         v-model="form.term"

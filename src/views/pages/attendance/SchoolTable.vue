@@ -10,11 +10,11 @@ import { callApi } from '@/helpers/request'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
 
-const props = defineProps<{
-  termId: number | null
-  session: string
-  cohurt: string | null
-}>()
+// const props = defineProps<{
+//   termId: number | null
+//   sessions: string
+//   cohurt: string | null
+// }>()
 
 const usera = useUserStore().getUser()
 const token = usera.value.token
@@ -31,7 +31,26 @@ const router = useRouter()
 
 const user = useUserStore()
 
-const { id, name } = route.params
+const { id, name, term, session, cohort } = route.params
+
+// const currentTerm = ref(route?.params?.term || '')
+// const currentSession = ref(route?.params?.session || '')
+// const currentCohort = ref(route?.params?.cohort || '')
+
+// watch(() => props.termId, newValue => {
+//   if (newValue !== null)
+//     currentTerm.value = newValue.toString()
+// }, { immediate: true })
+
+// watch(() => props.sessions, newValue => {
+//   if (newValue)
+//     currentSession.value = newValue
+// }, { immediate: true })
+
+// watch(() => props.cohurt, newValue => {
+//   if (newValue)
+//     currentCohort.value = newValue
+// }, { immediate: true })
 
 interface Schools {
   id: number | null
@@ -149,7 +168,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `lga?lga_id=${id}term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
+      url: `lga?lga_id=${id}term_id=${term}&session=${session}&cohurt=${cohort}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -200,7 +219,7 @@ const downloadTemplate = async () => {
 
   try {
     const response = await callApi({
-      url: `attendance/school/template?school_id=${selectedSchools.value.id}&term_id=${props.termId}&cohurt=${props.cohurt}`,
+      url: `attendance/school/template?school_id=${selectedSchools.value.id}&term_id=${term}&cohurt=${cohort}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -337,7 +356,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.termId, props.session, props.cohurt],
+  () => [term, session, cohort],
   () => {
     fetchData()
   },
@@ -516,6 +535,9 @@ watch(
                 params: {
                   id: item.raw.id,
                   name: item.raw.name,
+                  cohort: currentCohort,
+                  term: currentTerm,
+                  session: currentSession,
                 },
               }"
             >

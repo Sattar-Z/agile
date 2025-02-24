@@ -32,6 +32,25 @@ token.value = user.getUserInfo().token
 
 const { id, name } = route.params
 
+const currentTerm = ref(route.params.term)
+const currentSession = ref(route.params.session)
+const currentCohort = ref(route.params.cohort)
+
+watch(() => props.termId, newValue => {
+  if (newValue !== null)
+    currentTerm.value = newValue.toString()
+}, { immediate: true })
+
+watch(() => props.session, newValue => {
+  if (newValue)
+    currentSession.value = newValue
+}, { immediate: true })
+
+watch(() => props.cohurt, newValue => {
+  if (newValue)
+    currentCohort.value = newValue
+}, { immediate: true })
+
 interface CareGiver {
   id: number
   bvn_id: number
@@ -139,7 +158,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `school/students/${id}?term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
+      url: `school/students/${id}?term_id=${currentTerm?.value}&session=${currentSession?.value}&cohurt=${currentCohort?.value}`,
       method: 'GET',
       authorized: true,
       showAlert: false,

@@ -36,28 +36,6 @@ const formatDate = (date: string) => moment(date).format('YYYY-MM-DD')
 
 token.value = user.getUserInfo().token
 
-interface CareGiver {
-  id: number | null
-  bvn_id: number | null
-  nin_id: number | null
-  name: number | null
-  phone: string | null
-  address: string | null
-  date_of_birth: string | null
-  community: string | null
-  gender: string | null
-  qualification: string | null
-  income: string | null
-  is_employed: string | null
-  certificate: number | null
-  is_bvn_verfied: number | null
-  is_nin_verfied: number | null
-  date_collected: string | null
-  status: string | null
-  created_at: string | null
-  updated_at: string | null
-}
-
 interface Schools {
   id: number | null
   lga_id: number | null
@@ -78,6 +56,55 @@ interface Lgas {
   name: string | null
   daily_attendance_percentage: string | null
   created_at: string | null
+}
+
+interface Bvn {
+  id: number | null
+  bvn: string | null
+}
+
+interface Nin {
+  id: number | null
+  nin: string | null
+}
+
+interface Account {
+  id: number | null
+  care_giver_id: number | null
+  account_name: string | null
+  account_number: string | null
+  bank_code: string | null
+  created_at: string | null
+  updated_at: string | null
+  bvn_id: number | null
+  is_verified: number | null
+  kyc_level: string | null
+  error_message: string | null
+}
+
+interface CareGiver {
+  id: number | null
+  bvn_id: number | null
+  nin_id: number | null
+  name: number | null
+  phone: string | null
+  address: string | null
+  date_of_birth: string | null
+  community: string | null
+  gender: string | null
+  qualification: string | null
+  income: string | null
+  is_employed: string | null
+  certificate: number | null
+  is_bvn_verfied: number | null
+  is_nin_verfied: number | null
+  date_collected: string | null
+  status: string | null
+  nin: Nin
+  bvn: Bvn
+  accounts: Account[]
+  created_at: string | null
+  updated_at: string | null
 }
 
 interface Students {
@@ -143,6 +170,8 @@ const headers = ref([
   { title: 'Admission No', key: 'student_admission_number', align: 'center', value: 'student_admission_number' },
   { title: 'Class', key: 'class', align: 'center', value: 'class' },
   { title: 'DOB', key: 'date_of_birth', align: 'center', value: 'date_of_birth' },
+
+  // { title: 'Account Number', key: 'care_giver.accounts[0].account_number', align: 'center', value: 'care_giver.accounts[0].account_number' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center', value: 'care_giver.is_bvn_verfied' },
   { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
   { title: 'Date Uploaded', key: 'created_at', sortable: true, align: 'center', value: 'created_at' },
@@ -484,15 +513,32 @@ const getDisabilityInfo = (disability: string | null): {
   }
 }
 
-const safeAccess = <T>(obj: T | undefined, fallback: T = {} as T): T => obj ?? fallback;
+const safeAccess = <T extends object>(obj: T | undefined, fallback: T = {} as T): T => {
+  return obj ?? fallback
+}
 
-const formatCaregiverEmployment = (isEmployed?: boolean): string => isEmployed ? 'Employed' : 'Unemployed';
+const formatCaregiverEmployment = (isEmployed?: boolean): string => isEmployed ? 'Employed' : 'Unemployed'
+
+const formatCaregiverDetails = (careGiver: CareGiver) => ({
+  'Name of Caregiver': careGiver.name || '',
+  'Caregiver Phone Number': careGiver.phone || '',
+  'Address of Caregiver': careGiver.address || '',
+  'Caregiver Community': careGiver.community || '',
+  'Gender of Caregiver': careGiver.gender || '',
+  'Caregiver Date of Birth': careGiver.date_of_birth || '',
+  'Caregiver Highest Qualification': careGiver.qualification || '',
+  'Caregiver Employment Status': formatCaregiverEmployment(!!careGiver.is_employed),
+  'Caregiver Average Monthly Income': careGiver.income || '',
+  'Bvn': careGiver.bvn.bvn || '',
+  'Nin': careGiver.nin.nin || '',
+  'Account Number': careGiver.accounts[0].account_number || '',
+})
 
 const formatStudentForExport = (student: Students): ExportFormat => {
-  const careGiver = safeAccess(student.care_giver);
-  const school = safeAccess(student.school);
-  const alga = safeAccess(student.lga);
-  const disability = getDisabilityInfo(student.disabilities);
+  const careGiver = safeAccess(student.care_giver)
+  const school = safeAccess(student.school)
+  const alga = safeAccess(student.lga)
+  const disability = getDisabilityInfo(student.disabilities)
 
   return {
     'Cohort': student.cohurt || '',
@@ -511,21 +557,8 @@ const formatStudentForExport = (student: Students): ExportFormat => {
     'Writing Materials': getYesNoValue(student.materials),
     'School Bag': getYesNoValue(student.school_bag),
     ...formatCaregiverDetails(careGiver),
-  };
+  }
 }
-
-const formatCaregiverDetails = (careGiver: CareGiver) => ({
-  'Name of Caregiver': careGiver.name || '',
-  'Caregiver Phone Number': careGiver.phone || '',
-  'Address of Caregiver': careGiver.address || '',
-  'Caregiver Community': careGiver.community || '',
-  'Gender of Caregiver': careGiver.gender || '',
-  'Caregiver Date of Birth': careGiver.date_of_birth || '',
-  'Caregiver Highest Qualification': careGiver.qualification || '',
-  'Caregiver Employment Status': formatCaregiverEmployment(!!careGiver.is_employed),
-  'Caregiver Average Monthly Income': careGiver.income || '',
-});
-
 
 const exportCSV = () => {
   if (!students.value || students.value.length === 0) {

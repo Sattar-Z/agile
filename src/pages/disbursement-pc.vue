@@ -38,6 +38,27 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
+const getMandateStatusText = (status: string) => {
+  const statusMap: Record<string, string> = {
+    1: 'New Mandate Initiated by Biller',
+    2: 'Mandate Authorized by Biller',
+    3: 'Mandate Rejected by Biller',
+    4: 'Mandate Approved by Biller',
+    5: 'Mandate Disapproved by Biller',
+    6: 'Mandate Authorized by Bank',
+    7: 'Mandate Rejected by Bank',
+    8: 'Mandate Approved by Bank',
+    9: 'Mandate Disapproved by Bank',
+    10: 'New Mandate Initiated by Bank',
+  }
+
+  return statusMap[status] || 'Unknown Status'
+}
+
+const canReviewRequest = computed(() => {
+  return selectedRequest.value?.mandate_workflow_status === '8'
+})
+
 const headers = [
   { title: 'School', key: 'school.name', align: 'start' },
   { title: 'Payment Type', key: 'payment_type.name', align: 'start' },
@@ -58,7 +79,7 @@ const studentHeaders = [
   { title: 'Admission No.', key: 'student.student_admission_number', align: 'start' },
   { title: 'Guardian', key: 'student.care_giver.name', align: 'start' },
   { title: 'Guardian Phone', key: 'student.care_giver.phone', align: 'start' },
-  { title: 'Amount', key: 'amount', align: 'end' },
+  { title: 'Amount', key: 'student.amount', align: 'end' },
   { title: 'Status', key: 'note', align: 'center' },
 ]
 
@@ -359,6 +380,24 @@ onMounted(() => {
                 Total Amount: {{ selectedRequest?.total_amount ? formatAmount(selectedRequest.total_amount) : '' }}
               </p>
               <VDivider class="my-4" />
+
+              <p
+                v-if="selectedRequest?.mandate_workflow_status"
+                class="font-weight-medium"
+              >
+                Mandate Status: {{ getMandateStatusText(selectedRequest.mandate_workflow_status) }}
+              </p>
+
+              <!-- Show response message if mandate is not approved -->
+              <VAlert
+                v-if="!canReviewRequest && selectedRequest?.response_message"
+                color="info"
+                class="mt-4 text-caption"
+              >
+                {{ selectedRequest.response_message }}
+              </VAlert>
+
+              <VDivider class="my-4" />
               <p class="font-weight-medium">
                 Uploaded By: {{ selectedRequest?.uploaded_by?.name }}
                 <span class="text-caption">
@@ -396,6 +435,7 @@ onMounted(() => {
                 :items="statusOptions"
                 label="Status"
                 :error-messages="formErrors.status"
+                :disabled="!canReviewRequest"
                 required
               />
             </VCol>
@@ -404,6 +444,7 @@ onMounted(() => {
                 v-model="approvalForm.notes"
                 label="Notes"
                 :error-messages="formErrors.notes"
+                :disabled="!canReviewRequest"
                 :hint="approvalForm.status === 'rejected' ? 'Notes are required for rejection' : ''"
                 :persistent-hint="approvalForm.status === 'rejected'"
                 rows="3"
@@ -425,6 +466,7 @@ onMounted(() => {
         <VBtn
           color="primary"
           :loading="processingId === selectedRequest?.id"
+          :disabled="!canReviewRequest"
           @click="approveRequest"
         >
           Submit
@@ -470,6 +512,7 @@ onMounted(() => {
               <td>{{ student.student.student_admission_number }}</td>
               <td>{{ student.student.care_giver.name }}</td>
               <td>{{ student.student.care_giver.phone }}</td>
+              <td>{{ formatAmount(student.amount) }}</td>
               <td class="text-center">
                 <VChip
                   :color="student.note?.includes('Eligible') ? 'success' : 'error'"

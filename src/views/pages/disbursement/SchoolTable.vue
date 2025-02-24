@@ -261,6 +261,45 @@ const getDisbursementStatusColor = (status: string) => {
   return statusColors[status.toLowerCase() as StatusType] || 'info'
 }
 
+const LoadDownloading = ref(false)
+
+const downloadRequest = async (id: number) => {
+  LoadDownloading.value = true
+  try {
+    const response = await callApi({
+      url: `disbursement/payment/download/${id}`,
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Download Failed'
+      alertInfo.type = 'error'
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = responseData.message || 'Downloaded'
+      alertInfo.type = 'success'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'LGA list error'
+    alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
+  }
+  finally {
+    LoadDownloading.value = false
+  }
+}
+
 const handleViewSchool = (schoolId: number) => {
   emit('viewSchool', schoolId)
 }
@@ -516,6 +555,7 @@ watch(search, () => {
               <th>Created Date</th>
               <th>Updated Date</th>
               <th>Notes</th>
+              <th>Export</th>
             </tr>
           </thead>
           <tbody class="text-center text-body-1">
@@ -542,6 +582,15 @@ watch(search, () => {
                   v-else
                   class="text-disabled"
                 >No notes</span>
+              </td>
+              <td>
+                <VBtn
+                  color="primary"
+                  variant="text"
+                  size="small"
+                  icon="bx-upload"
+                  @click="downloadRequest(request.id)"
+                />
               </td>
             </tr>
             <tr v-if="selectedSchool.disbursement_requests.length === 0">

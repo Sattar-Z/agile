@@ -368,13 +368,16 @@ watch(
               color="success"
             />
           </template>
-          <template #item.action="{ item }">
+          <template v-if="props.cohurt && props.termId && props.session" #item.action="{ item }">
             <RouterLink
               :to="{
                 name: 'attendance-schools',
                 params: {
                   id: item.raw.id,
                   name: item.raw.name,
+                  cohort: props.cohurt,
+                  term: props.termId,
+                  session: props.session,
                 },
               }"
             >

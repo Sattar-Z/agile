@@ -101,8 +101,8 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <VRow justify="end">
-    <VCol cols="auto">
+  <VRow hidden justify="end">
+    <VCol hidden cols="auto">
       <span class="text-caption">Cohort</span>
       <VSelect
         v-model="form.cohurt"
@@ -112,7 +112,7 @@ onMounted(() => {
         :loading="termLoading"
       />
     </VCol>
-    <VCol cols="auto">
+    <VCol hidden cols="auto">
       <span class="text-caption">Session</span>
       <VSelect
         v-model="form.session"
@@ -122,7 +122,7 @@ onMounted(() => {
         :loading="termLoading"
       />
     </VCol>
-    <VCol cols="auto">
+    <VCol hidden cols="auto">
       <span class="text-caption">Term</span>
       <VSelect
         v-model="form.term"
@@ -139,7 +139,7 @@ onMounted(() => {
     <VCol cols="12">
       <SchoolTable
         :term-id="form.term"
-        :session="form.session"
+        :sessions="form.session"
         :cohurt="form.cohurt"
       />
     </VCol>

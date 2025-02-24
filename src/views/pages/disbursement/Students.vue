@@ -196,7 +196,7 @@ const processPayout = async () => {
     if (response.ok) {
       alertInfo.show = true
       alertInfo.title = 'Success'
-      alertInfo.message = 'Payout processed successfully'
+      alertInfo.message = responseData.message || 'Payout processed successfully'
       alertInfo.type = 'success'
     }
     else {

@@ -95,7 +95,7 @@ const router = createRouter({
         },
         {
           name: 'attendance-schools',
-          path: 'attendance/schools/:id/:name',
+          path: 'attendance/schools/:id/:name/:cohort/:term/:session',
           component: () => import('../pages/attendance-schools.vue'),
         },
         {
@@ -105,7 +105,7 @@ const router = createRouter({
         },
         {
           name: 'attendance-students',
-          path: 'attendance/schools/students/:id/:name',
+          path: 'attendance/schools/students/:id/:name/:cohort/:term/:session',
           component: () => import('../pages/attendance-students.vue'),
         },
         {
