@@ -271,26 +271,53 @@ const downloadRequest = async (id: number) => {
       method: 'GET',
       authorized: true,
       showAlert: false,
+
+      // Set responseType to 'blob' to handle file downloads
     })
 
-    const responseData = await response.json()
+    // Check if the response is OK
     if (!response.ok) {
+      const errorData = await response.json()
+
       alertInfo.show = true
       alertInfo.title = 'Error'
-      alertInfo.message = responseData.message || 'Download Failed'
+      alertInfo.message = errorData.message || 'Download Failed'
       alertInfo.type = 'error'
+
+      return
     }
-    else {
-      alertInfo.show = true
-      alertInfo.title = 'Success'
-      alertInfo.message = responseData.message || 'Downloaded'
-      alertInfo.type = 'success'
-    }
+
+    // Get the response as a blob
+    const blob = await response.blob()
+
+    // Create a download link
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+
+    a.style.display = 'none'
+    a.href = url
+
+    // Set the filename - you might want to get this from the response headers
+    // or use a more specific name based on the current date or payment ID
+    a.download = `payment_report_${id}.csv`
+
+    // Add to the DOM and trigger the download
+    document.body.appendChild(a)
+    a.click()
+
+    // Clean up
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    alertInfo.show = true
+    alertInfo.title = 'Success'
+    alertInfo.message = 'File downloaded successfully'
+    alertInfo.type = 'success'
   }
   catch (error) {
     alertInfo.show = true
     alertInfo.title = 'Error'
-    alertInfo.message = 'LGA list error'
+    alertInfo.message = 'Download failed'
     alertInfo.type = 'error'
     if (user.isTokenExpired())
       user.removeUser()

@@ -103,8 +103,8 @@ function logout() {
       <VerticalNavLink
         v-if="Admin || officer"
         :item="{
-          title: 'Enrollment',
-          icon: 'bx-download',
+          title: 'Beneficiaries',
+          icon: 'bxs-graduation',
           to: '/enrollment',
         }"
       />
@@ -119,7 +119,7 @@ function logout() {
       <VerticalNavLink
         v-if="Admin"
         :item="{
-          title: 'Disbursement',
+          title: 'Payments',
           icon: 'bxs-bank',
           to: '/disbursement',
         }"
@@ -127,7 +127,7 @@ function logout() {
       <VerticalNavLink
         v-if="Accountant"
         :item="{
-          title: 'Disbursement',
+          title: 'Payments',
           icon: 'bxs-bank',
           to: '/disbursement-accountant',
         }"
@@ -135,7 +135,7 @@ function logout() {
       <VerticalNavLink
         v-if="coordinator"
         :item="{
-          title: 'Disbursement',
+          title: 'Payments',
           icon: 'bxs-bank',
           to: '/disbursement-pc',
         }"
@@ -143,16 +143,16 @@ function logout() {
       <VerticalNavLink
         v-if="Finance"
         :item="{
-          title: 'Disbursement',
+          title: 'Payments',
           icon: 'bxs-bank',
           to: '/disbursement-finance',
         }"
       />
       <VerticalNavLink
         :item="{
-          title: 'report',
+          title: 'Report',
           icon: 'bx-receipt',
-          to: '/',
+          to: '/report',
         }"
       />
       <VerticalNavLink

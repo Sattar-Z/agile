@@ -114,6 +114,11 @@ const router = createRouter({
           component: () => import('../pages/register.vue'),
         },
         {
+          name: 'report',
+          path: 'report',
+          component: () => import('../pages/report.vue'),
+        },
+        {
           name: 'user-management',
           path: 'user-management',
           component: () => import('../pages/user-management.vue'),
