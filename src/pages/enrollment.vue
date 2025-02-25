@@ -333,7 +333,7 @@ onMounted(() => {
             class="mx-2"
             size="small"
             variant="tonal"
-          />Enrollment Summary
+          />Beneficiaries Summary
         </VCardText>
 
         <VDivider />
@@ -402,7 +402,7 @@ onMounted(() => {
             class="mx-2"
             size="small"
             variant="tonal"
-          />Enrollment Summary
+          />Beneficiaries Summary
         </VCardText>
 
         <VDivider />

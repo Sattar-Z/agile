@@ -22,7 +22,7 @@ const officer = ref(isOfficer())
 // Define the navigation links with their corresponding routes and titles
 const navLinks = [
   { title: 'Dashboard', to: '/dashboard' },
-  { title: 'Enrollment', to: '/enrollment' },
+  { title: 'Beneficiaries', to: '/enrollment' },
   { title: 'Attendance', to: '/attendance' },
   { title: 'Disbursement', to: '/disbursements' },
   { title: 'Disbursement', to: '/disbursements-coordinator' },
