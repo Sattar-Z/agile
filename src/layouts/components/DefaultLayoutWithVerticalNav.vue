@@ -105,7 +105,7 @@ function logout() {
         :item="{
           title: 'Beneficiaries',
           icon: 'bxs-graduation',
-          to: '/enrollment',
+          to: '/beneficiaries',
         }"
       />
       <VerticalNavLink

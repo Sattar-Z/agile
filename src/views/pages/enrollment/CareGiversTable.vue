@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { callApi } from '@/helpers/request'
+import { isAdmin } from '@/middlewares/auth'
+import { useUserStore } from '@/stores/user'
 import { Parser } from '@json2csv/plainjs'
 import { useRouter } from 'vue-router'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as XLSX from 'xlsx'
 import CareGiverStudentsModal from './CareGiverStudentsModal.vue'
 import LoadingTable from './LoadingTable.vue'
-import { useUserStore } from '@/stores/user'
-import { isAdmin } from '@/middlewares/auth'
-import { callApi } from '@/helpers/request'
 
 const token = ref('')
 const router = useRouter()
@@ -551,24 +551,24 @@ onMounted(() => {
               />
             </VCardText>
           </VCol>
-
-          <VCol
+          <!--
+            <VCol
             cols="12"
             md="3"
-          >
+            >
             <VCardText>
-              <VBtn
-                class="text-subtitle-1"
-                text="Export Records"
-                size="x-large"
-                block
-                density="compact"
-                @click="openExportModal"
-              />
+            <VBtn
+            class="text-subtitle-1"
+            text="Export Records"
+            size="x-large"
+            block
+            density="compact"
+            @click="openExportModal"
+            />
             </VCardText>
-          </VCol>
+            </VCol>
+          -->
         </VRow>
-
         <!-- Data Table -->
         <VDataTableServer
           v-model:items-per-page="itemsPerPage"

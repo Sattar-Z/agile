@@ -59,8 +59,8 @@ const router = createRouter({
           component: () => import('../pages/dashboard.vue'),
         },
         {
-          name: 'enrollment',
-          path: 'enrollment',
+          name: 'beneficiaries',
+          path: 'beneficiaries',
           component: () => import('../pages/enrollment.vue'),
         },
         {
@@ -181,7 +181,7 @@ router.beforeEach((to, from, next) => {
   if (!unGuardedRoutes.includes(to.name as string) && !isAuthenticated())
     next({ name: 'login' })
   else if (unGuardedRoutes.includes(to.name as string) && isAuthenticated())
-    next({ name: 'enrollment' })
+    next({ name: 'beneficiaries' })
   else next()
 })
 

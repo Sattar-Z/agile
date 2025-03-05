@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
+import AllStudentTable from '@/views/pages/enrollment/AllStudentTable.vue'
+import CareGiversTable from '@/views/pages/enrollment/CareGiversTable.vue'
+import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
 import Beneficiaries from '@/views/pages/report/Beneficiaries.vue'
 import CareGiver from '@/views/pages/report/CareGiver.vue'
 import Lga from '@/views/pages/report/Lga.vue'
@@ -21,6 +25,19 @@ const form = ref({
   term: null as number | null,
   cohurt: null as string | null,
 })
+
+const route = useRoute()
+
+const activeTab = ref(route.params.tab)
+
+// tabs
+const tabs = [
+  { title: 'Beneficiary', icon: 'bxs-graduation', tab: 'Beneficiary' },
+  { title: 'Advanced', icon: 'bxs-flag', tab: 'Advanced' },
+  { title: 'CareGivers', icon: 'bxs-donate-heart', tab: 'CareGivers' },
+  { title: 'Payments', icon: 'bx-money', tab: 'Payments' },
+  { title: 'Attendance', icon: 'bx-check', tab: 'Attendance' },
+]
 
 const terms = ref<Term[]>([])
 const cohurts = ref<string[]>([])
@@ -119,19 +136,51 @@ onMounted(() => {
       />
     </VCol>
   </VRow>
-  <VRow>
-    <VCol cols="4">
-      <Lga
-        :term-id="form.term"
-        :session="form.session"
-        :cohurt="form.cohurt"
-      />
-    </VCol>
-    <VCol cols="4">
-      <Beneficiaries />
-    </VCol>
-    <VCol cols="4">
-      <CareGiver />
-    </VCol>
-  </VRow>
+  <div>
+    <VTabs
+      v-model="activeTab"
+      show-arrows
+      align-tabs="center"
+    >
+      <VTab
+        v-for="item in tabs"
+        :key="item.icon"
+        :value="item.tab"
+      >
+        <VIcon
+          size="20"
+          start
+          :icon="item.icon"
+        />
+        {{ item.title }}
+      </VTab>
+    </VTabs>
+    <VDivider />
+    <VWindow
+      v-model="activeTab"
+      class="mt-5 disable-tab-transition"
+    >
+      <VWindowItem value="Beneficiary">
+        <Beneficiaries />
+        <AllStudentTable />
+      </VWindowItem>
+      <VWindowItem value="Advanced">
+        <Lga
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+        />
+
+        <LgasTable
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+        />
+      </VWindowItem>
+      <VWindowItem value="CareGivers">
+        <CareGiver />
+        <CareGiversTable />
+      </VWindowItem>
+    </VWindow>
+  </div>
 </template>

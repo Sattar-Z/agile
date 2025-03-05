@@ -22,7 +22,6 @@ const newUser = ref(false)
         <VCol cols="auto">
           <VBtn
             icon="bx-x"
-            variant="text"
             @click="newUser = false"
           />
         </VCol>

@@ -204,7 +204,7 @@ onMounted(() => {
 
 <template>
   <VCard
-    class="cursor-pointer"
+    class="cursor-pointer my-2"
     variant="tonal"
     color="primary"
     @click="openExportModal"

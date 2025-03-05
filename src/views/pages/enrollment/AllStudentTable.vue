@@ -792,120 +792,121 @@ onMounted(() => {
               />
             </VCardText>
           </VCol>
-
-          <VCol
+          <!--
+            <VCol
             cols="12"
             md="3"
-          >
+            >
             <VCardText>
-              <VBtn
-                class="text-subtitle-1"
-                text="Export Records"
-                size="x-large"
-                block
-                density="compact"
-                @click="openExportModal"
-              />
-            </VCardText>
-          </VCol>
-        </VRow>
-
-        <!-- Data Table -->
-        <VDataTableServer
-          v-model:items-per-page="itemsPerPage"
-          :headers="headers"
-          :items="currentItems"
-          :items-length="totalItems"
-          :loading="!isLoaded"
-          :search="search"
-          class="transaction-table"
-          @update:options="loadItems"
-        >
-          <template #item.action="{ item }">
-            <div class="d-flex flex-column flex-sm-row gap-2">
-              <VBtn
-                density="compact"
-                variant="tonal"
-                text="View"
-                @click="openStudentDetails(item.raw)"
-              />
-              <VBtn
-                v-if="Admin"
-                density="compact"
-                variant="tonal"
-                color="primary"
-                text="Edit"
-                @click="openEditModal(item.raw)"
-              />
-              <VBtn
-                v-if="Admin"
-                density="compact"
-                variant="tonal"
-                color="error"
-                text="Delete"
-                @click="openDeleteModal(item.raw)"
-              />
-            </div>
-          </template>
-          <template #item.created_at="{ item }">
-            {{ formatDate(item.raw.created_at) }}
-          </template>
-          <template #item.error_message="{ item }">
-            <VTooltip :text="item.raw.error_message">
-              <template #activator="{ props }">
-                <VChip
-                  v-if="item.raw.error_message"
-                  v-bind="props"
-                  text="False Record"
-                  color="error"
-                />
-                <VChip
-                  v-else
-                  text="Eligible"
-                  color="success"
-                />
-              </template>
-            </VTooltip>
-          </template>
-          <template #item.care_giver.is_bvn_verfied="{ item }">
-            <VChip
-              v-if="item.raw.care_giver.is_bvn_verfied === 1"
-              density="compact"
-              text="Account Verified"
-              color="success"
-            />
-            <VChip
-              v-else-if="item.raw.bvn?.is_pending === 1"
-              density="compact"
-              text="Processing"
-              color="info"
-            />
-            <template v-else-if="item.raw.bvn?.error_message">
-              <VBtn
-                density="compact"
-                variant="tonal"
-                color="error"
-                @click="showErrorMessage(item.raw.bvn.error_message)"
-              >
-                Verification Failed
-              </VBtn>
-            </template>
             <VBtn
-              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
-              :loading="verifyingBvn === item.raw.bvn_id"
-              density="compact"
-              variant="outlined"
-              text="Verify Account"
-              @click="verifyBvn(item.raw.care_giver.bvn_id)"
+            class="text-subtitle-1"
+            text="Export Records"
+            size="x-large"
+            block
+            density="compact"
+            @click="openExportModal"
             />
-            <VChip
-              v-else
-              density="compact"
-              text="Account Unverified"
-              color="warning"
-            />
-          </template>
-        </VDataTableServer>
+            </VCardText>
+            </VCol>
+            </VRow>
+          -->
+          <!-- Data Table -->
+          <VDataTableServer
+            v-model:items-per-page="itemsPerPage"
+            :headers="headers"
+            :items="currentItems"
+            :items-length="totalItems"
+            :loading="!isLoaded"
+            :search="search"
+            class="transaction-table"
+            @update:options="loadItems"
+          >
+            <template #item.action="{ item }">
+              <div class="d-flex flex-column flex-sm-row gap-2">
+                <VBtn
+                  density="compact"
+                  variant="tonal"
+                  text="View"
+                  @click="openStudentDetails(item.raw)"
+                />
+                <VBtn
+                  v-if="Admin"
+                  density="compact"
+                  variant="tonal"
+                  color="primary"
+                  text="Edit"
+                  @click="openEditModal(item.raw)"
+                />
+                <VBtn
+                  v-if="Admin"
+                  density="compact"
+                  variant="tonal"
+                  color="error"
+                  text="Delete"
+                  @click="openDeleteModal(item.raw)"
+                />
+              </div>
+            </template>
+            <template #item.created_at="{ item }">
+              {{ formatDate(item.raw.created_at) }}
+            </template>
+            <template #item.error_message="{ item }">
+              <VTooltip :text="item.raw.error_message">
+                <template #activator="{ props }">
+                  <VChip
+                    v-if="item.raw.error_message"
+                    v-bind="props"
+                    text="False Record"
+                    color="error"
+                  />
+                  <VChip
+                    v-else
+                    text="Eligible"
+                    color="success"
+                  />
+                </template>
+              </VTooltip>
+            </template>
+            <template #item.care_giver.is_bvn_verfied="{ item }">
+              <VChip
+                v-if="item.raw.care_giver.is_bvn_verfied === 1"
+                density="compact"
+                text="Account Verified"
+                color="success"
+              />
+              <VChip
+                v-else-if="item.raw.bvn?.is_pending === 1"
+                density="compact"
+                text="Processing"
+                color="info"
+              />
+              <template v-else-if="item.raw.bvn?.error_message">
+                <VBtn
+                  density="compact"
+                  variant="tonal"
+                  color="error"
+                  @click="showErrorMessage(item.raw.bvn.error_message)"
+                >
+                  Verification Failed
+                </VBtn>
+              </template>
+              <VBtn
+                v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
+                :loading="verifyingBvn === item.raw.bvn_id"
+                density="compact"
+                variant="outlined"
+                text="Verify Account"
+                @click="verifyBvn(item.raw.care_giver.bvn_id)"
+              />
+              <VChip
+                v-else
+                density="compact"
+                text="Account Unverified"
+                color="warning"
+              />
+            </template>
+          </VDataTableServer>
+        </vrow>
       </VCard>
     </VCol>
 
