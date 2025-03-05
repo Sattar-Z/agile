@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, minLength, required, sameAs } from '@vuelidate/validators'
-import { callApi } from '@/helpers/request'
+
+import { callApi } from '@/helpers/new_request'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
 import logo from '@images/logo.png'
@@ -84,34 +85,20 @@ const v$ = useVuelidate(loginFormRules, form)
 async function fetchRoles() {
   loadingRoles.value = true
   try {
-    const response = await callApi({
+    const { ok, data } = await callApi({
       url: 'roles',
       method: 'GET',
       authorized: true,
     })
 
-    const responseData = await response.json()
-
-    if (!response.ok) {
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = 'Failed to fetch roles'
-      alertInfo.type = 'error'
-
+    if (!ok)
       return
-    }
 
-    // Ensure responseData is an array
-    if (Array.isArray(responseData)) {
-      roles.value = responseData.filter(role => role.status === 1) // Only get active roles
-    }
-    else if (responseData.data && Array.isArray(responseData.data)) {
-      roles.value = responseData.data.filter((role: Role) => role.status === 1)
-    }
-    else {
-      // If response is a single object, wrap it in an array
-      roles.value = [responseData].filter(role => role.status === 1)
-    }
+    roles.value = Array.isArray(data)
+      ? data.filter((role: any) => role.status === 1)
+      : (data.data && Array.isArray(data.data))
+        ? data.data.filter((role: any) => role.status === 1)
+        : []
   }
   catch (error) {
     console.error('Error fetching roles:', error)
@@ -119,7 +106,7 @@ async function fetchRoles() {
     alertInfo.title = 'Error'
     alertInfo.message = 'Failed to load roles'
     alertInfo.type = 'error'
-    roles.value = [] // Ensure roles is an array even on error
+    roles.value = []
   }
   finally {
     loadingRoles.value = false
@@ -132,35 +119,31 @@ onMounted(() => {
 
 async function submit() {
   const isFormValid = await v$.value.$validate()
-
   if (!isFormValid)
     return
 
   loading.value = true
 
   try {
-    const response = await callApi({
+    const { ok, data } = await callApi({
       url: 'user/onboard',
       method: 'POST',
       authorized: true,
       data: form,
     })
 
-    const responseData = await response.json()
-
-    if (!response.ok) {
+    if (!ok) {
       alertInfo.show = true
       alertInfo.title = 'Error'
-      alertInfo.message = responseData.message || 'Registration failed'
+      alertInfo.message = data?.message || 'Registration failed'
       alertInfo.type = 'error'
-      loading.value = false
 
       return
     }
 
     alertInfo.show = true
     alertInfo.title = 'Success'
-    alertInfo.message = 'Registration successful!'
+    alertInfo.message = data?.message || 'Registration successful!'
     alertInfo.type = 'success'
 
     setTimeout(() => {
