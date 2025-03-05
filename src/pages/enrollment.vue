@@ -3,7 +3,6 @@ import { callApi } from '@/helpers/request'
 import { isAdmin } from '@/middlewares/auth'
 import { useUserStore } from '@/stores/user'
 import AllStudentTable from '@/views/pages/enrollment/AllStudentTable.vue'
-import CareGiversTable from '@/views/pages/enrollment/CareGiversTable.vue'
 import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
 import CsvPreviewModal from '@/views/pages/enrollment/modals/CsvPreviewModal.vue'
 import Table from '@/views/pages/enrollment/Table2.vue'
@@ -412,7 +411,7 @@ onMounted(() => {
       </VCard>
     </VCol>
     <VCol cols="12">
-     <!-- <CareGiversTable /> -->
+      <!-- <CareGiversTable /> -->
     </VCol>
     <VCol cols="12">
       <AllStudentTable />
