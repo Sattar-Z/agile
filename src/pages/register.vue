@@ -203,157 +203,155 @@ const isPasswordVisible = ref(false)
     </template>
   </VSnackbar>
 
-  <div class="auth-wrapper d-flex align-center justify-center pa-4">
-    <VCard
-      class="auth-card pa-2 pt-7"
-      max-width="448"
-    >
-      <VCardItem class="justify-center pb-1.5">
-        <VImg
-          :src="logo"
-          max-width="145"
-          class="mx-auto my-2 mb-0"
-        />
-      </VCardItem>
+  <VCard
+    class="auth-card pa-2 pt-7"
+    max-width="448"
+  >
+    <VCardItem class="justify-center pb-1.5">
+      <VImg
+        :src="logo"
+        max-width="145"
+        class="mx-auto my-2 mb-0"
+      />
+    </VCardItem>
 
-      <VCardText class="pt-0">
-        <h5 class="text-h4 mb-3 text-center font-weight-semibold text-heading">
-          Register
-        </h5>
-        <p class="mb-8 text-center text-subtitle-1 text-subheading font-weight-medium">
-          Welcome. Register to get started
-        </p>
-      </VCardText>
+    <VCardText class="pt-0">
+      <h5 class="text-h4 mb-3 text-center font-weight-semibold text-heading">
+        Register
+      </h5>
+      <p class="mb-8 text-center text-subtitle-1 text-subheading font-weight-medium">
+        Welcome. Register to get started
+      </p>
+    </VCardText>
 
-      <VCardText>
-        <VForm @submit.prevent="submit">
-          <VRow>
-            <!-- Name -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Your name
-              </div>
-              <VTextField
-                v-model="form.name"
-                autofocus
-                placeholder="John Doe"
-                density="compact"
-                class="mb-0"
-                color="primary"
-                clearable
-                :error-messages="v$.name.$errors.map(e => e.$message)"
-              />
-            </VCol>
+    <VCardText>
+      <VForm @submit.prevent="submit">
+        <VRow>
+          <!-- Name -->
+          <VCol cols="12">
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Your name
+            </div>
+            <VTextField
+              v-model="form.name"
+              autofocus
+              placeholder="John Doe"
+              density="compact"
+              class="mb-0"
+              color="primary"
+              clearable
+              :error-messages="v$.name.$errors.map(e => e.$message)"
+            />
+          </VCol>
 
-            <!-- Email -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Your email address
-              </div>
-              <VTextField
-                v-model="form.email"
-                placeholder="johndoe@email.com"
-                type="email"
-                density="compact"
-                class="mb-0"
-                color="primary"
-                clearable
-                :error-messages="emailErrorMessage"
-              />
-            </VCol>
+          <!-- Email -->
+          <VCol cols="12">
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Your email address
+            </div>
+            <VTextField
+              v-model="form.email"
+              placeholder="johndoe@email.com"
+              type="email"
+              density="compact"
+              class="mb-0"
+              color="primary"
+              clearable
+              :error-messages="emailErrorMessage"
+            />
+          </VCol>
 
-            <!-- Phone -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Your Phone Number
-              </div>
-              <VTextField
-                v-model="form.phone"
-                type="tel"
-                density="compact"
-                class="mb-0"
-                color="primary"
-                clearable
-                :error-messages="v$.phone.$errors.map(e => e.$message)"
-              />
-            </VCol>
+          <!-- Phone -->
+          <VCol cols="12">
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Your Phone Number
+            </div>
+            <VTextField
+              v-model="form.phone"
+              type="tel"
+              density="compact"
+              class="mb-0"
+              color="primary"
+              clearable
+              :error-messages="v$.phone.$errors.map(e => e.$message)"
+            />
+          </VCol>
 
-            <!-- Role Selection -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Select Role
-              </div>
-              <VSelect
-                v-model="form.role_id"
-                :items="roles"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                placeholder="Select your role"
-                :loading="loadingRoles"
-                :error-messages="v$.role_id.$errors.map(e => e.$message)"
-                clearable
-              />
-            </VCol>
+          <!-- Role Selection -->
+          <VCol cols="12">
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Select Role
+            </div>
+            <VSelect
+              v-model="form.role_id"
+              :items="roles"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              placeholder="Select your role"
+              :loading="loadingRoles"
+              :error-messages="v$.role_id.$errors.map(e => e.$message)"
+              clearable
+            />
+          </VCol>
 
-            <!-- Password -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Your password
-              </div>
-              <VTextField
-                v-model="form.password"
-                placeholder="********"
-                class=""
-                color="primary"
-                density="compact"
-                :type="isPasswordVisible ? 'text' : 'password'"
-                clearable
-                :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
-                :error-messages="passwordErrorMessage"
-                @click:append-inner="isPasswordVisible = !isPasswordVisible"
-              />
-            </VCol>
+          <!-- Password -->
+          <VCol cols="12">
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Your password
+            </div>
+            <VTextField
+              v-model="form.password"
+              placeholder="********"
+              class=""
+              color="primary"
+              density="compact"
+              :type="isPasswordVisible ? 'text' : 'password'"
+              clearable
+              :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
+              :error-messages="passwordErrorMessage"
+              @click:append-inner="isPasswordVisible = !isPasswordVisible"
+            />
+          </VCol>
 
-            <!-- Confirm Password -->
-            <VCol cols="12">
-              <div class="text-emphasis font-weight-semibold pb-1 text-heading">
-                Confirm Your password
-              </div>
-              <VTextField
-                v-model="form.password_confirmation"
-                label="Confirm Password"
-                placeholder="********"
-                color="mon-green"
-                :type="isConPasswordVisible ? 'text' : 'password'"
-                :append-inner-icon="
-                  isConPasswordVisible ? 'bx-hide' : 'bx-show'
-                "
-                :error-messages="v$.password_confirmation.$errors.map(e => e.$message)"
-                @click:append-inner="
-                  isConPasswordVisible = !isConPasswordVisible
-                "
-              />
-            </VCol>
+          <!-- Confirm Password -->
+          <VCol cols="12">
+            <div class="text-emphasis font-weight-semibold pb-1 text-heading">
+              Confirm Your password
+            </div>
+            <VTextField
+              v-model="form.password_confirmation"
+              label="Confirm Password"
+              placeholder="********"
+              color="mon-green"
+              :type="isConPasswordVisible ? 'text' : 'password'"
+              :append-inner-icon="
+                isConPasswordVisible ? 'bx-hide' : 'bx-show'
+              "
+              :error-messages="v$.password_confirmation.$errors.map(e => e.$message)"
+              @click:append-inner="
+                isConPasswordVisible = !isConPasswordVisible
+              "
+            />
+          </VCol>
 
-            <!-- Register button -->
-            <VCol cols="12">
-              <VBtn
-                block
-                size="large"
-                type="submit"
-                :loading="loading"
-                class="text-subtitle-1 font-weight-medium"
-                color="primary"
-              >
-                Register
-              </VBtn>
-            </VCol>
-          </VRow>
-        </VForm>
-      </VCardText>
-    </VCard>
-  </div>
+          <!-- Register button -->
+          <VCol cols="12">
+            <VBtn
+              block
+              size="large"
+              type="submit"
+              :loading="loading"
+              class="text-subtitle-1 font-weight-medium"
+              color="primary"
+            >
+              Register
+            </VBtn>
+          </VCol>
+        </VRow>
+      </VForm>
+    </VCardText>
+  </VCard>
 </template>
 
 <style lang="scss">
