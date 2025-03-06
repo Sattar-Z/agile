@@ -36,27 +36,6 @@ const formatDate = (date: string) => moment(date).format('YYYY-MM-DD')
 
 token.value = user.getUserInfo().token
 
-interface CareGiver {
-  id: number | null
-  bvn_id: number | null
-  nin_id: number | null
-  name: number | null
-  phone: string | null
-  date_of_birth: string | null
-  community: string | null
-  gender: string | null
-  qualification: string | null
-  income: string | null
-  is_employed: string | null
-  certificate: number | null
-  is_bvn_verfied: number | null
-  is_nin_verfied: number | null
-  date_collected: string | null
-  status: string | null
-  created_at: string | null
-  updated_at: string | null
-}
-
 interface Schools {
   id: number | null
   lga_id: number | null
@@ -79,6 +58,55 @@ interface Lgas {
   created_at: string | null
 }
 
+interface Bvn {
+  id: number | null
+  bvn: string | null
+}
+
+interface Nin {
+  id: number | null
+  nin: string | null
+}
+
+interface Account {
+  id: number | null
+  care_giver_id: number | null
+  account_name: string | null
+  account_number: string | null
+  bank_code: string | null
+  created_at: string | null
+  updated_at: string | null
+  bvn_id: number | null
+  is_verified: number | null
+  kyc_level: string | null
+  error_message: string | null
+}
+
+interface CareGiver {
+  id: number | null
+  bvn_id: number | null
+  nin_id: number | null
+  name: number | null
+  phone: string | null
+  address: string | null
+  date_of_birth: string | null
+  community: string | null
+  gender: string | null
+  qualification: string | null
+  income: string | null
+  is_employed: string | null
+  certificate: number | null
+  is_bvn_verfied: number | null
+  is_nin_verfied: number | null
+  date_collected: string | null
+  status: string | null
+  nin: Nin
+  bvn: Bvn
+  accounts: Account[]
+  created_at: string | null
+  updated_at: string | null
+}
+
 interface Students {
   id: number | null
   school_id: number | null
@@ -92,6 +120,7 @@ interface Students {
   disabilities: string | null
   uniform: number | null
   text_book: number | null
+  school_bag: number | null
   school_distance: string | null
   materials: number | null
   care_giver: CareGiver
@@ -141,6 +170,8 @@ const headers = ref([
   { title: 'Admission No', key: 'student_admission_number', align: 'center', value: 'student_admission_number' },
   { title: 'Class', key: 'class', align: 'center', value: 'class' },
   { title: 'DOB', key: 'date_of_birth', align: 'center', value: 'date_of_birth' },
+
+  // { title: 'Account Number', key: 'care_giver.accounts[0].account_number', align: 'center', value: 'care_giver.accounts[0].account_number' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center', value: 'care_giver.is_bvn_verfied' },
   { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
   { title: 'Date Uploaded', key: 'created_at', sortable: true, align: 'center', value: 'created_at' },
@@ -463,48 +494,144 @@ const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
   return { items: currentItems.value, total: totalItems.value }
 }
 
-const exportCSV = () => {
-  if (students.value.length === 0) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'No data to export'
-    alertInfo.type = 'error'
+interface ExportFormat {
+  [key: string]: string | number | null
+}
 
-    return
+const getYesNoValue = (value: boolean | number | null): string =>
+  value ? 'Yes' : 'No'
+
+const getDisabilityInfo = (disability: string | null): {
+  isDisabled: string
+  type: string
+} => {
+  const normalizedDisability = disability?.toUpperCase() || 'NONE'
+
+  return {
+    isDisabled: normalizedDisability === 'NONE' ? 'No' : 'Yes',
+    type: normalizedDisability === 'NONE' ? 'N/A' : (disability || ''),
+  }
+}
+
+const safeAccess = <T extends object>(obj: T | undefined, fallback: T = {} as T): T => {
+  return obj ?? fallback
+}
+
+const formatCaregiverEmployment = (isEmployed?: boolean): string => isEmployed ? 'Employed' : 'Unemployed'
+
+const formatCaregiverDetails = (careGiver: CareGiver) => ({
+  'Name of Caregiver': careGiver.name || '',
+  'Caregiver Phone Number': careGiver.phone || '',
+  'Address of Caregiver': careGiver.address || '',
+  'Caregiver Community': careGiver.community || '',
+  'Gender of Caregiver': careGiver.gender || '',
+  'Caregiver Date of Birth': careGiver.date_of_birth || '',
+  'Caregiver Highest Qualification': careGiver.qualification || '',
+  'Caregiver Employment Status': formatCaregiverEmployment(!!careGiver.is_employed),
+  'Caregiver Average Monthly Income': careGiver.income || '',
+  'Bvn': careGiver.bvn.bvn || '',
+  'Nin': careGiver.nin.nin || '',
+  'Account Number': careGiver.accounts[0].account_number || '',
+})
+
+const formatStudentForExport = (student: Students): ExportFormat => {
+  const careGiver = safeAccess(student.care_giver)
+  const school = safeAccess(student.school)
+  const alga = safeAccess(student.lga)
+  const disability = getDisabilityInfo(student.disabilities)
+
+  return {
+    'Cohort': student.cohurt || '',
+    'LGA': alga.name || '',
+    'Name of Current School': school.name || '',
+    'School Code': school.code || '',
+    'Name of Student (Beneficiary)': student.name || '',
+    'Student Admission Number': student.student_admission_number || '',
+    'Date of Birth': student.date_of_birth || '',
+    'Grade/Class': student.class || '',
+    'Disabled': disability.isDisabled,
+    'Type of Disability': disability.type,
+    'Distance from School (in KMs)': student.school_distance || '',
+    'Textbooks': getYesNoValue(student.text_book),
+    'Uniform': getYesNoValue(student.uniform),
+    'Writing Materials': getYesNoValue(student.materials),
+    'School Bag': getYesNoValue(student.school_bag),
+    ...formatCaregiverDetails(careGiver),
+  }
+}
+
+const exportCSV = () => {
+  if (!students.value || students.value.length === 0) {
+    return {
+      success: false,
+      message: 'No data to export',
+    }
   }
 
-  const parser = new Parser()
-  const csv = parser.parse(students.value)
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
+  try {
+    const formattedData = students.value.map(formatStudentForExport)
+    const parser = new Parser()
+    const csv = parser.parse(formattedData)
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
 
-  link.href = url
-  link.download = 'student_export.csv'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+    link.href = url
+    link.download = `students_export_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
 
-  exportModal.value = false
+    return {
+      success: true,
+      message: 'Export completed successfully',
+    }
+  }
+  catch (error) {
+    console.error('Export error:', error)
+
+    return {
+      success: false,
+      message: 'Failed to export data',
+    }
+  }
 }
 
 const exportExcel = () => {
-  if (students.value.length === 0) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'No data to export'
-    alertInfo.type = 'error'
-
-    return
+  if (!students.value || students.value.length === 0) {
+    return {
+      success: false,
+      message: 'No data to export',
+    }
   }
 
-  const ws = XLSX.utils.json_to_sheet(students.value)
-  const wb = XLSX.utils.book_new()
+  try {
+    const formattedData = students.value.map(formatStudentForExport)
+    const ws = XLSX.utils.json_to_sheet(formattedData)
+    const wb = XLSX.utils.book_new()
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Student Export')
-  XLSX.writeFile(wb, 'student_export.xlsx')
+    // Add column widths for better readability
+    const colWidths = Object.keys(formattedData[0]).map(() => ({ wch: 20 }))
 
-  exportModal.value = false
+    ws['!cols'] = colWidths
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Students Export')
+    XLSX.writeFile(wb, `students_export_${new Date().toISOString().split('T')[0]}.xlsx`)
+
+    return {
+      success: true,
+      message: 'Export completed successfully',
+    }
+  }
+  catch (error) {
+    console.error('Export error:', error)
+
+    return {
+      success: false,
+      message: 'Failed to export data',
+    }
+  }
 }
 
 const deleteStudent = async () => {
@@ -625,6 +752,21 @@ onMounted(() => {
 
   <!-- Main Layout -->
   <VRow>
+    <VCol
+      v-if="isLoaded"
+      cols="12"
+    >
+      <VCard
+        class="cursor-pointer"
+        variant="tonal"
+        color="primary"
+        @click="openExportModal"
+      >
+        <VCardItem class="text-center">
+          Download Beneficiary Report
+        </VCardItem>
+      </VCard>
+    </VCol>
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -634,15 +776,16 @@ onMounted(() => {
         <VRow
           no-gutters
           justify="start"
+          class="bg-primary"
         >
           <!-- Title -->
           <VCol
             cols="12"
             md="4"
           >
-            <VCardText>
-              <VCardTitle> All Students</VCardTitle>
-            </VCardText>
+            <VCardTitle class="font-weight-bold text-h5 my-3 text-white">
+              Beneficiaries
+            </VCardTitle>
           </VCol>
         </VRow>
         <VRow
@@ -665,120 +808,121 @@ onMounted(() => {
               />
             </VCardText>
           </VCol>
-
-          <VCol
+          <!--
+            <VCol
             cols="12"
             md="3"
-          >
+            >
             <VCardText>
-              <VBtn
-                class="text-subtitle-1"
-                text="Export Records"
-                size="x-large"
-                block
-                density="compact"
-                @click="openExportModal"
-              />
-            </VCardText>
-          </VCol>
-        </VRow>
-
-        <!-- Data Table -->
-        <VDataTableServer
-          v-model:items-per-page="itemsPerPage"
-          :headers="headers"
-          :items="currentItems"
-          :items-length="totalItems"
-          :loading="!isLoaded"
-          :search="search"
-          class="transaction-table"
-          @update:options="loadItems"
-        >
-          <template #item.action="{ item }">
-            <div class="d-flex flex-column flex-sm-row gap-2">
-              <VBtn
-                density="compact"
-                variant="tonal"
-                text="View"
-                @click="openStudentDetails(item.raw)"
-              />
-              <VBtn
-                v-if="Admin"
-                density="compact"
-                variant="tonal"
-                color="primary"
-                text="Edit"
-                @click="openEditModal(item.raw)"
-              />
-              <VBtn
-                v-if="Admin"
-                density="compact"
-                variant="tonal"
-                color="error"
-                text="Delete"
-                @click="openDeleteModal(item.raw)"
-              />
-            </div>
-          </template>
-          <template #item.created_at="{ item }">
-            {{ formatDate(item.raw.created_at) }}
-          </template>
-          <template #item.error_message="{ item }">
-            <VTooltip :text="item.raw.error_message">
-              <template #activator="{ props }">
-                <VChip
-                  v-if="item.raw.error_message"
-                  v-bind="props"
-                  text="False Record"
-                  color="error"
-                />
-                <VChip
-                  v-else
-                  text="Eligible"
-                  color="success"
-                />
-              </template>
-            </VTooltip>
-          </template>
-          <template #item.care_giver.is_bvn_verfied="{ item }">
-            <VChip
-              v-if="item.raw.care_giver.is_bvn_verfied === 1"
-              density="compact"
-              text="Account Verified"
-              color="success"
-            />
-            <VChip
-              v-else-if="item.raw.bvn?.is_pending === 1"
-              density="compact"
-              text="Processing"
-              color="info"
-            />
-            <template v-else-if="item.raw.bvn?.error_message">
-              <VBtn
-                density="compact"
-                variant="tonal"
-                color="error"
-                @click="showErrorMessage(item.raw.bvn.error_message)"
-              >
-                Verification Failed
-              </VBtn>
-            </template>
             <VBtn
-              v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
-              :loading="verifyingBvn === item.raw.bvn_id"
-              density="compact"
-              variant="outlined"
-              text="Verify Account"
-              @click="verifyBvn(item.raw.care_giver.bvn_id)"
+            class="text-subtitle-1"
+            text="Export Records"
+            size="x-large"
+            block
+            density="compact"
+            @click="openExportModal"
             />
-            <VChip
-              v-else
-              density="compact"
-              text="Account Unverified"
-              color="warning"
-            />
-          </template>
-        </VDataTableServer>
+            </VCardText>
+            </VCol>
+            </VRow>
+          -->
+          <!-- Data Table -->
+          <VDataTableServer
+            v-model:items-per-page="itemsPerPage"
+            :headers="headers"
+            :items="currentItems"
+            :items-length="totalItems"
+            :loading="!isLoaded"
+            :search="search"
+            class="transaction-table"
+            @update:options="loadItems"
+          >
+            <template #item.action="{ item }">
+              <div class="d-flex flex-column flex-sm-row gap-2">
+                <VBtn
+                  density="compact"
+                  variant="tonal"
+                  text="View"
+                  @click="openStudentDetails(item.raw)"
+                />
+                <VBtn
+                  v-if="Admin"
+                  density="compact"
+                  variant="tonal"
+                  color="primary"
+                  text="Edit"
+                  @click="openEditModal(item.raw)"
+                />
+                <VBtn
+                  v-if="Admin"
+                  density="compact"
+                  variant="tonal"
+                  color="error"
+                  text="Delete"
+                  @click="openDeleteModal(item.raw)"
+                />
+              </div>
+            </template>
+            <template #item.created_at="{ item }">
+              {{ formatDate(item.raw.created_at) }}
+            </template>
+            <template #item.error_message="{ item }">
+              <VTooltip :text="item.raw.error_message">
+                <template #activator="{ props }">
+                  <VChip
+                    v-if="item.raw.error_message"
+                    v-bind="props"
+                    text="False Record"
+                    color="error"
+                  />
+                  <VChip
+                    v-else
+                    text="Eligible"
+                    color="success"
+                  />
+                </template>
+              </VTooltip>
+            </template>
+            <template #item.care_giver.is_bvn_verfied="{ item }">
+              <VChip
+                v-if="item.raw.care_giver.is_bvn_verfied === 1"
+                density="compact"
+                text="Account Verified"
+                color="success"
+              />
+              <VChip
+                v-else-if="item.raw.bvn?.is_pending === 1"
+                density="compact"
+                text="Processing"
+                color="info"
+              />
+              <template v-else-if="item.raw.bvn?.error_message">
+                <VBtn
+                  density="compact"
+                  variant="tonal"
+                  color="error"
+                  @click="showErrorMessage(item.raw.bvn.error_message)"
+                >
+                  Verification Failed
+                </VBtn>
+              </template>
+              <VBtn
+                v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
+                :loading="verifyingBvn === item.raw.bvn_id"
+                density="compact"
+                variant="outlined"
+                text="Verify Account"
+                @click="verifyBvn(item.raw.care_giver.bvn_id)"
+              />
+              <VChip
+                v-else
+                density="compact"
+                text="Account Unverified"
+                color="warning"
+              />
+            </template>
+          </VDataTableServer>
+        </vrow>
       </VCard>
     </VCol>
 

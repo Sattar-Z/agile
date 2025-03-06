@@ -26,6 +26,9 @@ const lgaLoading = ref(false)
 const user = useUserStore()
 const Admin = ref(isAdmin())
 const studentLoading = ref(false)
+const selectedLgas = ref<number[]>([])
+const selectedSchools = ref<number[]>([])
+const showFilters = ref(false)
 
 const showErrorMessage = (message: string) => {
   selectedErrorMessage.value = message
@@ -186,6 +189,7 @@ const search = ref('')
 const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
 const verifyingBvn = ref<number | null>(null)
+const filteredStudents = ref<Students[]>([])
 
 const formData = ref<StudentFormData>({
   name: '',
@@ -238,6 +242,55 @@ interface Lga {
 
 const lga = ref<Lga[]>([])
 const schools = ref<Lga[]>([])
+
+// Get schools for a specific LGA
+const getSchoolsByLga = (lgaId: number) => {
+  return schools.value.filter(school => {
+    const schoolObj = school as unknown as Schools
+
+    return schoolObj.lga_id === lgaId
+  })
+}
+
+// Toggle filter visibility
+const toggleFilters = () => {
+  showFilters.value = !showFilters.value
+}
+
+// Apply filters to the data
+const applyFilters = () => {
+  if (selectedLgas.value.length === 0 && selectedSchools.value.length === 0) {
+    filteredStudents.value = students.value
+  }
+  else {
+    filteredStudents.value = students.value.filter(student => {
+      const lgaMatch = selectedLgas.value.length === 0
+                      || (student.lga_id && selectedLgas.value.includes(student.lga_id))
+
+      const schoolMatch = selectedSchools.value.length === 0
+                         || (student.school_id && selectedSchools.value.includes(student.school_id))
+
+      return lgaMatch && schoolMatch
+    })
+  }
+
+  // Update the total items count for pagination
+  totalItems.value = filteredStudents.value.length
+}
+
+// Reset filters
+const resetFilters = () => {
+  selectedLgas.value = []
+  selectedSchools.value = []
+  applyFilters()
+}
+
+// Handle LGA selection change
+const onLgaChange = () => {
+  // Reset school selection when LGA changes
+  selectedSchools.value = []
+  applyFilters()
+}
 
 const fetchLgaData = async () => {
   lgaLoading.value = true
@@ -321,6 +374,9 @@ const fetchData = async () => {
 
     if (response.ok) {
       students.value = Object.values(responseData.data)
+
+      // Initialize filtered students with all students
+      filteredStudents.value = students.value
       totalItems.value = students.value.length
     }
     else if (response.status === 401) {
@@ -752,6 +808,21 @@ onMounted(() => {
 
   <!-- Main Layout -->
   <VRow>
+    <VCol
+      v-if="isLoaded"
+      cols="12"
+    >
+      <VCard
+        class="cursor-pointer"
+        variant="tonal"
+        color="primary"
+        @click="openExportModal"
+      >
+        <VCardItem class="text-center">
+          Download Beneficiary Report
+        </VCardItem>
+      </VCard>
+    </VCol>
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -761,15 +832,16 @@ onMounted(() => {
         <VRow
           no-gutters
           justify="start"
+          class="bg-primary"
         >
           <!-- Title -->
           <VCol
             cols="12"
             md="4"
           >
-            <VCardText>
-              <VCardTitle> All Students</VCardTitle>
-            </VCardText>
+            <VCardTitle class="font-weight-bold text-h5 my-3 text-white">
+              Beneficiaries
+            </VCardTitle>
           </VCol>
         </VRow>
         <VRow

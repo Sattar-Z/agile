@@ -161,7 +161,6 @@ onMounted(() => {
       class="mt-5 disable-tab-transition"
     >
       <VWindowItem value="Beneficiary">
-        <Beneficiaries />
         <AllStudentTable />
       </VWindowItem>
       <VWindowItem value="Advanced">
