@@ -11,6 +11,12 @@ import { isAdmin } from '@/middlewares/auth'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 
+// const props = defineProps<{
+//   termId: string
+//   session: string
+// }>()
+
+// import { toNigerianCurrency } from '@/helpers/numbers'
 const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
@@ -20,8 +26,6 @@ const lgaLoading = ref(false)
 const user = useUserStore()
 const Admin = ref(isAdmin())
 const studentLoading = ref(false)
-
-// New filter refs
 const selectedLgas = ref<number[]>([])
 const selectedSchools = ref<number[]>([])
 const showFilters = ref(false)
@@ -154,6 +158,11 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
+const deleteModal = ref(false)
+const editModal = ref(false)
+const selectedStudent = ref<Students | null>(null)
+const currentItems = ref<Students[]>([])
+const selectedStudents = ref<Students | null>(null)
 const StudentManagementModal = ref(false)
 const selectedStudentId = ref<number | null>(null)
 
@@ -164,6 +173,8 @@ const headers = ref([
   { title: 'Admission No', key: 'student_admission_number', align: 'center', value: 'student_admission_number' },
   { title: 'Class', key: 'class', align: 'center', value: 'class' },
   { title: 'DOB', key: 'date_of_birth', align: 'center', value: 'date_of_birth' },
+
+  // { title: 'Account Number', key: 'care_giver.accounts[0].account_number', align: 'center', value: 'care_giver.accounts[0].account_number' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center', value: 'care_giver.is_bvn_verfied' },
   { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
   { title: 'Date Uploaded', key: 'created_at', sortable: true, align: 'center', value: 'created_at' },
@@ -197,6 +208,33 @@ const formData = ref<StudentFormData>({
   school_bag: false,
 })
 
+// Add new functions
+const openDeleteModal = (student: Students) => {
+  selectedStudent.value = student
+  deleteModal.value = true
+}
+
+const openEditModal = (student: Students) => {
+  selectedStudent.value = student
+  formData.value = {
+    name: student?.name || '',
+    cohurt: student?.cohurt || '',
+    lga_id: student?.lga?.id || '',
+    school_id: student?.school?.id || '',
+    care_giver_id: student?.care_giver_id?.toString() || '',
+    date_of_birth: student?.date_of_birth || '',
+    class: student?.class || '',
+    gender: '',
+    disabilities: student?.disabilities || '',
+    uniform: !!student.uniform,
+    text_book: !!student.text_book,
+    school_distance: student.school_distance || '',
+    materials: !!student.materials,
+    school_bag: false,
+  }
+  editModal.value = true
+}
+
 interface Lga {
   id: number
   name: string
@@ -208,47 +246,50 @@ const schools = ref<Lga[]>([])
 // Get schools for a specific LGA
 const getSchoolsByLga = (lgaId: number) => {
   return schools.value.filter(school => {
-    const schoolObj = school as unknown as Schools;
-    return schoolObj.lga_id === lgaId;
-  });
+    const schoolObj = school as unknown as Schools
+
+    return schoolObj.lga_id === lgaId
+  })
 }
 
 // Toggle filter visibility
 const toggleFilters = () => {
-  showFilters.value = !showFilters.value;
-}
-
-// Reset filters
-const resetFilters = () => {
-  selectedLgas.value = [];
-  selectedSchools.value = [];
-  applyFilters();
+  showFilters.value = !showFilters.value
 }
 
 // Apply filters to the data
 const applyFilters = () => {
   if (selectedLgas.value.length === 0 && selectedSchools.value.length === 0) {
-    filteredStudents.value = students.value;
-  } else {
-    filteredStudents.value = students.value.filter(student => {
-      const lgaMatch = selectedLgas.value.length === 0 || 
-                      (student.lga_id && selectedLgas.value.includes(student.lga_id));
-      const schoolMatch = selectedSchools.value.length === 0 || 
-                         (student.school_id && selectedSchools.value.includes(student.school_id));
-      
-      return lgaMatch && schoolMatch;
-    });
+    filteredStudents.value = students.value
   }
-  
+  else {
+    filteredStudents.value = students.value.filter(student => {
+      const lgaMatch = selectedLgas.value.length === 0
+                      || (student.lga_id && selectedLgas.value.includes(student.lga_id))
+
+      const schoolMatch = selectedSchools.value.length === 0
+                         || (student.school_id && selectedSchools.value.includes(student.school_id))
+
+      return lgaMatch && schoolMatch
+    })
+  }
+
   // Update the total items count for pagination
-  totalItems.value = filteredStudents.value.length;
+  totalItems.value = filteredStudents.value.length
+}
+
+// Reset filters
+const resetFilters = () => {
+  selectedLgas.value = []
+  selectedSchools.value = []
+  applyFilters()
 }
 
 // Handle LGA selection change
 const onLgaChange = () => {
   // Reset school selection when LGA changes
-  selectedSchools.value = [];
-  applyFilters();
+  selectedSchools.value = []
+  applyFilters()
 }
 
 const fetchLgaData = async () => {
@@ -262,13 +303,25 @@ const fetchLgaData = async () => {
     })
 
     const responseData = await response.json()
-
-    if (response.ok) {
-      lga.value = responseData.data
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'LGA list failed'
+      alertInfo.type = 'error'
     }
-  } catch (error) {
-    console.error('Error fetching LGA data:', error)
-  } finally {
+    else {
+      lga.value = responseData.data.lgas
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'LGA list error'
+    alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
+  }
+  finally {
     lgaLoading.value = false
   }
 }
@@ -284,12 +337,25 @@ const fetchStudentData = async () => {
     })
 
     const responseData = await response.json()
-    if (response.ok) {
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Schools list failed'
+      alertInfo.type = 'error'
+    }
+    else {
       schools.value = responseData.data
     }
-  } catch (error) {
-    console.error('Error fetching school data:', error)
-  } finally {
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Schools list error'
+    alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
+  }
+  finally {
     studentLoading.value = false
   }
 }
@@ -308,6 +374,7 @@ const fetchData = async () => {
 
     if (response.ok) {
       students.value = Object.values(responseData.data)
+
       // Initialize filtered students with all students
       filteredStudents.value = students.value
       totalItems.value = students.value.length
@@ -336,13 +403,59 @@ const fetchData = async () => {
 
 const verifyBvn = async (bvnId: number) => {
   if (!bvnId) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'No BVN ID available'
+    alertInfo.type = 'error'
+
     return
   }
-  
+
   verifyingBvn.value = bvnId
+
   try {
-    // Your BVN verification logic here
-  } finally {
+    const response = await callApi({
+      url: `bvn/verify/${bvnId}`,
+      method: 'POST',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      // Update both the main students array and current items being displayed
+      const updateStudent = (studentArray: Students[]) => {
+        const studentIndex = studentArray.findIndex(
+          student => student.care_giver.bvn_id === bvnId,
+        )
+
+        if (studentIndex !== -1)
+          studentArray[studentIndex].care_giver.is_bvn_verfied = 1
+      }
+
+      updateStudent(students.value)
+      updateStudent(currentItems.value)
+
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = responseData.message || 'BVN verified successfully'
+      alertInfo.type = 'success'
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'BVN verification failed'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong during BVN verification'
+    alertInfo.type = 'error'
+  }
+  finally {
     verifyingBvn.value = null
   }
 }
@@ -352,26 +465,9 @@ function openStudentDetails(student: Students) {
   showStudentDetails.value = true
 }
 
-// Filter items based on search and filters
+// Filter items based on search
 const filterItems = (items: Students[], searchValue: string): Students[] => {
-  // First apply LGA and School filters
-  let filtered = items;
-  
-  if (selectedLgas.value.length > 0 || selectedSchools.value.length > 0) {
-    filtered = items.filter(item => {
-      const lgaMatch = selectedLgas.value.length === 0 || 
-                      (item.lga_id && selectedLgas.value.includes(item.lga_id));
-      const schoolMatch = selectedSchools.value.length === 0 || 
-                         (item.school_id && selectedSchools.value.includes(item.school_id));
-      
-      return lgaMatch && schoolMatch;
-    });
-  }
-  
-  // Then apply text search
-  if (!searchValue) return filtered;
-  
-  return filtered.filter(item => {
+  return items.filter(item => {
     if (!item.name)
       return false
     const nameMatch = item.name?.toLowerCase().includes(searchValue.toLowerCase()) ?? false
@@ -387,34 +483,71 @@ const openExportModal = () => {
   exportType.value = null
 }
 
-// Load items with pagination, sorting, and filtering
-const loadItems = (options: any) => {
-  const { page, itemsPerPage, sortBy } = options
-  
-  // Apply search and custom filters
-  const searchedAndFilteredItems = filterItems(students.value, search.value)
-  
-  // Apply sorting
-  const sortedItems = sortItems(searchedAndFilteredItems, sortBy)
-  
-  // Calculate pagination
-  const startIndex = (page - 1) * itemsPerPage
-  const endIndex = Math.min(startIndex + itemsPerPage, sortedItems.length)
-  const currentItems = sortedItems.slice(startIndex, endIndex)
-  
-  // Update total for pagination
-  totalItems.value = searchedAndFilteredItems.length
-  
-  return currentItems
+// Helper function to get nested values
+const getNestedValue = (item: Students, key: string): any => {
+  return key.split('.').reduce((value, k) => value?.[k], item as any)
+}
+
+// Helper function to compare dates
+const compareDates = (aValue: any, bValue: any, order: string): number => {
+  if (!aValue)
+    return order === 'desc' ? 1 : -1
+  if (!bValue)
+    return order === 'desc' ? -1 : 1
+
+  const dateA = new Date(aValue).getTime()
+  const dateB = new Date(bValue).getTime()
+
+  return order === 'desc' ? dateB - dateA : dateA - dateB
+}
+
+// Helper function to compare strings
+const compareStrings = (aValue: string, bValue: string, order: string): number => {
+  return order === 'desc'
+    ? bValue.localeCompare(aValue)
+    : aValue.localeCompare(bValue)
+}
+
+// Helper function to compare numbers
+const compareNumbers = (aValue: number, bValue: number, order: string): number => {
+  return order === 'desc' ? bValue - aValue : aValue - bValue
 }
 
 // Main sorting function
 const sortItems = (items: Students[], sortBy: { key: string; order: string }[]): Students[] => {
   if (sortBy.length === 0)
     return items
-    
-  // Your sorting logic here
-  return items
+
+  const [sortItem] = sortBy
+
+  return [...items].sort((a, b) => {
+    const aValue = getNestedValue(a, sortItem.key)
+    const bValue = getNestedValue(b, sortItem.key)
+
+    if (sortItem.key === 'care_giver.date_collected')
+      return compareDates(aValue, bValue, sortItem.order)
+
+    if (typeof aValue === 'string' && typeof bValue === 'string')
+      return compareStrings(aValue, bValue, sortItem.order)
+
+    if (typeof aValue === 'number' && typeof bValue === 'number')
+      return compareNumbers(aValue, bValue, sortItem.order)
+
+    return 0
+  })
+}
+
+const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
+  const filteredItems = filterItems(students.value, search.value)
+  const sortedItems = sortItems(filteredItems, sortBy)
+
+  const start = (page - 1) * itemsPerPageOption
+  const end = start + itemsPerPageOption
+
+  currentItems.value = sortedItems.slice(start, end)
+  totalItems.value = filteredItems.length
+
+  return { items: currentItems.value, total: totalItems.value }
 }
 
 interface ExportFormat {
@@ -537,7 +670,7 @@ const exportExcel = () => {
     const formattedData = dataToExport.map(formatStudentForExport)
     const worksheet = XLSX.utils.json_to_sheet(formattedData)
     const workbook = XLSX.utils.book_new()
-    
+
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
     XLSX.writeFile(workbook, `students_export_${new Date().toISOString().split('T')[0]}.xlsx`)
 
@@ -553,6 +686,89 @@ const exportExcel = () => {
       success: false,
       message: 'Failed to export data',
     }
+  }
+}
+
+const deleteStudent = async () => {
+  if (!selectedStudent.value?.id)
+    return
+
+  try {
+    const response = await callApi({
+      url: `student/delete/${selectedStudent.value.id}`,
+      method: 'DELETE',
+      authorized: true,
+      showAlert: false,
+    })
+
+    if (response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = 'Student deleted successfully'
+      alertInfo.type = 'success'
+
+      // Refresh data
+      await fetchData()
+    }
+    else {
+      const data = await response.json()
+
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = data.message || 'Failed to delete student'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong'
+    alertInfo.type = 'error'
+  }
+  finally {
+    deleteModal.value = false
+  }
+}
+
+const updateStudent = async () => {
+  if (!selectedStudent.value?.id)
+    return
+
+  try {
+    const response = await callApi({
+      url: `student/update/${selectedStudent.value.id}`,
+      method: 'POST',
+      data: formData.value,
+      authorized: true,
+      showAlert: false,
+    })
+
+    if (response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Success'
+      alertInfo.message = 'Student updated successfully'
+      alertInfo.type = 'success'
+
+      // Refresh data
+      await fetchData()
+    }
+    else {
+      const data = await response.json()
+
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = data.message || 'Failed to update student'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Something went wrong'
+    alertInfo.type = 'error'
+  }
+  finally {
+    editModal.value = false
   }
 }
 
@@ -611,7 +827,6 @@ onMounted(() => {
         </VCardItem>
       </VCard>
     </VCol>
-    
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -632,17 +847,16 @@ onMounted(() => {
               Beneficiaries
             </VCardTitle>
           </VCol>
-          
           <!-- Filter toggle button -->
           <VCol
             cols="12"
             md="8"
-            class="d-flex justify-end align-center pr-4"
+            class="d-flex justify-end align-center pw-4"
           >
             <VBtn
               variant="outlined"
               color="white"
-              class="mr-2"
+              class="mx-4"
               @click="toggleFilters"
             >
               {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
@@ -652,13 +866,20 @@ onMounted(() => {
             </VBtn>
           </VCol>
         </VRow>
-        
+
         <!-- Filter Section -->
         <VExpandTransition>
           <div v-show="showFilters">
-            <VCard class="pa-4 mb-4" flat>
+            <VCard
+              class="pa-4 mb-4"
+              flat
+            >
               <VRow>
-                <VCol cols="12" sm="6" md="4">
+                <VCol
+                  cols="12"
+                  sm="6"
+                  md="4"
+                >
                   <VAutocomplete
                     v-model="selectedLgas"
                     :items="lga"
@@ -667,6 +888,7 @@ onMounted(() => {
                     label="Filter by LGA"
                     multiple
                     chips
+                    density="compact"
                     closable-chips
                     :loading="lgaLoading"
                     hide-details
@@ -674,8 +896,11 @@ onMounted(() => {
                     @update:model-value="onLgaChange"
                   />
                 </VCol>
-                
-                <VCol cols="12" sm="6" md="4">
+                <VCol
+                  cols="12"
+                  sm="6"
+                  md="4"
+                >
                   <VAutocomplete
                     v-model="selectedSchools"
                     :items="selectedLgas.length ? schools.filter(school => {
@@ -687,6 +912,7 @@ onMounted(() => {
                     label="Filter by School"
                     multiple
                     chips
+                    density="compact"
                     closable-chips
                     :loading="studentLoading"
                     hide-details
@@ -694,12 +920,15 @@ onMounted(() => {
                     @update:model-value="applyFilters"
                   />
                 </VCol>
-                
-                <VCol cols="12" sm="12" md="4" class="d-flex align-center">
+                <VCol
+                  cols="12"
+                  sm="12"
+                  md="4"
+                >
                   <VBtn
                     color="error"
                     variant="outlined"
-                    class="ml-auto"
+                    class="mx-auto"
                     @click="resetFilters"
                   >
                     Reset Filters
@@ -715,6 +944,7 @@ onMounted(() => {
           justify="space-between"
         >
           <!-- Actions -->
+
           <VCol
             cols="12"
             md="3"
@@ -729,12 +959,29 @@ onMounted(() => {
               />
             </VCardText>
           </VCol>
-          
+          <!--
+            <VCol
+            cols="12"
+            md="3"
+            >
+            <VCardText>
+            <VBtn
+            class="text-subtitle-1"
+            text="Export Records"
+            size="x-large"
+            block
+            density="compact"
+            @click="openExportModal"
+            />
+            </VCardText>
+            </VCol>
+            </VRow>
+          -->
           <!-- Data Table -->
           <VDataTableServer
             v-model:items-per-page="itemsPerPage"
             :headers="headers"
-            :items="loadItems({ page: 1, itemsPerPage: itemsPerPage.value, sortBy: [] })"
+            :items="currentItems"
             :items-length="totalItems"
             :loading="!isLoaded"
             :search="search"
@@ -787,12 +1034,96 @@ onMounted(() => {
                 </template>
               </VTooltip>
             </template>
+            <template #item.care_giver.is_bvn_verfied="{ item }">
+              <VChip
+                v-if="item.raw.care_giver.is_bvn_verfied === 1"
+                density="compact"
+                text="Account Verified"
+                color="success"
+              />
+              <VChip
+                v-else-if="item.raw.bvn?.is_pending === 1"
+                density="compact"
+                text="Processing"
+                color="info"
+              />
+              <template v-else-if="item.raw.bvn?.error_message">
+                <VBtn
+                  density="compact"
+                  variant="tonal"
+                  color="error"
+                  @click="showErrorMessage(item.raw.bvn.error_message)"
+                >
+                  Verification Failed
+                </VBtn>
+              </template>
+              <VBtn
+                v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
+                :loading="verifyingBvn === item.raw.bvn_id"
+                density="compact"
+                variant="outlined"
+                text="Verify Account"
+                @click="verifyBvn(item.raw.care_giver.bvn_id)"
+              />
+              <VChip
+                v-else
+                density="compact"
+                text="Account Unverified"
+                color="warning"
+              />
+            </template>
           </VDataTableServer>
-        </VRow>
+        </vrow>
       </VCard>
     </VCol>
+
+    <!-- Loading Indicator -->
+    <VCol
+      v-else
+      cols="12"
+    >
+      <LoadingTable type="Students" />
+    </VCol>
   </VRow>
-  
+  <VDialog
+    v-model="StudentManagementModal"
+    width="600"
+    persistent
+  >
+    <VCard
+      v-if="selectedStudents"
+      class="pa-4"
+    >
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            File Management
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="StudentManagementModal = false"
+          />
+        </VCol>
+      </VRow>
+
+      <VCardText>
+        <VRow>
+          <VCol
+            cols="12"
+            md="6"
+          />
+
+          <VCol
+            cols="12"
+            md="6"
+          />
+        </VRow>
+      </VCardText>
+    </VCard>
+  </VDialog>
   <!-- Export Modal -->
   <VDialog
     v-model="exportModal"
@@ -803,7 +1134,9 @@ onMounted(() => {
         Export Options
       </VCardTitle>
       <VCardText>
-        <p class="mb-4">Select export format:</p>
+        <p class="mb-4">
+          Select export format:
+        </p>
         <VRadioGroup
           v-model="exportType"
           inline
@@ -817,17 +1150,21 @@ onMounted(() => {
             value="Excel"
           />
         </VRadioGroup>
-        
         <!-- Show filter summary -->
         <VDivider class="my-4" />
-        <div class="text-subtitle-1 mb-2">Export will include:</div>
+        <div class="text-subtitle-1 mb-2">
+          Export will include:
+        </div>
         <div class="text-body-2 mb-1">
           <strong>LGA Filter:</strong> {{ selectedLgas.length ? 'Selected LGAs only' : 'All LGAs' }}
         </div>
         <div class="text-body-2">
           <strong>School Filter:</strong> {{ selectedSchools.length ? 'Selected Schools only' : 'All Schools' }}
         </div>
-        <div v-if="search" class="text-body-2 mt-1">
+        <div
+          v-if="search"
+          class="text-body-2 mt-1"
+        >
           <strong>Search Filter:</strong> "{{ search }}"
         </div>
       </VCardText>
@@ -851,11 +1188,270 @@ onMounted(() => {
       </VCardActions>
     </VCard>
   </VDialog>
-  
-  <!-- Student Details Modal -->
+  <VDialog
+    v-model="errorMessageModal"
+    width="500"
+  >
+    <VCard class="pa-6">
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 text-center mb-4">
+            Verification Error Details
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
+            icon="bx-x"
+            variant="text"
+            @click="errorMessageModal = false"
+          />
+        </VCol>
+      </VRow>
+      <VCardText>
+        <p class="text-body-1">
+          {{ selectedErrorMessage }}
+        </p>
+      </VCardText>
+      <VCardActions class="justify-end pt-4">
+        <VBtn
+          color="primary"
+          variant="tonal"
+          @click="errorMessageModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
   <StudentDetailsModal
-    v-if="showStudentDetails"
     v-model="showStudentDetails"
     :student-id="selectedStudentId"
   />
+
+  <VDialog
+    v-model="deleteModal"
+    width="400"
+    persistent
+  >
+    <VCard class="pa-4">
+      <VCardTitle class="text-h6">
+        Confirm Delete
+      </VCardTitle>
+      <VCardText>
+        Are you sure you want to delete this student?
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          variant="text"
+          @click="deleteModal = false"
+        >
+          Cancel
+        </VBtn>
+        <VBtn
+          color="error"
+          variant="elevated"
+          @click="deleteStudent"
+        >
+          Delete
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
+
+  <!-- Edit Student Modal -->
+  <VDialog
+    v-model="editModal"
+    width="800"
+    persistent
+  >
+    <VCard class="pa-4">
+      <VCardTitle class="text-h6">
+        Edit Student
+      </VCardTitle>
+      <VCardText>
+        <VRow>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.name"
+              label="Name"
+              density="compact"
+              variant="solo-filled"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.cohurt"
+              density="compact"
+              variant="solo-filled"
+              label="Cohort"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VAutocomplete
+              v-model="formData.lga_id"
+              :items="lga"
+              item-title="name"
+              item-value="id"
+              label="LGA"
+              required
+              density="compact"
+              variant="solo-filled"
+              :loading="lgaLoading"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VAutocomplete
+              v-model="formData.school_id"
+              :items="schools"
+              item-title="name"
+              item-value="id"
+              label="School"
+              required
+              density="compact"
+              variant="solo-filled"
+              :loading="studentLoading"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.date_of_birth"
+              label="Date of Birth"
+              density="compact"
+              variant="solo-filled"
+              type="date"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.class"
+              label="Class"
+              density="compact"
+              variant="solo-filled"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VSelect
+              v-model="formData.gender"
+              label="Gender"
+              required
+              density="compact"
+              variant="solo-filled"
+              :items="['Male', 'Female']"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.disabilities"
+              density="compact"
+              variant="solo-filled"
+              label="Disabilities"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="formData.school_distance"
+              density="compact"
+              variant="solo-filled"
+              label="School Distance"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VCheckbox
+              v-model="formData.uniform"
+              label="Has Uniform"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VCheckbox
+              v-model="formData.text_book"
+              label="Has Textbook"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VCheckbox
+              v-model="formData.materials"
+              label="Has Materials"
+            />
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VCheckbox
+              v-model="formData.school_bag"
+              label="Has School Bag"
+            />
+          </VCol>
+        </VRow>
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          variant="text"
+          @click="editModal = false"
+        >
+          Cancel
+        </VBtn>
+        <VBtn
+          color="primary"
+          variant="elevated"
+          @click="updateStudent"
+        >
+          Save
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
 </template>
+
+<style scoped>
+.no-wrap {
+  white-space: nowrap;
+}
+
+.v-data-table {
+  font-size: 0.85rem;
+}
+</style>

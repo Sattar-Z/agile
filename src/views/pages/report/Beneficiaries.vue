@@ -243,15 +243,6 @@ interface Lga {
 const lga = ref<Lga[]>([])
 const schools = ref<Lga[]>([])
 
-// Get schools for a specific LGA
-const getSchoolsByLga = (lgaId: number) => {
-  return schools.value.filter(school => {
-    const schoolObj = school as unknown as Schools
-
-    return schoolObj.lga_id === lgaId
-  })
-}
-
 // Toggle filter visibility
 const toggleFilters = () => {
   showFilters.value = !showFilters.value
@@ -537,10 +528,30 @@ const sortItems = (items: Students[], sortBy: { key: string; order: string }[]):
   })
 }
 
-const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }: any) => {
-  const filteredItems = filterItems(students.value, search.value)
+// Update loadItems to use the filtered data
+const loadItems = ({ page, itemsPerPage: itemsPerPageOption, sortBy }) => {
+  // Apply LGA and School filters first
+  let filteredItems = students.value
+
+  if (selectedLgas.value.length > 0 || selectedSchools.value.length > 0) {
+    filteredItems = filteredItems.filter(student => {
+      const lgaMatch = selectedLgas.value.length === 0
+                      || (student.lga_id && selectedLgas.value.includes(student.lga_id))
+
+      const schoolMatch = selectedSchools.value.length === 0
+                         || (student.school_id && selectedSchools.value.includes(student.school_id))
+
+      return lgaMatch && schoolMatch
+    })
+  }
+
+  // Then apply search filter
+  filteredItems = filterItems(filteredItems, search.value)
+
+  // Sort the filtered items
   const sortedItems = sortItems(filteredItems, sortBy)
 
+  // Apply pagination
   const start = (page - 1) * itemsPerPageOption
   const end = start + itemsPerPageOption
 
@@ -778,6 +789,15 @@ onMounted(() => {
 
 watch(search, () => {
   totalItems.value = filterItems(students.value, search.value).length
+})
+
+// Watch for filter changes and call loadItems
+watch([selectedLgas, selectedSchools, search], () => {
+  loadItems({
+    page: 1,
+    itemsPerPage: itemsPerPage.value,
+    sortBy: [],
+  })
 })
 
 // Watch for filter changes
