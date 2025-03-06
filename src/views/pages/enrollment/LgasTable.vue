@@ -5,7 +5,7 @@ import { VDataTableServer } from 'vuetify/labs/VDataTable'
 
 import * as XLSX from 'xlsx'
 import LoadingTable from './LoadingTable.vue'
-import { callApi } from '@/helpers/request'
+import { callApi } from '@/helpers/new_request'
 import { useUserStore } from '@/stores/user'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
@@ -14,6 +14,7 @@ const props = defineProps<{
   termId: number | null
   session: string
   cohurt: string | null
+  loading: boolean
 }>()
 
 const token = ref('')
@@ -27,8 +28,8 @@ interface Lgas {
   id: number | null
   name: string | null
   daily_attendance_percentage: string | null
-  schools_count: number | null
   students_count: number | null
+  schools_count: number | null
   verified_care_givers_count: number | null
   unverified_care_givers_count: number | null
   created_at: string | null
@@ -65,27 +66,24 @@ const exportType = ref<'CSV' | 'Excel' | null>(null)
 const fetchData = async () => {
   isLoaded.value = false
   try {
-    const response = await callApi({
+    const { ok, data } = await callApi({
       url: `lgas?term_id=${props.termId}&session=${props.session}&cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
-      showAlert: false,
     })
 
-    const responseData = await response.json()
-
-    if (response.ok) {
-      lgas.value = Object.values(responseData.data.lgas)
+    if (ok) {
+      lgas.value = Object.values(data?.data?.lgas)
       totalItems.value = lgas.value.length
     }
-    else if (response.status === 401) {
+    else if (data?.status === 401) {
       user.removeUser()
       router.push({ name: 'login' })
     }
     else {
       alertInfo.show = true
       alertInfo.title = 'Error'
-      alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      alertInfo.message = data?.message || 'Something went wrong please try again later'
       alertInfo.type = 'error'
     }
   }
@@ -250,7 +248,7 @@ watch(
   <VRow>
     <!-- Data Table Section -->
     <VCol
-      v-if="isLoaded"
+      v-if="isLoaded && !loading"
       cols="12"
     >
       <VCard>
@@ -318,33 +316,8 @@ watch(
           class="transaction-table"
           @update:options="loadItems"
         >
-          <template #item.is_approved="{ item }">
-            <VIcon
-              v-if="item.raw.is_approved === 0"
-              size="small"
-              icon="bx-x-circle"
-              color="error"
-            />
-            <VIcon
-              v-else
-              size="small"
-              icon="bx-check-circle"
-              color="success"
-            />
-          </template>
-          <template #item.is_scanned="{ item }">
-            <VIcon
-              v-if="item.raw.is_scanned === 0"
-              size="small"
-              icon="bx-x-circle"
-              color="error"
-            />
-            <VIcon
-              v-else
-              size="small"
-              icon="bx-check-circle"
-              color="success"
-            />
+          <template #item.students_count="{ item }">
+            {{ item.raw.students_count }}
           </template>
           <template #item.action="{ item }">
             <RouterLink

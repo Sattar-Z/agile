@@ -418,9 +418,10 @@ onMounted(() => {
     </VCol>
     <VCol cols="12">
       <LgasTable
-        :term-id="form.term"
-        :session="form.session"
-        :cohurt="form.cohurt"
+        :term-id="form?.term"
+        :session="form?.session"
+        :cohurt="form?.cohurt"
+        :loading="termLoading"
       />
     </VCol>
   </VRow>

@@ -138,7 +138,7 @@ const headers = ref([
   { title: 'Students', align: 'start', sortable: false, key: 'name' },
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
-  { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
+  // { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
   { title: 'Cohort', key: 'cohurt', align: 'center' },
   { title: 'Attendance', key: 'attendance', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },

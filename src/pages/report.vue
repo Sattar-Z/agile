@@ -33,10 +33,10 @@ const activeTab = ref(route.params.tab)
 // tabs
 const tabs = [
   { title: 'Beneficiary', icon: 'bxs-graduation', tab: 'Beneficiary' },
-  { title: 'Advanced', icon: 'bxs-flag', tab: 'Advanced' },
   { title: 'CareGivers', icon: 'bxs-donate-heart', tab: 'CareGivers' },
   { title: 'Payments', icon: 'bx-money', tab: 'Payments' },
   { title: 'Attendance', icon: 'bx-check', tab: 'Attendance' },
+  { title: 'Advanced', icon: 'bxs-flag', tab: 'Advanced' },
 ]
 
 const terms = ref<Term[]>([])
@@ -161,7 +161,11 @@ onMounted(() => {
       class="mt-5 disable-tab-transition"
     >
       <VWindowItem value="Beneficiary">
-        <AllStudentTable />
+        <Beneficiaries />
+      </VWindowItem>
+      <VWindowItem value="CareGivers">
+        <CareGiver />
+        <CareGiversTable />
       </VWindowItem>
       <VWindowItem value="Advanced">
         <Lga
@@ -174,11 +178,8 @@ onMounted(() => {
           :term-id="form.term"
           :session="form.session"
           :cohurt="form.cohurt"
+          :loading="termLoading"
         />
-      </VWindowItem>
-      <VWindowItem value="CareGivers">
-        <CareGiver />
-        <CareGiversTable />
       </VWindowItem>
     </VWindow>
   </div>

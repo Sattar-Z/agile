@@ -422,7 +422,7 @@ onMounted(() => {
               color="primary"
               size="48"
             />
-            <span class="mx-4">Approved Attendance Files</span>
+            <span class="mx-4">Approved Student Attendance</span>
           </VCardTitle>
           <VCardText class="text-h4">
             {{ approvedFiles.length }}
@@ -446,7 +446,7 @@ onMounted(() => {
               color="primary"
               size="48"
             />
-            <span class="mx-4">Pending Attendance Files</span>
+            <span class="mx-4">Pending Student Attendance</span>
           </VCardTitle>
           <VCardText class="text-h4">
             {{ pendingFiles.length }}
@@ -470,7 +470,7 @@ onMounted(() => {
               color="primary"
               size="48"
             />
-            <span class="mx-4">Rejected Attendance Files</span>
+            <span class="mx-4">Rejected Student Attendance</span>
           </VCardTitle>
           <VCardText class="text-h4">
             {{ rejectedFiles.length }}
