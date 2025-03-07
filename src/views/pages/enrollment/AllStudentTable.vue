@@ -11,12 +11,6 @@ import { isAdmin } from '@/middlewares/auth'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 
-// const props = defineProps<{
-//   termId: string
-//   session: string
-// }>()
-
-// import { toNigerianCurrency } from '@/helpers/numbers'
 const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
