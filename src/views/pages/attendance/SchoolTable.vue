@@ -83,7 +83,8 @@ const SchoolManagementModal = ref(false)
 
 const headers = ref([
   { title: 'Schools', align: 'start', sortable: false, key: 'name' },
-  { title: 'Education Level', key: 'education_level', align: 'center' },
+
+  // { title: 'Education Level', key: 'education_level', align: 'center' },
   { title: 'NO of Students', key: 'students_count', align: 'center' },
   { title: 'Upload Records', key: 'upload', align: 'center' },
   { title: 'Action', key: 'view', align: 'center' },
@@ -535,9 +536,9 @@ watch(
                 params: {
                   id: item.raw.id,
                   name: item.raw.name,
-                  cohort: currentCohort,
-                  term: currentTerm,
-                  session: currentSession,
+                  cohort,
+                  term,
+                  session,
                 },
               }"
             >
