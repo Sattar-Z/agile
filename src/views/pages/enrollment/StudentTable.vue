@@ -149,17 +149,17 @@ const fetchData = async () => {
       router.push({ name: 'login' })
     }
     else {
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = responseData.message || 'Something went wrong please try again later'
-      alertInfo.type = 'error'
+      // alertInfo.show = true
+      // alertInfo.title = 'Error'
+      // alertInfo.message = responseData.message || 'Something went wrong please try again later'
+      // alertInfo.type = 'error'
     }
   }
   catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Something went wrong please try again later'
-    alertInfo.type = 'error'
+    // alertInfo.show = true
+    // alertInfo.title = 'Error'
+    // alertInfo.message = 'Something went wrong please try again later'
+    // alertInfo.type = 'error'
   }
   finally {
     isLoaded.value = true

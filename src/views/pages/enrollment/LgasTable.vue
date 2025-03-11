@@ -81,17 +81,17 @@ const fetchData = async () => {
       router.push({ name: 'login' })
     }
     else {
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = data?.message || 'Something went wrong please try again later'
-      alertInfo.type = 'error'
+      // alertInfo.show = true
+      // alertInfo.title = 'Error'
+      // alertInfo.message = data?.message || 'Something went wrong please try again later'
+      // alertInfo.type = 'error'
     }
   }
   catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Something went wrong please try again later'
-    alertInfo.type = 'error'
+    // alertInfo.show = true
+    // alertInfo.title = 'Error'
+    // alertInfo.message = 'Something went wrong please try again later'
+    // alertInfo.type = 'error'
     if (user.isTokenExpired())
       user.removeUser()
   }
