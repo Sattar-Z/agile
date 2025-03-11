@@ -3,10 +3,11 @@ import { useRoute } from 'vue-router'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 import CareGiversTable from '@/views/pages/enrollment/CareGiversTable.vue'
-import LgasTable from '@/views/pages/enrollment/LgasTable.vue'
+import Lga from '@/views/pages/report/advanced/Lga.vue'
+import LgaSchoolTable from '@/views/pages/report/advanced/SchoolTable.vue'
+import StudentTable from '@/views/pages/report/advanced/StudentTable.vue'
 import Beneficiaries from '@/views/pages/report/Beneficiaries.vue'
 import CareGiver from '@/views/pages/report/CareGiver.vue'
-import Lga from '@/views/pages/report/Lga.vue'
 import SchoolTable from '@/views/pages/report/SchoolTable.vue'
 
 const termLoading = ref(false)
@@ -55,7 +56,8 @@ const terms = ref<Term[]>([])
 const cohurts = ref<string[]>([])
 const payment = ref<Pay[]>([])
 const lga = ref<Pay[]>([])
-const schools = ref<Pay[]>([])
+
+// const schools = ref<Pay[]>([])
 
 const sessions = ref<string[]>([])
 
@@ -184,11 +186,42 @@ const fetchPaymentData = async () => {
   }
 }
 
+const showSchools = ref(false)
+const selectedLgaId = ref<number | null>(null)
+const selectedLgaName = ref('')
+
+const showStudents = ref(false)
+const selectedSchoolId = ref<number | null>(null)
+const selectedSchoolName = ref('')
+
+const handleViewLga = (id: number, name: string) => {
+  selectedLgaId.value = id
+  selectedLgaName.value = name
+  showSchools.value = true
+}
+
+const handleViewSchool = (id: number, name: string) => {
+  selectedSchoolId.value = id
+  selectedSchoolName.value = name
+  showSchools.value = false
+  showStudents.value = true
+}
+
 onMounted(() => {
   fetchTermData()
   fetchPaymentData()
   fetchSchoolData()
 })
+
+const handleSchoolGoBack = (): void => {
+  showSchools.value = true
+  showStudents.value = false
+}
+
+const handleLgaGoBack = (): void => {
+  showSchools.value = false
+  showStudents.value = false
+}
 </script>
 
 <template>
@@ -316,16 +349,33 @@ onMounted(() => {
       </VWindowItem>
       <VWindowItem value="Advanced">
         <Lga
-          :term-id="form.term"
-          :session="form.session"
-          :cohurt="form.cohurt"
-        />
-
-        <LgasTable
+          v-if="!showSchools && !showStudents"
           :term-id="form.term"
           :session="form.session"
           :cohurt="form.cohurt"
           :loading="termLoading"
+          @view-lga="handleViewLga"
+        />
+        <LgaSchoolTable
+          v-if="showSchools && !showStudents"
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+          :loading="termLoading"
+          :lga-id="selectedLgaId"
+          :lga-name="selectedLgaName"
+          @view-school="handleViewSchool"
+          @go-back-lga="handleLgaGoBack"
+        />
+        <StudentTable
+          v-if="!showSchools && showStudents"
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+          :loading="termLoading"
+          :school-id="selectedSchoolId"
+          :school-name="selectedSchoolName"
+          @go-back-school="handleSchoolGoBack"
         />
       </VWindowItem>
     </VWindow>
