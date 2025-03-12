@@ -333,7 +333,7 @@ const handleLgaGoBack = (): void => {
         <CareGiversTable />
       </VWindowItem>
       <VWindowItem value="Attendance">
-        <VRow justify="end">
+        <VRow justify="center">
           <VCol cols="auto">
             <span class="text-caption">School</span>
             <VAutocomplete
