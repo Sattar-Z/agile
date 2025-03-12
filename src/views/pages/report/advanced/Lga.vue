@@ -305,23 +305,6 @@ watch(
               />
             </VCardText>
           </VCol>
-          <!--
-            <VCol
-            cols="12"
-            md="3"
-            >
-            <VCardText>
-            <VBtn
-            class="text-subtitle-1"
-            text="Export Records"
-            size="x-large"
-            block
-            density="compact"
-            @click="openExportModal"
-            />
-            </VCardText>
-            </VCol>
-          -->
         </VRow>
 
         <!-- Data Table -->

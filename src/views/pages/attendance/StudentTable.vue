@@ -9,6 +9,7 @@ import { isAdmin } from '@/middlewares/auth'
 
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
+import { VProgressCircular } from 'vuetify/lib/components/index.mjs'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
 
@@ -35,6 +36,11 @@ const { id, name } = route.params
 const currentTerm = ref(route.params.term)
 const currentSession = ref(route.params.session)
 const currentCohort = ref(route.params.cohort)
+
+// Attendance modal state
+const attendanceModal = ref(false)
+const selectedStudentAttendance = ref<any>(null)
+const loadingAttendance = ref(false)
 
 watch(() => props.termId, newValue => {
   if (newValue !== null)
@@ -77,28 +83,6 @@ interface CareGiver {
   lga_id: number
 }
 
-// "id": 388,
-//                 "school_id": 322,
-//                 "lga_id": 8,
-//                 "care_giver_id": 377,
-//                 "name": "ISMAIL RABI ABDULLAHI",
-//                 "date_of_birth": "21/01/2010",
-//                 "student_admission_number": "98",
-//                 "class": "JSS 1",
-//                 "disabilities": "NONE  ",
-//                 "biometrics_photo": "signature-9_32_18.png",
-//                 "uniform": 0,
-//                 "text_book": 0,
-//                 "school_distance": "0 - 1km",
-//                 "materials": 0,
-//                 "photo": "1730363501687415231105831504887-9_31_59.jpg",
-//                 "created_at": "2025-01-10T10:47:02.000000Z",
-//                 "updated_at": "2025-01-10T10:47:02.000000Z",
-//                 "cohurt": "1",
-//                 "term_id": null,
-//                 "is_eligible": false,
-//                 "note": "[\"Attendance Criteria not met\"]"
-
 interface Students {
   id: number | null
   school_id: number | null
@@ -138,8 +122,6 @@ const headers = ref([
   { title: 'Students', align: 'start', sortable: false, key: 'name' },
   { title: 'Admission No', key: 'student_admission_number', align: 'center' },
   { title: 'DOB', key: 'date_of_birth', align: 'center' },
-
-  // { title: 'Account', key: 'care_giver.is_bvn_verfied', align: 'center' },
   { title: 'Cohort', key: 'cohurt', align: 'center' },
   { title: 'Attendance', key: 'attendance', align: 'center' },
   { title: 'Action', key: 'action', align: 'center' },
@@ -193,6 +175,52 @@ const fetchData = async () => {
   finally {
     isLoaded.value = true
   }
+}
+
+const fetchStudentAttendance = async (studentId: number) => {
+  loadingAttendance.value = true
+  attendanceModal.value = true
+  try {
+    const response = await callApi({
+      url: `student/attendance/${studentId}`,
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok) {
+      selectedStudentAttendance.value = responseData.data
+    }
+    else if (response.status === 401) {
+      user.removeUser()
+      router.push({ name: 'login' })
+    }
+    else {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Failed to fetch attendance data'
+      alertInfo.type = 'error'
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Failed to fetch attendance data'
+    alertInfo.type = 'error'
+  }
+  finally {
+    loadingAttendance.value = false
+  }
+}
+
+const formatDate = (dateString: string) => {
+  if (!dateString)
+    return ''
+  const date = new Date(dateString)
+
+  return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const verifyBvn = async (bvnId: number) => {
@@ -257,6 +285,20 @@ const verifyBvn = async (bvnId: number) => {
 function openStudentDetails(student: Students) {
   selectedStudentId.value = student.id
   showStudentDetails.value = true
+}
+
+// Function to determine attendance status color
+const getAttendanceStatusColor = (attendances: number | null) => {
+  if (attendances === null)
+    return 'grey'
+  if (attendances >= 80)
+    return 'success'
+  if (attendances >= 60)
+    return 'info'
+  if (attendances >= 40)
+    return 'warning'
+
+  return 'error'
 }
 
 // Filter items based on search
@@ -518,7 +560,20 @@ watch(
             />
           </template>
           <template #item.attendance="{ item }">
-            {{ item.raw.attendance }} %
+            <VTooltip
+              activator="parent"
+              location="top"
+            >
+              Click to view detailed attendance
+            </VTooltip>
+            <VChip
+              :color="getAttendanceStatusColor(item.raw.attendance)"
+              density="compact"
+              class="cursor-pointer"
+              @click="fetchStudentAttendance(item.raw.id || 0)"
+            >
+              {{ item.raw.attendance }} %
+            </VChip>
           </template>
           <template #item.care_giver.is_bvn_verfied="{ item }">
             <VChip
@@ -651,6 +706,167 @@ watch(
           </VCol>
         </VRow>
       </VCardText>
+    </VCard>
+  </VDialog>
+  <!-- Attendance Modal -->
+  <VDialog
+    v-model="attendanceModal"
+    max-width="800px"
+    persistent
+  >
+    <VCard>
+      <VRow justify="space-between">
+        <VCol cols="auto">
+          <VCardTitle class="text-h5 pa-4">
+            Student Attendance Record
+          </VCardTitle>
+        </VCol>
+        <VCol cols="auto">
+          <VCardText>
+            <VBtn
+              icon
+              @click="attendanceModal = false"
+            >
+              <VIcon>mdi-close</VIcon>
+            </VBtn>
+          </VCardText>
+        </VCol>
+      </VRow>
+
+      <VDivider />
+
+      <VCardText class="pa-4">
+        <VRow v-if="loadingAttendance">
+          <VCol
+            cols="12"
+            class="d-flex justify-center align-center"
+          >
+            <VProgressCircular
+              indeterminate
+              color="primary"
+            />
+          </VCol>
+        </VRow>
+
+        <div v-else-if="selectedStudentAttendance">
+          <VRow>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <h3 class="text-h6 mb-2">
+                Student Information
+              </h3>
+              <VList>
+                <VListItem>
+                  <VListItemTitle class="font-weight-bold">
+                    Name
+                  </VListItemTitle>
+                  <VListItemSubtitle>{{ selectedStudentAttendance.student.name }}</VListItemSubtitle>
+                </VListItem>
+                <VListItem>
+                  <VListItemTitle class="font-weight-bold">
+                    Admission Number
+                  </VListItemTitle>
+                  <VListItemSubtitle>{{ selectedStudentAttendance.student.student_admission_number }}</VListItemSubtitle>
+                </VListItem>
+                <VListItem>
+                  <VListItemTitle class="font-weight-bold">
+                    Class
+                  </VListItemTitle>
+                  <VListItemSubtitle>{{ selectedStudentAttendance.student.class }}</VListItemSubtitle>
+                </VListItem>
+              </VList>
+            </VCol>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <h3 class="text-h6 mb-2 text-center">
+                Attendance Summary
+              </h3>
+              <VRow>
+                <VCol cols="6">
+                  <VCard variant="outlined">
+                    <VCardText class="text-center">
+                      <div class="text-h6">
+                        Total Days
+                      </div>
+                      <div class="text-h4">
+                        {{ selectedStudentAttendance.attendance.length }}
+                      </div>
+                    </VCardText>
+                  </VCard>
+                </VCol>
+                <VCol cols="6">
+                  <VCard variant="outlined">
+                    <VCardText class="text-center">
+                      <div class="text-h6">
+                        Present
+                      </div>
+                      <div class="text-h4">
+                        {{ selectedStudentAttendance.attendance.filter((a:any) => a.check_in && a.check_out).length }}
+                      </div>
+                    </VCardText>
+                  </VCard>
+                </VCol>
+              </VRow>
+            </VCol>
+          </VRow>
+
+          <VDivider class="my-4" />
+
+          <h3 class="text-h6 mb-3">
+            Attendance Records
+          </h3>
+          <VTable>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Comment</th>
+              </tr>
+            </thead>
+            <tbody class="text-center">
+              <tr
+                v-for="(item, index) in selectedStudentAttendance.attendance"
+                :key="index"
+              >
+                <td>{{ formatDate(item.date) }}</td>
+                <td>
+                  <VChip
+                    :color="item.check_in ? 'success' : 'error'"
+                    density="compact"
+                  >
+                    {{ item.check_in ? 'Present' : 'Absent' }}
+                  </VChip>
+                </td>
+                <td>
+                  <VChip
+                    :color="item.check_out ? 'success' : 'error'"
+                    density="compact"
+                  >
+                    {{ item.check_out ? 'Present' : 'Absent' }}
+                  </VChip>
+                </td>
+                <td>{{ item.comment || '-' }}</td>
+              </tr>
+            </tbody>
+          </VTable>
+        </div>
+      </VCardText>
+
+      <VCardActions class="pa-4 pt-0">
+        <VSpacer />
+        <VBtn
+          color="primary"
+          variant="tonal"
+          @click="attendanceModal = false"
+        >
+          Close
+        </VBtn>
+      </VCardActions>
     </VCard>
   </VDialog>
   <StudentDetailsModal
