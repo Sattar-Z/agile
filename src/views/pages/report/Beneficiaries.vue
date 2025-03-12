@@ -128,23 +128,6 @@ interface Students {
   lga: Lgas
 }
 
-interface StudentFormData {
-  name: string
-  cohurt: string
-  lga_id: number | string
-  school_id: number | string
-  care_giver_id: string
-  date_of_birth: string
-  class: string
-  gender: string
-  disabilities: string
-  uniform: boolean
-  text_book: boolean
-  school_distance: string
-  materials: boolean
-  school_bag: boolean
-}
-
 const alertInfo = reactive({
   show: false,
   message: '',
@@ -152,9 +135,6 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
-const deleteModal = ref(false)
-const editModal = ref(false)
-const selectedStudent = ref<Students | null>(null)
 const currentItems = ref<Students[]>([])
 const selectedStudents = ref<Students | null>(null)
 const StudentManagementModal = ref(false)
@@ -184,50 +164,6 @@ const exportModal = ref(false)
 const exportType = ref<'CSV' | 'Excel' | null>(null)
 const verifyingBvn = ref<number | null>(null)
 const filteredStudents = ref<Students[]>([])
-
-const formData = ref<StudentFormData>({
-  name: '',
-  cohurt: '',
-  lga_id: '',
-  school_id: '',
-  care_giver_id: '',
-  date_of_birth: '',
-  class: '',
-  gender: '',
-  disabilities: '',
-  uniform: false,
-  text_book: false,
-  school_distance: '',
-  materials: false,
-  school_bag: false,
-})
-
-// Add new functions
-const openDeleteModal = (student: Students) => {
-  selectedStudent.value = student
-  deleteModal.value = true
-}
-
-const openEditModal = (student: Students) => {
-  selectedStudent.value = student
-  formData.value = {
-    name: student?.name || '',
-    cohurt: student?.cohurt || '',
-    lga_id: student?.lga?.id || '',
-    school_id: student?.school?.id || '',
-    care_giver_id: student?.care_giver_id?.toString() || '',
-    date_of_birth: student?.date_of_birth || '',
-    class: student?.class || '',
-    gender: '',
-    disabilities: student?.disabilities || '',
-    uniform: !!student.uniform,
-    text_book: !!student.text_book,
-    school_distance: student.school_distance || '',
-    materials: !!student.materials,
-    school_bag: false,
-  }
-  editModal.value = true
-}
 
 interface Lga {
   id: number
@@ -694,89 +630,6 @@ const exportExcel = () => {
   }
 }
 
-const deleteStudent = async () => {
-  if (!selectedStudent.value?.id)
-    return
-
-  try {
-    const response = await callApi({
-      url: `student/delete/${selectedStudent.value.id}`,
-      method: 'DELETE',
-      authorized: true,
-      showAlert: false,
-    })
-
-    if (response.ok) {
-      alertInfo.show = true
-      alertInfo.title = 'Success'
-      alertInfo.message = 'Student deleted successfully'
-      alertInfo.type = 'success'
-
-      // Refresh data
-      await fetchData()
-    }
-    else {
-      const data = await response.json()
-
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = data.message || 'Failed to delete student'
-      alertInfo.type = 'error'
-    }
-  }
-  catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Something went wrong'
-    alertInfo.type = 'error'
-  }
-  finally {
-    deleteModal.value = false
-  }
-}
-
-const updateStudent = async () => {
-  if (!selectedStudent.value?.id)
-    return
-
-  try {
-    const response = await callApi({
-      url: `student/update/${selectedStudent.value.id}`,
-      method: 'POST',
-      data: formData.value,
-      authorized: true,
-      showAlert: false,
-    })
-
-    if (response.ok) {
-      alertInfo.show = true
-      alertInfo.title = 'Success'
-      alertInfo.message = 'Student updated successfully'
-      alertInfo.type = 'success'
-
-      // Refresh data
-      await fetchData()
-    }
-    else {
-      const data = await response.json()
-
-      alertInfo.show = true
-      alertInfo.title = 'Error'
-      alertInfo.message = data.message || 'Failed to update student'
-      alertInfo.type = 'error'
-    }
-  }
-  catch (error) {
-    alertInfo.show = true
-    alertInfo.title = 'Error'
-    alertInfo.message = 'Something went wrong'
-    alertInfo.type = 'error'
-  }
-  finally {
-    editModal.value = false
-  }
-}
-
 onMounted(() => {
   loadItems({ page: 1, itemsPerPage: itemsPerPage.value, sortBy: [] })
 })
@@ -973,24 +826,6 @@ onMounted(() => {
               />
             </VCardText>
           </VCol>
-          <!--
-            <VCol
-            cols="12"
-            md="3"
-            >
-            <VCardText>
-            <VBtn
-            class="text-subtitle-1"
-            text="Export Records"
-            size="x-large"
-            block
-            density="compact"
-            @click="openExportModal"
-            />
-            </VCardText>
-            </VCol>
-            </VRow>
-          -->
           <!-- Data Table -->
           <VDataTableServer
             v-model:items-per-page="itemsPerPage"
@@ -1009,22 +844,6 @@ onMounted(() => {
                   variant="tonal"
                   text="View"
                   @click="openStudentDetails(item.raw)"
-                />
-                <VBtn
-                  v-if="Admin"
-                  density="compact"
-                  variant="tonal"
-                  color="primary"
-                  text="Edit"
-                  @click="openEditModal(item.raw)"
-                />
-                <VBtn
-                  v-if="Admin"
-                  density="compact"
-                  variant="tonal"
-                  color="error"
-                  text="Delete"
-                  @click="openDeleteModal(item.raw)"
                 />
               </div>
             </template>
@@ -1241,223 +1060,6 @@ onMounted(() => {
     v-model="showStudentDetails"
     :student-id="selectedStudentId"
   />
-
-  <VDialog
-    v-model="deleteModal"
-    width="400"
-    persistent
-  >
-    <VCard class="pa-4">
-      <VCardTitle class="text-h6">
-        Confirm Delete
-      </VCardTitle>
-      <VCardText>
-        Are you sure you want to delete this student?
-      </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <VBtn
-          color="primary"
-          variant="text"
-          @click="deleteModal = false"
-        >
-          Cancel
-        </VBtn>
-        <VBtn
-          color="error"
-          variant="elevated"
-          @click="deleteStudent"
-        >
-          Delete
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
-
-  <!-- Edit Student Modal -->
-  <VDialog
-    v-model="editModal"
-    width="800"
-    persistent
-  >
-    <VCard class="pa-4">
-      <VCardTitle class="text-h6">
-        Edit Student
-      </VCardTitle>
-      <VCardText>
-        <VRow>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.name"
-              label="Name"
-              density="compact"
-              variant="solo-filled"
-              required
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.cohurt"
-              density="compact"
-              variant="solo-filled"
-              label="Cohort"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VAutocomplete
-              v-model="formData.lga_id"
-              :items="lga"
-              item-title="name"
-              item-value="id"
-              label="LGA"
-              required
-              density="compact"
-              variant="solo-filled"
-              :loading="lgaLoading"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VAutocomplete
-              v-model="formData.school_id"
-              :items="schools"
-              item-title="name"
-              item-value="id"
-              label="School"
-              required
-              density="compact"
-              variant="solo-filled"
-              :loading="studentLoading"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.date_of_birth"
-              label="Date of Birth"
-              density="compact"
-              variant="solo-filled"
-              type="date"
-              required
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.class"
-              label="Class"
-              density="compact"
-              variant="solo-filled"
-              required
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VSelect
-              v-model="formData.gender"
-              label="Gender"
-              required
-              density="compact"
-              variant="solo-filled"
-              :items="['Male', 'Female']"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.disabilities"
-              density="compact"
-              variant="solo-filled"
-              label="Disabilities"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.school_distance"
-              density="compact"
-              variant="solo-filled"
-              label="School Distance"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.uniform"
-              label="Has Uniform"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.text_book"
-              label="Has Textbook"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.materials"
-              label="Has Materials"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.school_bag"
-              label="Has School Bag"
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <VBtn
-          color="primary"
-          variant="text"
-          @click="editModal = false"
-        >
-          Cancel
-        </VBtn>
-        <VBtn
-          color="primary"
-          variant="elevated"
-          @click="updateStudent"
-        >
-          Save
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
 </template>
 
 <style scoped>

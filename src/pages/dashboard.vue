@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import AnalyticsCongratulations from '@/views/dashboard/AnalyticsCongratulations.vue'
-import AnalyticsTotalRevenue from '@/views/dashboard/AnalyticsTotalRevenue.vue'
-import { useUserStore } from '@/stores/user'
 import { toNigerianCurrency } from '@/helpers/numbers'
 import { callApi } from '@/helpers/request'
+import { useUserStore } from '@/stores/user'
+import AnalyticsCongratulations from '@/views/dashboard/AnalyticsCongratulations.vue'
+import AnalyticsTotalRevenue from '@/views/dashboard/AnalyticsTotalRevenue.vue'
 
 const loading = ref(false)
 const student = ref(0)
@@ -60,7 +60,7 @@ onMounted(() => {
 </script>
 
 <template>
-   <VSnackbar
+  <VSnackbar
     v-model="alertInfo.show"
     :color="alertInfo.type"
     elevation="74"
@@ -99,9 +99,25 @@ onMounted(() => {
             </VCardTitle>
           </div>
         </VCardItem>
-        <VCardText class="my-auto text-h5">
-          {{ student || 0 }}
-        </VCardText>
+        <VRow
+          no-gutters
+          justify="space-between"
+        >
+          <VCol cols="auto">
+            <VCardText class="my-auto text-h5">
+              {{ student || 0 }}
+            </VCardText>
+          </VCol>
+          <VCol cols="auto">
+            <VCardText>
+              <VBtn
+                text="View"
+                to="/beneficiaries"
+                size="small"
+              />
+            </VCardText>
+          </VCol>
+        </VRow>
       </VCard>
     </VCol>
     <VCol
@@ -123,9 +139,25 @@ onMounted(() => {
             </VCardTitle>
           </div>
         </VCardItem>
-        <VCardText class="my-auto text-h5">
-          {{ attendance }} %
-        </VCardText>
+        <VRow
+          no-gutters
+          justify="space-between"
+        >
+          <VCol cols="auto">
+            <VCardText class="my-auto text-h5">
+              {{ attendance }} %
+            </VCardText>
+          </VCol>
+          <VCol cols="auto">
+            <VCardText>
+              <VBtn
+                text="View"
+                to="/attendance"
+                size="small"
+              />
+            </VCardText>
+          </VCol>
+        </VRow>
       </VCard>
     </VCol>
     <VCol
@@ -147,9 +179,25 @@ onMounted(() => {
             </VCardTitle>
           </div>
         </VCardItem>
-        <VCardText class="my-auto text-h5">
-          {{ toNigerianCurrency(disbursement) }}
-        </VCardText>
+        <VRow
+          no-gutters
+          justify="space-between"
+        >
+          <VCol cols="auto">
+            <VCardText class="my-auto text-h5">
+              {{ toNigerianCurrency(disbursement) }}
+            </VCardText>
+          </VCol>
+          <VCol cols="auto">
+            <VCardText>
+              <VBtn
+                text="View"
+                to="/disbursement"
+                size="small"
+              />
+            </VCardText>
+          </VCol>
+        </VRow>
       </VCard>
     </VCol>
 

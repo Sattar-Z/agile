@@ -7,10 +7,11 @@ import Lga from '@/views/pages/report/advanced/Lga.vue'
 import LgaSchoolTable from '@/views/pages/report/advanced/SchoolTable.vue'
 import StudentTable from '@/views/pages/report/advanced/StudentTable.vue'
 import Beneficiaries from '@/views/pages/report/Beneficiaries.vue'
-import CareGiver from '@/views/pages/report/CareGiver.vue'
 import SchoolTable from '@/views/pages/report/SchoolTable.vue'
+import StudentAttendanceTable from '@/views/pages/report/attendance/StudentTable.vue'
 
 const termLoading = ref(false)
+const studentLoading = ref(false)
 const paymentLoading = ref(false)
 const lgaLoading = ref(false)
 const user = useUserStore()
@@ -28,6 +29,7 @@ const form = ref({
   session: '',
   term: null as number | null,
   school: null as number | null,
+  schoolName: null as string | null,
   lga: null as number | null,
   cohurt: null as string | null,
   payment: null as number | null,
@@ -42,6 +44,8 @@ interface Pay {
   id: number
   name: string
 }
+
+const schools = ref<Pay[]>([])
 
 // tabs
 const tabs = [
@@ -111,6 +115,44 @@ const fetchTermData = async () => {
   }
   finally {
     termLoading.value = false
+  }
+}
+
+const fetchStudentData = async () => {
+  studentLoading.value = true
+  try {
+    const response = await callApi({
+      url: 'schools',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Schools list failed'
+      alertInfo.type = 'error'
+    }
+    else {
+      schools.value = responseData.data
+      if (schools.value.length > 0) {
+        form.value.school = schools.value[0].id
+        form.value.schoolName = schools.value[0].name
+      }
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Schools list error'
+    alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
+  }
+  finally {
+    studentLoading.value = false
   }
 }
 
@@ -208,6 +250,7 @@ const handleViewSchool = (id: number, name: string) => {
 }
 
 onMounted(() => {
+  fetchStudentData()
   fetchTermData()
   fetchPaymentData()
   fetchSchoolData()
@@ -288,6 +331,33 @@ const handleLgaGoBack = (): void => {
       </VWindowItem>
       <VWindowItem value="CareGivers">
         <CareGiversTable />
+      </VWindowItem>
+      <VWindowItem value="Attendance">
+        <VRow justify="end">
+          <VCol cols="auto">
+            <span class="text-caption">School</span>
+            <VAutocomplete
+              v-model="form.school"
+              :items="schools"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="studentLoading"
+            />
+          </VCol>
+        </VRow>
+        <VRow>
+          <VCol cols="12">
+            <StudentAttendanceTable
+              :term-id="form.term"
+              :session="sessions"
+              :school="form.school"
+              :school-name="form.schoolName"
+              :cohurt="form.cohurt"
+            />
+          </VCol>
+        </VRow>
       </VWindowItem>
       <!-- Payment -->
       <VWindowItem value="Payments">

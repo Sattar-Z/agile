@@ -70,8 +70,6 @@ const headers = ref([
   { title: 'NO of Students', key: 'students_count', align: 'center' },
   { title: 'Verified Accounts', key: 'verified_care_givers_count', align: 'center' },
   { title: 'Unverified Accounts', key: 'unverified_care_givers_count', align: 'center' },
-  { title: 'Upload Records', key: 'upload', align: 'center' },
-  { title: 'Verify Accounts', key: 'verify', align: 'center' },
   { title: 'Action', key: 'view', align: 'center' },
 ] as const)
 
