@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
-import CareGiversTable from '@/views/pages/enrollment/CareGiversTable.vue'
+import CareGiversTable from '@/views/pages/report/CareGiversTable.vue'
 import Lga from '@/views/pages/report/advanced/Lga.vue'
 import LgaSchoolTable from '@/views/pages/report/advanced/SchoolTable.vue'
 import StudentTable from '@/views/pages/report/advanced/StudentTable.vue'
@@ -287,7 +287,6 @@ const handleLgaGoBack = (): void => {
         <Beneficiaries />
       </VWindowItem>
       <VWindowItem value="CareGivers">
-        <CareGiver />
         <CareGiversTable />
       </VWindowItem>
       <!-- Payment -->
