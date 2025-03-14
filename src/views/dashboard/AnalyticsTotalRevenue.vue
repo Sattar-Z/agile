@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import VueApexCharts from 'vue3-apexcharts'
-import { useDisplay, useTheme } from 'vuetify'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
+import VueApexCharts from 'vue3-apexcharts'
+import { useDisplay, useTheme } from 'vuetify'
 
 import { hexToRgb } from '@layouts/utils'
 
@@ -337,7 +337,7 @@ const chartOptions = computed(() => {
       },
       tooltip: {
         y: {
-          formatter: val => `${val}%`,
+          formatter: (val: any) => `${val}%`,
         },
       },
       stroke: {
@@ -345,7 +345,7 @@ const chartOptions = computed(() => {
       },
       dataLabels: {
         enabled: true,
-        formatter: val => `${Math.round(val)}%`,
+        formatter: (val: any) => `${Math.round(val)}%`,
         style: {
           fontSize: '12px',
           fontFamily: 'Public Sans',
@@ -373,41 +373,6 @@ const chartOptions = computed(() => {
       ],
     },
   }
-})
-
-// Updated balance data to show useful statistics
-const balanceData = computed(() => [
-  {
-    icon: 'bxs-graduation',
-    amount: lgas.value.length > 0
-      ? lgas.value.reduce((sum, lga) => {
-        const juniorSchool = lga.schools.find(s => s.type === 'Junior')
-
-        return sum + (juniorSchool ? juniorSchool.total_students : 0)
-      }, 0).toLocaleString()
-      : '0',
-    year: 'Junior Students',
-    color: 'primary',
-  },
-  {
-    icon: 'bxs-school',
-    amount: lgas.value.length > 0
-      ? lgas.value.reduce((sum, lga) => {
-        const seniorSchool = lga.schools.find(s => s.type === 'Senior')
-
-        return sum + (seniorSchool ? seniorSchool.total_students : 0)
-      }, 0).toLocaleString()
-      : '0',
-    year: 'Senior Students',
-    color: 'info',
-  },
-])
-
-// Calculate total schools
-const totalSchools = computed(() => {
-  return lgas.value.reduce((sum, lga) => {
-    return sum + lga.schools.reduce((schoolSum, school) => schoolSum + school.schools_count, 0)
-  }, 0)
 })
 
 onMounted(() => {
@@ -438,7 +403,7 @@ onMounted(() => {
       cols="12"
       md="8"
     >
-      <VCard>
+      <VCard :loading="lgaLoading">
         <VCardItem class="pb-0">
           <VCardTitle>LGA Student Distribution</VCardTitle>
 
@@ -456,18 +421,6 @@ onMounted(() => {
         </VCardText>
 
         <div class="position-relative">
-          <!-- Loading overlay -->
-          <div
-            v-if="lgaLoading"
-            class="d-flex justify-center align-center"
-            style="position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(255, 255, 255, 70%);"
-          >
-            <VProgressCircular
-              indeterminate
-              color="primary"
-            />
-          </div>
-
           <!-- No data message -->
           <div
             v-if="!lgaLoading && lgas.length === 0"
@@ -495,25 +448,13 @@ onMounted(() => {
       cols="12"
       md="4"
     >
-      <VCard>
+      <VCard :loading="pieChartLoading">
         <VCardText class="text-center">
           <h6 class="text-h6 font-weight-medium mt-4">
             Attendance Percentages by LGA
           </h6>
 
           <div class="position-relative">
-            <!-- Loading overlay -->
-            <div
-              v-if="pieChartLoading"
-              class="d-flex justify-center align-center"
-              style="position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(255, 255, 255, 70%);"
-            >
-              <VProgressCircular
-                indeterminate
-                color="primary"
-              />
-            </div>
-
             <!-- No data message -->
             <div
               v-if="!pieChartLoading && attendanceData.length === 0"
