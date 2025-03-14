@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { callApi } from '@/helpers/request'
-import { useUserStore } from '@/stores/user'
 import VueApexCharts from 'vue3-apexcharts'
 import { useDisplay, useTheme } from 'vuetify'
+import { callApi } from '@/helpers/request'
+import { useUserStore } from '@/stores/user'
 
 import { hexToRgb } from '@layouts/utils'
 
@@ -162,22 +162,19 @@ const chartOptions = computed(() => {
   return {
     bar: {
       chart: {
-        stacked: false, // Set to false for side-by-side comparison
+        stacked: false,
         parentHeightOffset: 0,
         toolbar: { show: false },
       },
       dataLabels: { enabled: false },
       stroke: {
-        width: 6,
-        lineCap: 'round',
+        width: 1,
         colors: [currentTheme.surface],
       },
       colors: [`rgba(${hexToRgb(String(currentTheme.primary))}, 1)`, `rgba(${hexToRgb(String(currentTheme.info))}, 1)`],
       legend: {
-        offsetX: -10,
         position: 'top',
         fontSize: '14px',
-        horizontalAlign: 'left',
         fontFamily: 'Public Sans',
         labels: {
           colors: currentTheme.secondary,
@@ -201,19 +198,19 @@ const chartOptions = computed(() => {
           filter: { type: 'none' },
         },
       },
-      grid: {
-        borderColor,
-        padding: {
-          bottom: 5,
-        },
-      },
       plotOptions: {
         bar: {
-          borderRadius: 10,
-          columnWidth: '60%',
+          borderRadius: 3,
+          columnWidth: '40%', // Reduce this for more spacing between groups
           endingShape: 'rounded',
           startingShape: 'rounded',
-          horizontal: false, // Set to false for vertical bars with LGAs on x-axis
+          horizontal: false,
+          dataLabels: {
+            position: 'top', // Add data labels for clarity
+          },
+
+          // Make sure grouped is explicitly set
+          grouped: true,
         },
       },
       xaxis: {
@@ -310,14 +307,6 @@ const chartOptions = computed(() => {
         toolbar: { show: false },
       },
       labels: pieChartLabels.value,
-      colors: attendanceData.value.length > 0
-        ? attendanceData.value.map((_, index) => {
-          const baseColor = currentTheme.primary
-          const opacity = 0.5 + (index * 0.5 / attendanceData.value.length)
-
-          return `rgba(${hexToRgb(String(baseColor))}, ${opacity})`
-        })
-        : [currentTheme.primary],
       legend: {
         position: 'bottom',
         fontSize: '13px',
@@ -486,9 +475,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
-#bar-chart .apexcharts-series[rel="2"] {
-  transform: translateY(-10px);
-}
 
 .custom-tooltip {
   border-radius: 5px;
