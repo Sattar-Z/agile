@@ -1,15 +1,155 @@
 <script setup lang="ts">
 import VueApexCharts from 'vue3-apexcharts'
 import { useDisplay, useTheme } from 'vuetify'
+import { callApi } from '@/helpers/request'
+import { useUserStore } from '@/stores/user'
 
 import { hexToRgb } from '@layouts/utils'
 
+interface School {
+  type: string
+  total_students: number
+  schools_count: number
+}
+
+interface Lga {
+  lga_id: number
+  lga_name: string
+  schools: School[]
+  total_students: number
+}
+
+interface AttendanceData {
+  lga_id: number
+  lga_name: string
+  attendance_pacentage: number
+  total_students: number
+}
+
+const lgas = ref<Lga[]>([])
 const vuetifyTheme = useTheme()
 const display = useDisplay()
+const lgaLoading = ref(false)
+const user = useUserStore()
+const attendanceData = ref<AttendanceData[]>([])
+const pieChartLoading = ref(false)
 
-const series = [
-  { name: `${new Date().getFullYear() - 1}`, data: [1, 1, 1, 1, 1, 1, 1] },
-]
+const alertInfo = reactive({
+  show: false,
+  message: '',
+  title: '',
+  type: 'error' as 'error' | 'success' | 'warning' | 'info',
+})
+
+// Chart data will be computed from the API response
+const chartSeries = computed(() => {
+  if (!lgas.value || lgas.value.length === 0) {
+    return [
+      { name: 'Junior', data: [] },
+      { name: 'Senior', data: [] },
+    ]
+  }
+
+  // Extract data for both Junior and Senior schools per LGA
+  const juniorData = lgas.value.map(lga => {
+    const juniorSchool = lga.schools.find(school => school.type === 'Junior')
+
+    return juniorSchool ? juniorSchool.total_students : 0
+  })
+
+  const seniorData = lgas.value.map(lga => {
+    const seniorSchool = lga.schools.find(school => school.type === 'Senior')
+
+    return seniorSchool ? seniorSchool.total_students : 0
+  })
+
+  return [
+    { name: 'Junior', data: juniorData },
+    { name: 'Senior', data: seniorData },
+  ]
+})
+
+// LGA names for chart categories
+const lgaNames = computed(() => {
+  return lgas.value.map(lga => lga.lga_name)
+})
+
+const fetchData = async () => {
+  lgaLoading.value = true
+  try {
+    const response = await callApi({
+      url: 'compliance/chart',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'LGA list failed'
+      alertInfo.type = 'error'
+    }
+    else {
+      // Update to match the new API response format
+      lgas.value = responseData.data
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'LGA list error'
+    alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
+  }
+  finally {
+    lgaLoading.value = false
+  }
+}
+
+const fetchPieChartData = async () => {
+  pieChartLoading.value = true
+  try {
+    const response = await callApi({
+      url: 'compliance/pie-chart',
+      method: 'GET',
+      authorized: true,
+      showAlert: false,
+    })
+
+    const responseData = await response.json()
+    if (!response.ok) {
+      alertInfo.show = true
+      alertInfo.title = 'Error'
+      alertInfo.message = responseData.message || 'Attendance data failed'
+      alertInfo.type = 'error'
+    }
+    else {
+      attendanceData.value = responseData
+    }
+  }
+  catch (error) {
+    alertInfo.show = true
+    alertInfo.title = 'Error'
+    alertInfo.message = 'Attendance data error'
+    alertInfo.type = 'error'
+    if (user.isTokenExpired())
+      user.removeUser()
+  }
+  finally {
+    pieChartLoading.value = false
+  }
+}
+
+const pieChartSeries = computed(() => {
+  return attendanceData.value.map(item => item.attendance_pacentage)
+})
+
+const pieChartLabels = computed(() => {
+  return attendanceData.value.map(item => item.lga_name)
+})
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
@@ -22,7 +162,7 @@ const chartOptions = computed(() => {
   return {
     bar: {
       chart: {
-        stacked: true,
+        stacked: false, // Set to false for side-by-side comparison
         parentHeightOffset: 0,
         toolbar: { show: false },
       },
@@ -70,31 +210,63 @@ const chartOptions = computed(() => {
       plotOptions: {
         bar: {
           borderRadius: 10,
-          columnWidth: '30%',
+          columnWidth: '60%',
           endingShape: 'rounded',
           startingShape: 'rounded',
+          horizontal: false, // Set to false for vertical bars with LGAs on x-axis
         },
       },
       xaxis: {
         axisTicks: { show: false },
         crosshairs: { opacity: 0 },
         axisBorder: { show: false },
-        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+        categories: lgaNames.value.map(value => value.slice(0, 3)), // Use LGA names for the x-axis categories
         labels: {
           style: {
             fontSize: '14px',
             colors: disabledTextColor,
             fontFamily: 'Public Sans',
           },
+          rotate: -45,
+          rotateAlways: false,
+          hideOverlappingLabels: true,
+          trim: true,
+          maxHeight: 120,
         },
       },
       yaxis: {
+        title: {
+          text: 'Number of Students',
+          style: {
+            fontSize: '14px',
+            fontFamily: 'Public Sans',
+            color: primaryTextColor,
+          },
+        },
         labels: {
           style: {
             fontSize: '14px',
             colors: disabledTextColor,
             fontFamily: 'Public Sans',
           },
+          formatter(val: any) {
+            return val.toFixed(0)
+          },
+        },
+      },
+      tooltip: {
+        custom({ series, seriesIndex, dataPointIndex, w }) {
+          const lga = lgas.value[dataPointIndex]
+          const schoolType = seriesIndex === 0 ? 'Junior' : 'Senior'
+          const schoolInfo = lga.schools.find(s => s.type === schoolType)
+
+          return `
+            <div class="custom-tooltip" style="padding: 8px;">
+              <div style="font-weight: bold; margin-bottom: 5px;">${lga.lga_name} - ${schoolType}</div>
+              <div style="margin-bottom: 3px;">Students: ${series[seriesIndex][dataPointIndex]}</div>
+              <div>Schools: ${schoolInfo ? schoolInfo.schools_count : 0}</div>
+            </div>
+          `
         },
       },
       responsive: [
@@ -102,7 +274,7 @@ const chartOptions = computed(() => {
           breakpoint: display.thresholds.value.xl,
           options: {
             plotOptions: {
-              bar: { columnWidth: '43%' },
+              bar: { columnWidth: '83%' },
             },
           },
         },
@@ -110,7 +282,7 @@ const chartOptions = computed(() => {
           breakpoint: display.thresholds.value.lg,
           options: {
             plotOptions: {
-              bar: { columnWidth: '50%' },
+              bar: { columnWidth: '90%' },
             },
           },
         },
@@ -118,7 +290,7 @@ const chartOptions = computed(() => {
           breakpoint: display.thresholds.value.md,
           options: {
             plotOptions: {
-              bar: { columnWidth: '42%' },
+              bar: { columnWidth: '82%' },
             },
           },
         },
@@ -126,86 +298,76 @@ const chartOptions = computed(() => {
           breakpoint: display.thresholds.value.sm,
           options: {
             plotOptions: {
-              bar: { columnWidth: '45%' },
+              bar: { columnWidth: '85%' },
             },
           },
         },
       ],
     },
-    radial: {
+    pie: {
       chart: {
-        sparkline: { enabled: true },
+        type: 'pie',
+        toolbar: { show: false },
       },
-      labels: ['Growth'],
-      stroke: { dashArray: 5 },
-      colors: [`rgba(${hexToRgb(String(currentTheme.primary))}, 1)`],
-      states: {
-        hover: {
-          filter: { type: 'none' },
+      labels: pieChartLabels.value,
+      colors: attendanceData.value.length > 0
+        ? attendanceData.value.map((_, index) => {
+          const baseColor = currentTheme.primary
+          const opacity = 0.5 + (index * 0.5 / attendanceData.value.length)
+
+          return `rgba(${hexToRgb(String(baseColor))}, ${opacity})`
+        })
+        : [currentTheme.primary],
+      legend: {
+        position: 'bottom',
+        fontSize: '13px',
+        fontFamily: 'Public Sans',
+        labels: {
+          colors: currentTheme.secondary,
         },
-        active: {
-          filter: { type: 'none' },
+        markers: {
+          width: 10,
+          height: 10,
+          radius: 5,
+        },
+        itemMargin: {
+          horizontal: 8,
+          vertical: 3,
         },
       },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark',
-          opacityTo: 0.6,
-          opacityFrom: 1,
-          shadeIntensity: 0.5,
-          stops: [30, 70, 100],
-          inverseColors: false,
-          gradientToColors: [currentTheme.primary],
+      tooltip: {
+        y: {
+          formatter: val => `${val}%`,
         },
       },
-      plotOptions: {
-        radialBar: {
-          endAngle: 150,
-          startAngle: -140,
-          hollow: { size: '55%' },
-          track: { background: 'transparent' },
-          dataLabels: {
-            name: {
-              offsetY: 25,
-              fontWeight: 600,
-              fontSize: '16px',
-              color: currentTheme.secondary,
-              fontFamily: 'Public Sans',
-            },
-            value: {
-              offsetY: -15,
-              fontWeight: 500,
-              fontSize: '24px',
-              color: primaryTextColor,
-              fontFamily: 'Public Sans',
-            },
-          },
+      stroke: {
+        width: 0,
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: val => `${Math.round(val)}%`,
+        style: {
+          fontSize: '12px',
+          fontFamily: 'Public Sans',
+          fontWeight: 'normal',
+        },
+        dropShadow: {
+          enabled: false,
         },
       },
       responsive: [
         {
           breakpoint: 900,
           options: {
-            chart: { height: 200 },
-          },
-        },
-        {
-          breakpoint: 735,
-          options: {
-            chart: { height: 200 },
-          },
-        },
-        {
-          breakpoint: 660,
-          options: {
-            chart: { height: 200 },
+            chart: { height: 300 },
+            legend: { position: 'bottom' },
           },
         },
         {
           breakpoint: 600,
           options: {
             chart: { height: 280 },
+            legend: { position: 'bottom' },
           },
         },
       ],
@@ -213,22 +375,72 @@ const chartOptions = computed(() => {
   }
 })
 
-const balanceData = [
-  { icon: 'bxs-graduation', amount: '₦0.00', year: '2025', color: 'primary' },
-  { icon: 'bxs-school', amount: '₦0.00', year: '2025', color: 'primary' },
-]
+// Updated balance data to show useful statistics
+const balanceData = computed(() => [
+  {
+    icon: 'bxs-graduation',
+    amount: lgas.value.length > 0
+      ? lgas.value.reduce((sum, lga) => {
+        const juniorSchool = lga.schools.find(s => s.type === 'Junior')
+
+        return sum + (juniorSchool ? juniorSchool.total_students : 0)
+      }, 0).toLocaleString()
+      : '0',
+    year: 'Junior Students',
+    color: 'primary',
+  },
+  {
+    icon: 'bxs-school',
+    amount: lgas.value.length > 0
+      ? lgas.value.reduce((sum, lga) => {
+        const seniorSchool = lga.schools.find(s => s.type === 'Senior')
+
+        return sum + (seniorSchool ? seniorSchool.total_students : 0)
+      }, 0).toLocaleString()
+      : '0',
+    year: 'Senior Students',
+    color: 'info',
+  },
+])
+
+// Calculate total schools
+const totalSchools = computed(() => {
+  return lgas.value.reduce((sum, lga) => {
+    return sum + lga.schools.reduce((schoolSum, school) => schoolSum + school.schools_count, 0)
+  }, 0)
+})
+
+onMounted(() => {
+  fetchData()
+  fetchPieChartData()
+})
 </script>
 
 <template>
+  <!-- Snackbar -->
+  <VSnackbar
+    v-model="alertInfo.show"
+    :color="alertInfo.type"
+    :timeout="4000"
+    elevation="4"
+  >
+    <p>{{ alertInfo.message }}</p>
+    <template #actions>
+      <VBtn
+        icon="bx-x"
+        variant="text"
+        @click="alertInfo.show = false"
+      />
+    </template>
+  </VSnackbar>
   <VRow>
     <VCol
       cols="12"
-      sm="7"
-      xl="8"
+      md="8"
     >
       <VCard>
         <VCardItem class="pb-0">
-          <VCardTitle>Attendance compliance rate (%)</VCardTitle>
+          <VCardTitle>LGA Student Distribution</VCardTitle>
 
           <template #append>
             <div class="me-n3">
@@ -237,78 +449,95 @@ const balanceData = [
           </template>
         </VCardItem>
 
-        <!-- bar chart -->
-        <VueApexCharts
-          id="bar-chart"
-          type="bar"
-          :height="336"
-          :options="chartOptions.bar"
-          :series="series"
-        />
+        <VCardText class="pt-2 pb-0">
+          <p class="text-sm text-disabled mb-4">
+            Comparison of junior and senior students across Local Government Areas
+          </p>
+        </VCardText>
+
+        <div class="position-relative">
+          <!-- Loading overlay -->
+          <div
+            v-if="lgaLoading"
+            class="d-flex justify-center align-center"
+            style="position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(255, 255, 255, 70%);"
+          >
+            <VProgressCircular
+              indeterminate
+              color="primary"
+            />
+          </div>
+
+          <!-- No data message -->
+          <div
+            v-if="!lgaLoading && lgas.length === 0"
+            class="d-flex justify-center align-center py-10"
+          >
+            <p class="text-disabled">
+              No data available
+            </p>
+          </div>
+
+          <!-- bar chart -->
+          <VueApexCharts
+            v-if="lgas.length > 0"
+            id="bar-chart"
+            type="bar"
+            :height="Math.max(330)"
+            :options="chartOptions.bar"
+            :series="chartSeries"
+          />
+        </div>
       </VCard>
     </VCol>
 
     <VCol
       cols="12"
-      sm="5"
-      xl="4"
+      md="4"
     >
       <VCard>
         <VCardText class="text-center">
-          <VBtn
-            size="small"
-            variant="tonal"
-            append-icon="bx-chevron-down"
-            class="mt-4"
-          >
-            2025
-            <VMenu activator="parent">
-              <VList>
-                <VListItem
-                  v-for="(item, index) in ['2025']"
-                  :key="index"
-                  :value="item"
-                >
-                  <VListItemTitle>{{ item }}</VListItemTitle>
-                </VListItem>
-              </VList>
-            </VMenu>
-          </VBtn>
+          <h6 class="text-h6 font-weight-medium mt-4">
+            Attendance Percentages by LGA
+          </h6>
 
-          <!-- radial chart -->
-          <VueApexCharts
-            type="radialBar"
-            :height="200"
-            :options="chartOptions.radial"
-            :series="[0]"
-            class="mt-6"
-          />
-
-          <p class="font-weight-medium text-high-emphasis mb-7">
-            Disbursement success
-          </p>
-          <div class="d-flex align-center justify-center gap-x-8 gap-y-4 py-2 flex-wrap">
+          <div class="position-relative">
+            <!-- Loading overlay -->
             <div
-              v-for="data in balanceData"
-              :key="data.year"
-              class="d-flex align-center gap-3"
+              v-if="pieChartLoading"
+              class="d-flex justify-center align-center"
+              style="position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(255, 255, 255, 70%);"
             >
-              <VAvatar
-                :icon="data.icon"
-                :color="data.color"
-                size="38"
-                rounded
-                variant="tonal"
+              <VProgressCircular
+                indeterminate
+                color="primary"
               />
-
-              <div class="text-start">
-                <span class="text-sm"> {{ data.year }}</span>
-                <h6 class="text-base font-weight-medium">
-                  {{ data.amount }}
-                </h6>
-              </div>
             </div>
+
+            <!-- No data message -->
+            <div
+              v-if="!pieChartLoading && attendanceData.length === 0"
+              class="d-flex justify-center align-center py-10"
+            >
+              <p class="text-disabled">
+                No attendance data available
+              </p>
+            </div>
+
+            <!-- Pie chart -->
+            <VueApexCharts
+              v-if="attendanceData.length > 0"
+              type="pie"
+              :height="300"
+              :options="chartOptions.pie"
+              :series="pieChartSeries"
+              class="mt-6"
+            />
           </div>
+
+          <p class="font-weight-medium text-high-emphasis mt-4 mb-2">
+            LGA Attendance Compliance
+          </p>
         </VCardText>
       </VCard>
     </VCol>
@@ -318,5 +547,14 @@ const balanceData = [
 <style lang="scss">
 #bar-chart .apexcharts-series[rel="2"] {
   transform: translateY(-10px);
+}
+
+.custom-tooltip {
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 15%);
+  font-family: "Public Sans", sans-serif;
+  padding-block: 8px;
+  padding-inline: 12px;
 }
 </style>
