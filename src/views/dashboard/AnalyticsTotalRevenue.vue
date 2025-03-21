@@ -475,7 +475,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
-
 .custom-tooltip {
   border-radius: 5px;
   background: #fff;

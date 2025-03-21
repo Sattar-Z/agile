@@ -26,6 +26,8 @@ const showErrorMessage = (message: string) => {
   errorMessageModal.value = true
 }
 
+const activeTab = ref('student')
+const isUpdating = ref(false)
 const formatDate = (date: string) => moment(date).format('YYYY-MM-DD')
 
 token.value = user.getUserInfo().token
@@ -111,6 +113,7 @@ interface Students {
   date_of_birth: string | null
   student_admission_number: string | null
   class: string | null
+  gender: string | null
   disabilities: string | null
   uniform: number | null
   text_book: number | null
@@ -141,6 +144,38 @@ interface StudentFormData {
   materials: boolean
   school_bag: boolean
 }
+
+interface CaregiverFormData {
+  bvn: string
+  name: string
+  phone: string
+  address: string
+  community: string
+  gender: string
+  date_of_birth: string
+  qualification: string
+  income: string
+  is_employed: boolean
+  account_number: string
+  account_name: string
+  bank_code: string
+}
+
+const caregiverFormData = ref<CaregiverFormData>({
+  bvn: '',
+  name: '',
+  phone: '',
+  address: '',
+  community: '',
+  gender: '',
+  date_of_birth: '',
+  qualification: '',
+  income: '',
+  is_employed: false,
+  account_number: '',
+  account_name: '',
+  bank_code: '',
+})
 
 const alertInfo = reactive({
   show: false,
@@ -178,7 +213,8 @@ const totalItems = ref(0)
 const itemsPerPage = ref(10)
 const search = ref('')
 const exportModal = ref(false)
-const exportType = ref<'CSV' | 'Excel' | null>(null)
+
+// const exportType = ref<'CSV' | 'Excel' | null>(null)
 const verifyingBvn = ref<number | null>(null)
 
 const formData = ref<StudentFormData>({
@@ -204,24 +240,92 @@ const openDeleteModal = (student: Students) => {
   deleteModal.value = true
 }
 
+// Helper function to extract caregiver data
+const extractCaregiverData = (caregiver: CareGiver | null): CaregiverFormData => {
+  if (!caregiver) {
+    return {
+      bvn: '',
+      name: '',
+      phone: '',
+      address: '',
+      community: '',
+      gender: '',
+      date_of_birth: '',
+      qualification: '',
+      income: '',
+      is_employed: false,
+      account_number: '',
+      account_name: '',
+      bank_code: '',
+    }
+  }
+
+  return {
+    bvn: caregiver.bvn?.bvn || '',
+    name: caregiver.name?.toString() || '',
+    phone: caregiver.phone || '',
+    address: caregiver.address || '',
+    community: caregiver.community || '',
+    gender: caregiver.gender || '',
+    date_of_birth: caregiver.date_of_birth || '',
+    qualification: caregiver.qualification || '',
+    income: caregiver.income || '',
+    is_employed: ['true', '1'].includes(caregiver.is_employed || ''),
+    account_number: caregiver.accounts?.[0]?.account_number || '',
+    account_name: caregiver.accounts?.[0]?.account_name || '',
+    bank_code: caregiver.accounts?.[0]?.bank_code || '',
+  }
+}
+
+// Helper function to extract student data
+const extractStudentData = (student: Students | null): StudentFormData => {
+  if (!student) {
+    return {
+      name: '',
+      cohurt: '',
+      lga_id: '',
+      school_id: '',
+      care_giver_id: '',
+      date_of_birth: '',
+      class: '',
+      gender: '',
+      disabilities: '',
+      uniform: false,
+      text_book: false,
+      school_distance: '',
+      materials: false,
+      school_bag: false,
+    }
+  }
+
+  return {
+    name: student.name || '',
+    cohurt: student.cohurt || '',
+    lga_id: student.lga?.id || '',
+    school_id: student.school?.id || '',
+    care_giver_id: student.care_giver_id?.toString() || '',
+    date_of_birth: student.date_of_birth || '',
+    class: student.class || '',
+    gender: student.gender || '',
+    disabilities: student.disabilities || '',
+    uniform: Boolean(student.uniform),
+    text_book: Boolean(student.text_book),
+    school_distance: student.school_distance || '',
+    materials: Boolean(student.materials),
+    school_bag: Boolean(student.school_bag),
+  }
+}
+
+// Simplified main function
 const openEditModal = (student: Students) => {
   selectedStudent.value = student
-  formData.value = {
-    name: student?.name || '',
-    cohurt: student?.cohurt || '',
-    lga_id: student?.lga?.id || '',
-    school_id: student?.school?.id || '',
-    care_giver_id: student?.care_giver_id?.toString() || '',
-    date_of_birth: student?.date_of_birth || '',
-    class: student?.class || '',
-    gender: '',
-    disabilities: student?.disabilities || '',
-    uniform: !!student.uniform,
-    text_book: !!student.text_book,
-    school_distance: student.school_distance || '',
-    materials: !!student.materials,
-    school_bag: false,
-  }
+
+  // Populate forms with extracted data
+  formData.value = extractStudentData(student)
+  caregiverFormData.value = extractCaregiverData(student?.care_giver)
+
+  // Reset to student tab and open modal
+  activeTab.value = 'student'
   editModal.value = true
 }
 
@@ -416,10 +520,10 @@ const filterItems = (items: Students[], searchValue: string): Students[] => {
   })
 }
 
-const openExportModal = () => {
-  exportModal.value = true
-  exportType.value = null
-}
+// const openExportModal = () => {
+//   exportModal.value = true
+//   exportType.value = null
+// }
 
 // Helper function to get nested values
 const getNestedValue = (item: Students, key: string): any => {
@@ -670,33 +774,69 @@ const deleteStudent = async () => {
 }
 
 const updateStudent = async () => {
-  if (!selectedStudent.value?.id)
+  if (!selectedStudent.value?.id || !selectedStudent.value?.care_giver?.id)
     return
 
-  try {
-    const response = await callApi({
-      url: `student/update/${selectedStudent.value.id}`,
-      method: 'POST',
-      data: formData.value,
-      authorized: true,
-      showAlert: false,
-    })
+  isUpdating.value = true
 
-    if (response.ok) {
+  try {
+    // Create an array of promises for both API calls
+    const promises = [
+      callApi({
+        url: `student/update/${selectedStudent.value.id}`,
+        method: 'POST',
+        data: formData.value,
+        authorized: true,
+        showAlert: false,
+      }),
+      callApi({
+        url: `care_giver/update/${selectedStudent.value.care_giver.id}`,
+        method: 'POST',
+        data: caregiverFormData.value,
+        authorized: true,
+        showAlert: false,
+      }),
+    ]
+
+    // Wait for both requests to complete
+    const [studentResponse, caregiverResponse] = await Promise.all(promises)
+
+    // Process responses
+    if (studentResponse.ok && caregiverResponse.ok) {
       alertInfo.show = true
       alertInfo.title = 'Success'
-      alertInfo.message = 'Student updated successfully'
+      alertInfo.message = 'Student and caregiver information updated successfully'
       alertInfo.type = 'success'
 
       // Refresh data
       await fetchData()
+      editModal.value = false
     }
     else {
-      const data = await response.json()
+      // Handle errors - get error messages from responses
+      let studentError = null
+      let caregiverError = null
+
+      if (!studentResponse.ok) {
+        const studentData = await studentResponse.json()
+
+        studentError = studentData.message || 'Failed to update student'
+      }
+
+      if (!caregiverResponse.ok) {
+        const caregiverData = await caregiverResponse.json()
+
+        caregiverError = caregiverData.message || 'Failed to update caregiver'
+      }
+
+      // Combine error messages if both failed
+      const errorMessage = [studentError, caregiverError]
+        .filter(Boolean)
+        .join(' and ')
 
       alertInfo.show = true
       alertInfo.title = 'Error'
-      alertInfo.message = data.message || 'Failed to update student'
+      alertInfo.message = errorMessage || 'Failed to update records'
       alertInfo.type = 'error'
     }
   }
@@ -707,7 +847,7 @@ const updateStudent = async () => {
     alertInfo.type = 'error'
   }
   finally {
-    editModal.value = false
+    isUpdating.value = false
   }
 }
 
@@ -1082,185 +1222,435 @@ onMounted(() => {
   </VDialog>
 
   <!-- Edit Student Modal -->
+  <!-- Edit Student & Caregiver Modal -->
   <VDialog
     v-model="editModal"
-    width="800"
+    width="900"
     persistent
   >
     <VCard class="pa-4">
-      <VCardTitle class="text-h6">
-        Edit Student
+      <VCardTitle class="text-h5 pb-4 d-flex align-center">
+        <VIcon
+          class="mx-2"
+          icon="mdi-account-edit"
+        />
+        Edit Student & Caregiver Information
       </VCardTitle>
+
       <VCardText>
-        <VRow>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.name"
-              label="Name"
-              density="compact"
-              variant="solo-filled"
-              required
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.cohurt"
-              density="compact"
-              variant="solo-filled"
-              label="Cohort"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VAutocomplete
-              v-model="formData.lga_id"
-              :items="lga"
-              item-title="name"
-              item-value="id"
-              label="LGA"
-              required
-              density="compact"
-              variant="solo-filled"
-              :loading="lgaLoading"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VAutocomplete
-              v-model="formData.school_id"
-              :items="schools"
-              item-title="name"
-              item-value="id"
-              label="School"
-              required
-              density="compact"
-              variant="solo-filled"
-              :loading="studentLoading"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.date_of_birth"
-              label="Date of Birth"
-              density="compact"
-              variant="solo-filled"
-              type="date"
-              required
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.class"
-              label="Class"
-              density="compact"
-              variant="solo-filled"
-              required
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VSelect
-              v-model="formData.gender"
-              label="Gender"
-              required
-              density="compact"
-              variant="solo-filled"
-              :items="['Male', 'Female']"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.disabilities"
-              density="compact"
-              variant="solo-filled"
-              label="Disabilities"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="formData.school_distance"
-              density="compact"
-              variant="solo-filled"
-              label="School Distance"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.uniform"
-              label="Has Uniform"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.text_book"
-              label="Has Textbook"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.materials"
-              label="Has Materials"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VCheckbox
-              v-model="formData.school_bag"
-              label="Has School Bag"
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <VBtn
+        <VTabs
+          v-model="activeTab"
           color="primary"
+          grow
+        >
+          <VTab value="student">
+            Student Information
+          </VTab>
+          <VTab value="caregiver">
+            Caregiver Information
+          </VTab>
+        </VTabs>
+
+        <VWindow
+          v-model="activeTab"
+          class="mt-4"
+        >
+          <!-- Student Information Tab -->
+          <VWindowItem value="student">
+            <VRow>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="formData.name"
+                  label="Student Name"
+                  density="compact"
+                  variant="solo-filled"
+                  required
+                  prepend-inner-icon="mdi-account"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="formData.cohurt"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Cohort"
+                  prepend-inner-icon="mdi-account-group"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VAutocomplete
+                  v-model="formData.lga_id"
+                  :items="lga"
+                  item-title="name"
+                  item-value="id"
+                  label="LGA"
+                  required
+                  density="compact"
+                  variant="solo-filled"
+                  :loading="lgaLoading"
+                  prepend-inner-icon="mdi-map-marker"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VAutocomplete
+                  v-model="formData.school_id"
+                  :items="schools"
+                  item-title="name"
+                  item-value="id"
+                  label="School"
+                  required
+                  density="compact"
+                  variant="solo-filled"
+                  :loading="studentLoading"
+                  prepend-inner-icon="mdi-school"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="formData.date_of_birth"
+                  label="Date of Birth"
+                  density="compact"
+                  variant="solo-filled"
+                  type="date"
+                  required
+                  prepend-inner-icon="mdi-calendar"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="formData.class"
+                  label="Class"
+                  density="compact"
+                  variant="solo-filled"
+                  required
+                  prepend-inner-icon="mdi-book-open-variant"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VSelect
+                  v-model="formData.gender"
+                  label="Gender"
+                  required
+                  density="compact"
+                  variant="solo-filled"
+                  :items="['Male', 'Female']"
+                  prepend-inner-icon="mdi-gender-male-female"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="formData.disabilities"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Disabilities"
+                  prepend-inner-icon="mdi-wheelchair-accessibility"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="formData.school_distance"
+                  density="compact"
+                  variant="solo-filled"
+                  label="School Distance"
+                  prepend-inner-icon="mdi-map-marker-distance"
+                />
+              </VCol>
+
+              <VCol cols="12">
+                <VDivider class="my-2" />
+                <div class="text-subtitle-1 font-weight-medium mb-2">
+                  Student Resources
+                </div>
+              </VCol>
+
+              <VCol
+                cols="12"
+                sm="6"
+                md="3"
+              >
+                <VCheckbox
+                  v-model="formData.uniform"
+                  label="Has Uniform"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                sm="6"
+                md="3"
+              >
+                <VCheckbox
+                  v-model="formData.text_book"
+                  label="Has Textbook"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                sm="6"
+                md="3"
+              >
+                <VCheckbox
+                  v-model="formData.materials"
+                  label="Has Materials"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                sm="6"
+                md="3"
+              >
+                <VCheckbox
+                  v-model="formData.school_bag"
+                  label="Has School Bag"
+                />
+              </VCol>
+            </VRow>
+          </VWindowItem>
+
+          <!-- Caregiver Information Tab -->
+          <VWindowItem value="caregiver">
+            <VRow>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.name"
+                  label="Caregiver Name"
+                  density="compact"
+                  variant="solo-filled"
+                  required
+                  prepend-inner-icon="mdi-account"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.phone"
+                  label="Phone Number"
+                  density="compact"
+                  variant="solo-filled"
+                  required
+                  prepend-inner-icon="mdi-phone"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.bvn"
+                  label="BVN"
+                  density="compact"
+                  variant="solo-filled"
+                  prepend-inner-icon="mdi-identifier"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VSelect
+                  v-model="caregiverFormData.gender"
+                  label="Gender"
+                  required
+                  density="compact"
+                  variant="solo-filled"
+                  :items="['MALE', 'FEMALE']"
+                  prepend-inner-icon="mdi-gender-male-female"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.date_of_birth"
+                  label="Date of Birth"
+                  density="compact"
+                  variant="solo-filled"
+                  type="date"
+                  prepend-inner-icon="mdi-calendar"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.address"
+                  label="Address"
+                  density="compact"
+                  variant="solo-filled"
+                  prepend-inner-icon="mdi-home"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.community"
+                  label="Community"
+                  density="compact"
+                  variant="solo-filled"
+                  prepend-inner-icon="mdi-account-group"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.qualification"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Qualification"
+                  prepend-inner-icon="mdi-certificate"
+                />
+              </VCol>
+
+              <VCol cols="12">
+                <VDivider class="my-2" />
+                <div class="text-subtitle-1 font-weight-medium mb-2">
+                  Employment & Income
+                </div>
+              </VCol>
+
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VTextField
+                  v-model="caregiverFormData.income"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Income"
+                  prepend-inner-icon="mdi-currency-ngn"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <VCheckbox
+                  v-model="caregiverFormData.is_employed"
+                  label="Is Employed"
+                />
+              </VCol>
+
+              <VCol cols="12">
+                <VDivider class="my-2" />
+                <div class="text-subtitle-1 font-weight-medium mb-2">
+                  Banking Information
+                </div>
+              </VCol>
+
+              <VCol
+                cols="12"
+                md="4"
+              >
+                <VTextField
+                  v-model="caregiverFormData.account_number"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Account Number"
+                  prepend-inner-icon="mdi-numeric"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="4"
+              >
+                <VTextField
+                  v-model="caregiverFormData.account_name"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Account Name"
+                  prepend-inner-icon="mdi-account"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="4"
+              >
+                <VTextField
+                  v-model="caregiverFormData.bank_code"
+                  density="compact"
+                  variant="solo-filled"
+                  label="Bank Code"
+                  prepend-inner-icon="mdi-bank"
+                />
+              </VCol>
+            </VRow>
+          </VWindowItem>
+        </VWindow>
+      </VCardText>
+
+      <VCardActions>
+        <VBtn
+          color="error"
           variant="text"
+          prepend-icon="mdi-close"
           @click="editModal = false"
         >
           Cancel
         </VBtn>
+        <VSpacer />
         <VBtn
+          v-if="activeTab === 'student' && caregiverFormData.name"
           color="primary"
+          variant="text"
+          append-icon="mdi-arrow-right"
+          @click="activeTab = 'caregiver'"
+        >
+          Next: Caregiver Info
+        </VBtn>
+        <VBtn
+          v-if="activeTab === 'caregiver' && formData.name"
+          color="primary"
+          variant="text"
+          prepend-icon="mdi-arrow-left"
+          @click="activeTab = 'student'"
+        >
+          Back to Student Info
+        </VBtn>
+        <VBtn
+          color="success"
           variant="elevated"
+          prepend-icon="mdi-content-save"
+          :loading="isUpdating"
           @click="updateStudent"
         >
-          Save
+          Save All Changes
         </VBtn>
       </VCardActions>
     </VCard>
