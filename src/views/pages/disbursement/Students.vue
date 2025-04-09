@@ -92,7 +92,7 @@ const headers = [
   { title: 'Attendance', key: 'overall_attendance', align: 'center' },
 
   // { title: 'Account Status', key: 'is_bvn_verified', align: 'center' },
-  { title: 'Eligibility', key: 'is_eligible', align: 'center' },
+  // { title: 'Eligibility', key: 'is_eligible', align: 'center' },
 ]
 
 const isLoaded = ref(false)

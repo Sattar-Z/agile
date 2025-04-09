@@ -202,7 +202,8 @@ const headers = ref([
 
   // { title: 'Account Number', key: 'care_giver.accounts[0].account_number', align: 'center', value: 'care_giver.accounts[0].account_number' },
   { title: 'Care Giver Acc.', key: 'care_giver.is_bvn_verfied', align: 'center', value: 'care_giver.is_bvn_verfied' },
-  { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
+
+  // { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
   { title: 'Date Uploaded', key: 'created_at', sortable: true, align: 'center', value: 'created_at' },
   { title: 'Action', key: 'action', align: 'center', value: 'action' },
 ] as const)

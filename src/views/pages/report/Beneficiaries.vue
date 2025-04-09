@@ -148,7 +148,7 @@ const headers = ref([
   { title: 'Class', key: 'class', align: 'center', value: 'class' },
   { title: 'DOB', key: 'date_of_birth', align: 'center', value: 'date_of_birth' },
 
-  { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
+  // { title: 'Eligibility', key: 'error_message', sortable: true, align: 'center', value: 'error_message' },
   { title: 'Date Uploaded', key: 'created_at', sortable: true, align: 'center', value: 'created_at' },
   { title: 'Action', key: 'action', align: 'center', value: 'action' },
 ] as const)
