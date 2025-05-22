@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import SchoolTable from '@/views/pages/attendance/SchoolTable.vue'
-import { useUserStore } from '@/stores/user'
 import { callApi } from '@/helpers/request'
+import { useUserStore } from '@/stores/user'
+import SchoolTable from '@/views/pages/attendance/SchoolTable.vue'
 
 interface Term {
   id: number
   term: string
-  session: string
   start_date: string
   end_date: string
   cohurt: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface SessionData {
+  session: string
+  terms: Term[]
 }
 
 const termLoading = ref(false)
@@ -20,9 +26,17 @@ const form = ref({
   cohurt: null as string | null,
 })
 
-const terms = ref<Term[]>([])
+const sessionData = ref<SessionData[]>([])
 const cohurts = ref<string[]>([])
-const sessions = ref<string[]>([])
+const sessions = computed(() => sessionData.value.map(s => s.session))
+
+const availableTerms = computed(() => {
+  if (!form.value.session)
+    return []
+  const selectedSession = sessionData.value.find(s => s.session === form.value.session)
+
+  return selectedSession ? selectedSession.terms : []
+})
 
 const alertInfo = reactive({
   show: false,
@@ -49,16 +63,18 @@ const fetchTermData = async () => {
       alertInfo.type = 'error'
     }
     else {
-      terms.value = responseData.data
+      sessionData.value = responseData.data
 
-      // Extract unique cohurts and sessions
-      cohurts.value = [...new Set(terms.value.map(t => t.cohurt).filter(Boolean))]
-      sessions.value = [...new Set(terms.value.map(t => t.session))]
+      // Extract unique cohurts from all terms
+      const allTerms = sessionData.value.flatMap(s => s.terms)
+
+      cohurts.value = [...new Set(allTerms.map(t => t.cohurt).filter(Boolean) as string[])]
 
       // Set initial values
-      if (terms.value.length > 0) {
-        form.value.term = terms.value[0].id
-        form.value.session = terms.value[0].session
+      if (sessionData.value.length > 0) {
+        form.value.session = sessionData.value[0].session
+        if (sessionData.value[0].terms.length > 0)
+          form.value.term = sessionData.value[0].terms[0].id
       }
       if (cohurts.value.length > 0)
         form.value.cohurt = cohurts.value[0]
@@ -76,6 +92,20 @@ const fetchTermData = async () => {
     termLoading.value = false
   }
 }
+
+// Watch for session changes to reset term selection
+watch(() => form.value.session, newSession => {
+  if (newSession) {
+    const selectedSession = sessionData.value.find(s => s.session === newSession)
+    if (selectedSession && selectedSession.terms.length > 0)
+      form.value.term = selectedSession.terms[0].id
+    else
+      form.value.term = null
+  }
+  else {
+    form.value.term = null
+  }
+})
 
 onMounted(() => {
   fetchTermData()
@@ -101,8 +131,14 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <VRow hidden justify="end">
-    <VCol hidden cols="auto">
+  <VRow
+    hidden
+    justify="end"
+  >
+    <VCol
+      hidden
+      cols="auto"
+    >
       <span class="text-caption">Cohort</span>
       <VSelect
         v-model="form.cohurt"
@@ -112,7 +148,10 @@ onMounted(() => {
         :loading="termLoading"
       />
     </VCol>
-    <VCol hidden cols="auto">
+    <VCol
+      hidden
+      cols="auto"
+    >
       <span class="text-caption">Session</span>
       <VSelect
         v-model="form.session"
@@ -122,16 +161,20 @@ onMounted(() => {
         :loading="termLoading"
       />
     </VCol>
-    <VCol hidden cols="auto">
+    <VCol
+      hidden
+      cols="auto"
+    >
       <span class="text-caption">Term</span>
       <VSelect
         v-model="form.term"
-        :items="terms"
+        :items="availableTerms"
         item-title="term"
         item-value="id"
         density="compact"
         variant="solo-filled"
         :loading="termLoading"
+        :disabled="!form.session"
       />
     </VCol>
   </VRow>

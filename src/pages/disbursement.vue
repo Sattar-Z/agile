@@ -28,18 +28,32 @@ interface School {
 interface Term {
   id: number
   term: string
-  session: string
   start_date: string
   end_date: string
   cohurt: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface SessionData {
+  session: string
+  terms: Term[]
 }
 
 const schools = ref<School[]>([])
 const lga = ref<School[]>([])
 const payment = ref<School[]>([])
-const term = ref<Term[]>([])
+const sessionData = ref<SessionData[]>([])
 const cohurts = ref<string[]>([])
-const session = ref<string[]>([])
+const sessions = computed(() => sessionData.value.map(s => s.session))
+
+const availableTerms = computed(() => {
+  if (!form.value.session)
+    return []
+  const selectedSession = sessionData.value.find(s => s.session === form.value.session)
+
+  return selectedSession ? selectedSession.terms : []
+})
 
 const alertInfo = reactive({
   show: false,
@@ -148,15 +162,21 @@ const fetchTermData = async () => {
       alertInfo.type = 'error'
     }
     else {
-      term.value = responseData.data
-      session.value = [...new Set(term.value.map(t => t.session).filter(Boolean))]
-      cohurts.value = [...new Set(term.value.map(t => t.cohurt).filter(Boolean))]
-      if (term.value.length > 0)
-        form.value.term = term.value[0].id
+      sessionData.value = responseData.data
+
+      // Extract unique cohurts from all terms
+      const allTerms = sessionData.value.flatMap(s => s.terms)
+
+      cohurts.value = [...new Set(allTerms.map(t => t.cohurt).filter(Boolean) as string[])]
+
+      // Set initial values
+      if (sessionData.value.length > 0) {
+        form.value.session = sessionData.value[0].session
+        if (sessionData.value[0].terms.length > 0)
+          form.value.term = sessionData.value[0].terms[0].id
+      }
       if (cohurts.value.length > 0)
         form.value.cohurt = cohurts.value[0]
-      if (session.value.length > 0)
-        form.value.session = session.value[0]
     }
   }
   catch (error) {
@@ -164,13 +184,27 @@ const fetchTermData = async () => {
     alertInfo.title = 'Error'
     alertInfo.message = 'Terms list error'
     alertInfo.type = 'error'
-    if (user.isTokenExpired())
-      user.removeUser()
+    if (useUserStore().isTokenExpired())
+      useUserStore().removeUser()
   }
   finally {
     termLoading.value = false
   }
 }
+
+// Watch for session changes to reset term selection
+watch(() => form.value.session, newSession => {
+  if (newSession) {
+    const selectedSession = sessionData.value.find(s => s.session === newSession)
+    if (selectedSession && selectedSession.terms.length > 0)
+      form.value.term = selectedSession.terms[0].id
+    else
+      form.value.term = null
+  }
+  else {
+    form.value.term = null
+  }
+})
 
 const fetchPaymentData = async () => {
   paymentLoading.value = true
@@ -290,7 +324,7 @@ onMounted(() => {
             <span class="text-caption">Session</span>
             <VSelect
               v-model="form.session"
-              :items="session"
+              :items="sessions"
               density="compact"
               variant="solo-filled"
               :loading="termLoading"
@@ -311,7 +345,7 @@ onMounted(() => {
           <VCol cols="12">
             <SchoolTable
               :payment="form.payment"
-              :session="session"
+              :session="sessions"
               :lga-id="form.lga"
               :cohurt="form.cohurt"
               @view-school="handleViewSchool"
@@ -360,11 +394,12 @@ onMounted(() => {
             <span class="text-caption">Term</span>
             <VSelect
               v-model="form.term"
-              :items="term"
+              :items="availableTerms"
               item-title="term"
               item-value="id"
               density="compact"
               variant="solo-filled"
+              :disabled="!form.session"
             />
           </VCol>
         </VRow>

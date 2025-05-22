@@ -2,12 +2,12 @@
 import { useRoute } from 'vue-router'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
-import Beneficiaries from '@/views/pages/report/Beneficiaries.vue'
 import CareGiversTable from '@/views/pages/report/CareGiversTable.vue'
-import SchoolTable from '@/views/pages/report/SchoolTable.vue'
 import Lga from '@/views/pages/report/advanced/Lga.vue'
 import LgaSchoolTable from '@/views/pages/report/advanced/SchoolTable.vue'
 import StudentTable from '@/views/pages/report/advanced/StudentTable.vue'
+import Beneficiaries from '@/views/pages/report/Beneficiaries.vue'
+import SchoolTable from '@/views/pages/report/SchoolTable.vue'
 import StudentAttendanceTable from '@/views/pages/report/attendance/StudentTable.vue'
 
 const termLoading = ref(false)
@@ -19,16 +19,10 @@ const user = useUserStore()
 interface Term {
   id: number
   term: string
+  session: string
   start_date: string
   end_date: string
   cohurt: string | null
-  created_at: string
-  updated_at: string
-}
-
-interface SessionData {
-  session: string
-  terms: Term[]
 }
 
 const form = ref({
@@ -39,6 +33,7 @@ const form = ref({
   lga: null as number | null,
   cohurt: null as string | null,
   payment: null as number | null,
+
 })
 
 const route = useRoute()
@@ -61,20 +56,14 @@ const tabs = [
   { title: 'Advanced', icon: 'bxs-flag', tab: 'Advanced' },
 ]
 
-const sessionData = ref<SessionData[]>([])
+const terms = ref<Term[]>([])
 const cohurts = ref<string[]>([])
 const payment = ref<Pay[]>([])
 const lga = ref<Pay[]>([])
 
-const sessions = computed(() => sessionData.value.map(s => s.session))
+// const schools = ref<Pay[]>([])
 
-const availableTerms = computed(() => {
-  if (!form.value.session)
-    return []
-  const selectedSession = sessionData.value.find(s => s.session === form.value.session)
-
-  return selectedSession ? selectedSession.terms : []
-})
+const sessions = ref<string[]>([])
 
 const alertInfo = reactive({
   show: false,
@@ -101,18 +90,16 @@ const fetchTermData = async () => {
       alertInfo.type = 'error'
     }
     else {
-      sessionData.value = responseData.data
+      terms.value = responseData.data
 
-      // Extract unique cohurts from all terms
-      const allTerms = sessionData.value.flatMap(s => s.terms)
-
-      cohurts.value = [...new Set(allTerms.map(t => t.cohurt).filter(Boolean) as string[])]
+      // Extract unique cohurts and sessions
+      cohurts.value = [...new Set(terms.value.map(t => t.cohurt).filter(Boolean))]
+      sessions.value = [...new Set(terms.value.map(t => t.session))]
 
       // Set initial values
-      if (sessionData.value.length > 0) {
-        form.value.session = sessionData.value[0].session
-        if (sessionData.value[0].terms.length > 0)
-          form.value.term = sessionData.value[0].terms[0].id
+      if (terms.value.length > 0) {
+        form.value.term = terms.value[0].id
+        form.value.session = terms.value[0].session
       }
       if (cohurts.value.length > 0)
         form.value.cohurt = cohurts.value[0]
@@ -130,20 +117,6 @@ const fetchTermData = async () => {
     termLoading.value = false
   }
 }
-
-// Watch for session changes to reset term selection
-watch(() => form.value.session, newSession => {
-  if (newSession) {
-    const selectedSession = sessionData.value.find(s => s.session === newSession)
-    if (selectedSession && selectedSession.terms.length > 0)
-      form.value.term = selectedSession.terms[0].id
-    else
-      form.value.term = null
-  }
-  else {
-    form.value.term = null
-  }
-})
 
 const fetchStudentData = async () => {
   studentLoading.value = true
@@ -320,13 +293,12 @@ const handleLgaGoBack = (): void => {
       <span class="text-caption">Term</span>
       <VSelect
         v-model="form.term"
-        :items="availableTerms"
+        :items="terms"
         item-title="term"
         item-value="id"
         density="compact"
         variant="solo-filled"
         :loading="termLoading"
-        :disabled="!form.session"
       />
     </VCol>
   </VRow>
@@ -379,7 +351,7 @@ const handleLgaGoBack = (): void => {
           <VCol cols="12">
             <StudentAttendanceTable
               :term-id="form.term"
-              :session="form.session"
+              :session="sessions"
               :school="form.school"
               :school-name="form.schoolName"
               :cohurt="form.cohurt"
@@ -437,7 +409,7 @@ const handleLgaGoBack = (): void => {
           <VCol cols="12">
             <SchoolTable
               :payment="form.payment"
-              :session="form.session"
+              :session="sessions"
               :lga-id="form.lga"
               :cohurt="form.cohurt"
             />
