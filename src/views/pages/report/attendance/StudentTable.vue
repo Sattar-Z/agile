@@ -753,8 +753,7 @@ watch(
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Check In</th>
-                <th>Check Out</th>
+                <th>Attendance</th>
                 <th>Comment</th>
               </tr>
             </thead>
@@ -770,14 +769,6 @@ watch(
                     density="compact"
                   >
                     {{ item.check_in ? 'Present' : 'Absent' }}
-                  </VChip>
-                </td>
-                <td>
-                  <VChip
-                    :color="item.check_out ? 'success' : 'error'"
-                    density="compact"
-                  >
-                    {{ item.check_out ? 'Present' : 'Absent' }}
                   </VChip>
                 </td>
                 <td>{{ item.comment || '-' }}</td>
