@@ -9,7 +9,6 @@ import { isAdmin } from '@/middlewares/auth'
 
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
-import { VProgressCircular } from 'vuetify/lib/components/index.mjs'
 
 // import { toNigerianCurrency } from '@/helpers/numbers'
 
@@ -805,7 +804,7 @@ watch(
                         Present
                       </div>
                       <div class="text-h4">
-                        {{ selectedStudentAttendance.attendance.filter((a:any) => a.check_in && a.check_out).length }}
+                        {{ selectedStudentAttendance.attendance.filter((a:any) => a.check_in).length }}
                       </div>
                     </VCardText>
                   </VCard>

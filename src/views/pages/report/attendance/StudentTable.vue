@@ -735,7 +735,7 @@ watch(
                         Present
                       </div>
                       <div class="text-h4">
-                        {{ selectedStudentAttendance.attendance.filter((a:any) => a.check_in && a.check_out).length }}
+                        {{ selectedStudentAttendance.attendance.filter((a:any) => a.check_in).length }}
                       </div>
                     </VCardText>
                   </VCard>
