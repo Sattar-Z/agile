@@ -756,26 +756,29 @@ watch(
               <h3 class="text-h6 mb-2">
                 Student Information
               </h3>
-              <VList>
-                <VListItem>
-                  <VListItemTitle class="font-weight-bold">
-                    Name
-                  </VListItemTitle>
-                  <VListItemSubtitle>{{ selectedStudentAttendance.student.name }}</VListItemSubtitle>
-                </VListItem>
-                <VListItem>
-                  <VListItemTitle class="font-weight-bold">
-                    Admission Number
-                  </VListItemTitle>
-                  <VListItemSubtitle>{{ selectedStudentAttendance.student.student_admission_number }}</VListItemSubtitle>
-                </VListItem>
-                <VListItem>
-                  <VListItemTitle class="font-weight-bold">
-                    Class
-                  </VListItemTitle>
-                  <VListItemSubtitle>{{ selectedStudentAttendance.student.class }}</VListItemSubtitle>
-                </VListItem>
-              </VList>
+
+                <VList>
+                  <VListItem>
+                      
+                    <VListItemTitle class="font-weight-bold">
+                      Name
+                    </VListItemTitle>
+                    <VListItemSubtitle>{{ selectedStudentAttendance.student.name }}</VListItemSubtitle>
+                  </VListItem>
+                  <VListItem>
+                    <VListItemTitle class="font-weight-bold">
+                      Admission Number
+                    </VListItemTitle>
+                    <VListItemSubtitle>{{ selectedStudentAttendance.student.student_admission_number }}</VListItemSubtitle>
+                  </VListItem>
+                  <VListItem>
+                    <VListItemTitle class="font-weight-bold">
+                      Class
+                    </VListItemTitle>
+                    <VListItemSubtitle>{{ selectedStudentAttendance.student.class }}</VListItemSubtitle>
+                  </VListItem>
+                </VList>
+
             </VCol>
             <VCol
               cols="12"

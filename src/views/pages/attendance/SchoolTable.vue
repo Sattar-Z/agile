@@ -169,7 +169,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: `lga?lga_id=${id}term_id=${term}&session=${session}&cohurt=${cohort}`,
+      url: `lga?lga_id=${id}&term_id=${term}&session=${session}&cohurt=${cohort}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
