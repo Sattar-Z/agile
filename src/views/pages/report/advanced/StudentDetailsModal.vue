@@ -261,7 +261,6 @@ const getStatusColor = (status: string) => {
               </h3>
               <div class="d-flex flex-column gap-2">
                 <div><strong>Attendance Rate:</strong> {{ studentData.attendance }}%</div>
-                <div><strong>Lateness Rate:</strong> {{ studentData.lateness }}%</div>
               </div>
             </VCol>
 
@@ -333,6 +332,18 @@ const getStatusColor = (status: string) => {
                 <div><strong>School Code:</strong> {{ studentData.school.code }}</div>
                 <div><strong>Education Level:</strong> {{ studentData.school.education_level }}</div>
                 <div><strong>LGA:</strong> {{ studentData.lga.name }}</div>
+              </div>
+            </VCol>
+
+            <!-- Bank Information -->
+
+            <VCol cols="12">
+              <h3 class="text-h6 mb-4">
+                Bank Information
+              </h3>
+              <div class="d-flex flex-column gap-2">
+                <div><strong>Bank:</strong> {{ studentData.bank_name }}</div>
+                <div><strong>Account Number:</strong> {{ studentData.account_number }}</div>
               </div>
             </VCol>
 
