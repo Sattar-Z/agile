@@ -433,13 +433,12 @@ onMounted(() => {
                 label="Status"
                 :error-messages="formErrors.status"
                 required
-                :disabled="!canReviewRequest"
               />
             </VCol>
             <VCol cols="12">
               <VTextarea
                 v-model="approvalForm.notes"
-                :disabled="!canReviewRequest"
+
                 label="Notes"
                 :error-messages="formErrors.notes"
                 :hint="approvalForm.status === 'rejected' ? 'Notes are required for rejection' : ''"
@@ -463,7 +462,6 @@ onMounted(() => {
         <VBtn
           color="primary"
           :loading="processingId === selectedRequest?.id"
-          :disabled="!canReviewRequest"
           @click="approveRequest"
         >
           Submit

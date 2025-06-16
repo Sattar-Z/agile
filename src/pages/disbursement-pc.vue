@@ -435,7 +435,6 @@ onMounted(() => {
                 :items="statusOptions"
                 label="Status"
                 :error-messages="formErrors.status"
-                :disabled="!canReviewRequest"
                 required
               />
             </VCol>
@@ -444,7 +443,6 @@ onMounted(() => {
                 v-model="approvalForm.notes"
                 label="Notes"
                 :error-messages="formErrors.notes"
-                :disabled="!canReviewRequest"
                 :hint="approvalForm.status === 'rejected' ? 'Notes are required for rejection' : ''"
                 :persistent-hint="approvalForm.status === 'rejected'"
                 rows="3"
@@ -466,7 +464,6 @@ onMounted(() => {
         <VBtn
           color="primary"
           :loading="processingId === selectedRequest?.id"
-          :disabled="!canReviewRequest"
           @click="approveRequest"
         >
           Submit
