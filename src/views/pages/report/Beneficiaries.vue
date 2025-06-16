@@ -123,6 +123,8 @@ interface Students {
   care_giver: CareGiver
   created_at: string | null
   updated_at: string | null
+  bank_name: string | null
+  account_number: string | null
   error_message: string | null
   school: Schools
   lga: Lgas
@@ -526,7 +528,6 @@ const formatCaregiverDetails = (careGiver: CareGiver) => ({
   'Caregiver Average Monthly Income': careGiver.income || '',
   'Bvn': careGiver.bvn.bvn || '',
   'Nin': careGiver.nin.nin || '',
-  'Account Number': careGiver.accounts[0].account_number || '',
 })
 
 const formatStudentForExport = (student: Students): ExportFormat => {
@@ -544,6 +545,8 @@ const formatStudentForExport = (student: Students): ExportFormat => {
     'Student Admission Number': student.student_admission_number || '',
     'Date of Birth': student.date_of_birth || '',
     'Grade/Class': student.class || '',
+    'Bank': student.bank_name || '',
+    'Account Number': student.account_number || '',
     'Disabled': disability.isDisabled,
     'Type of Disability': disability.type,
     'Distance from School (in KMs)': student.school_distance || '',
