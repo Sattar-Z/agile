@@ -10,9 +10,9 @@ import { callApi } from '@/helpers/request'
 // import { toNigerianCurrency } from '@/helpers/numbers'
 
 const props = defineProps<{
-  termId: string
+  termId: number | null
   session: string
-  cohurt: string
+  cohurt: string | null
 }>()
 
 const token = ref('')

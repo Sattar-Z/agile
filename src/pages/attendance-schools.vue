@@ -19,6 +19,7 @@ interface SessionData {
 }
 
 const termLoading = ref(false)
+const dataInitialized = ref(false)
 
 const form = ref({
   session: '',
@@ -45,8 +46,16 @@ const alertInfo = reactive({
   type: 'error' as 'error' | 'success' | 'warning' | 'info',
 })
 
+const isFormReady = computed(() => {
+  return dataInitialized.value
+         && form.value.session
+         && form.value.term !== null
+         && form.value.cohurt !== null
+})
+
 const fetchTermData = async () => {
   termLoading.value = true
+  dataInitialized.value = false
   try {
     const response = await callApi({
       url: 'attendance/terms',
@@ -78,6 +87,7 @@ const fetchTermData = async () => {
       }
       if (cohurts.value.length > 0)
         form.value.cohurt = cohurts.value[0]
+      dataInitialized.value = true
     }
   }
   catch (error) {
@@ -131,60 +141,114 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <VRow
-    hidden
-    justify="end"
-  >
-    <VCol
+  <div v-if="!dataInitialized">
+    <VRow justify="end">
+      <VCol cols="auto">
+        <span class="text-caption">Cohort</span>
+        <VSkeleton
+          type="text"
+          height="40"
+          width="120"
+        />
+      </VCol>
+      <VCol cols="auto">
+        <span class="text-caption">Session</span>
+        <VSkeleton
+          type="text"
+          height="40"
+          width="150"
+        />
+      </VCol>
+      <VCol cols="auto">
+        <span class="text-caption">Term</span>
+        <VSkeleton
+          type="text"
+          height="40"
+          width="120"
+        />
+      </VCol>
+    </VRow>
+    <VRow>
+      <VCol cols="12">
+        <VSkeleton type="table" />
+      </VCol>
+    </VRow>
+  </div>
+  <div v-if="!dataInitialized">
+    <VRow
       hidden
-      cols="auto"
+      justify="end"
     >
-      <span class="text-caption">Cohort</span>
-      <VSelect
-        v-model="form.cohurt"
-        :items="cohurts"
-        density="compact"
-        variant="solo-filled"
-        :loading="termLoading"
-      />
-    </VCol>
-    <VCol
-      hidden
-      cols="auto"
-    >
-      <span class="text-caption">Session</span>
-      <VSelect
-        v-model="form.session"
-        :items="sessions"
-        density="compact"
-        variant="solo-filled"
-        :loading="termLoading"
-      />
-    </VCol>
-    <VCol
-      hidden
-      cols="auto"
-    >
-      <span class="text-caption">Term</span>
-      <VSelect
-        v-model="form.term"
-        :items="availableTerms"
-        item-title="term"
-        item-value="id"
-        density="compact"
-        variant="solo-filled"
-        :loading="termLoading"
-        :disabled="!form.session"
-      />
-    </VCol>
-  </VRow>
-  <VRow>
-    <VCol cols="12">
-      <SchoolTable
-        :term-id="form.term"
-        :sessions="form.session"
-        :cohurt="form.cohurt"
-      />
-    </VCol>
-  </VRow>
+      <VCol
+        hidden
+        cols="auto"
+      >
+        <span class="text-caption">Cohort</span>
+        <VSelect
+          v-model="form.cohurt"
+          :items="[
+            { title: '1', value: '1' },
+            { title: '2', value: '2' },
+            { title: '3', value: '3' },
+            { title: '4', value: '4' },
+            { title: '5', value: '5' },
+          ]"
+          density="compact"
+          variant="solo-filled"
+          :loading="termLoading"
+        />
+      </VCol>
+      <VCol
+        hidden
+        cols="auto"
+      >
+        <span class="text-caption">Session</span>
+        <VSelect
+          v-model="form.session"
+          :items="sessions"
+          density="compact"
+          variant="solo-filled"
+          :loading="termLoading"
+        />
+      </VCol>
+      <VCol
+        hidden
+        cols="auto"
+      >
+        <span class="text-caption">Term</span>
+        <VSelect
+          v-model="form.term"
+          :items="availableTerms"
+          item-title="term"
+          item-value="id"
+          density="compact"
+          variant="solo-filled"
+          :loading="termLoading"
+          :disabled="!form.session"
+        />
+      </VCol>
+    </VRow>
+    <VRow>
+      <VCol cols="12">
+        <SchoolTable
+          v-if="isFormReady"
+          :term-id="form.term"
+          :sessions="form.session"
+          :cohurt="form.cohurt"
+        />
+        <div
+          v-else
+          class="d-flex justify-center align-center"
+          style="min-height: 100px;"
+        >
+          <VProgressCircular
+            indeterminate
+            color="primary"
+            size="32"
+          />
+          <span class="mx-3">Loading data...</span>
+        </div>
+      </VCol>
+    </VRow>
+  </div>
 </template>

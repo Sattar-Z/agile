@@ -225,7 +225,6 @@ const submitPaymentType = async () => {
             <VCheckbox
               v-model="bvnCriteria"
               label="BVN Criteria"
-              disabled
             />
           </VCol>
         </VRow>

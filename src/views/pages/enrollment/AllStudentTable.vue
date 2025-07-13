@@ -11,6 +11,10 @@ import { isAdmin } from '@/middlewares/auth'
 import { callApi } from '@/helpers/request'
 import { useUserStore } from '@/stores/user'
 
+const props = defineProps<{
+  cohurt: string | null
+}>()
+
 const token = ref('')
 const router = useRouter()
 const showStudentDetails = ref(false)
@@ -20,6 +24,7 @@ const lgaLoading = ref(false)
 const user = useUserStore()
 const Admin = ref(isAdmin())
 const studentLoading = ref(false)
+const studentNo = ref(0)
 
 const showErrorMessage = (message: string) => {
   selectedErrorMessage.value = message
@@ -410,7 +415,7 @@ const fetchData = async () => {
   isLoaded.value = false
   try {
     const response = await callApi({
-      url: 'students',
+      url: `students/by-cohort?cohurt=${props.cohurt}`,
       method: 'GET',
       authorized: true,
       showAlert: false,
@@ -419,7 +424,8 @@ const fetchData = async () => {
     const responseData = await response.json()
 
     if (response.ok) {
-      students.value = Object.values(responseData.data)
+      studentNo.value = responseData.data.count
+      students.value = responseData.data.students
       totalItems.value = students.value.length
     }
     else if (response.status === 401) {
@@ -860,8 +866,15 @@ watch(search, () => {
   totalItems.value = filterItems(students.value, search.value).length
 })
 
+watch(
+  () => [props.cohurt],
+  () => {
+    fetchData()
+  },
+  { immediate: true },
+)
+
 onMounted(() => {
-  fetchData()
   fetchLgaData()
   fetchStudentData()
 })
@@ -887,6 +900,27 @@ onMounted(() => {
 
   <!-- Main Layout -->
   <VRow>
+    <VCol>
+      <VCard
+        variant="tonal"
+        color="primary"
+      >
+        <VCardItem>
+          <div class="d-flex">
+            <VIcon
+              class="my-auto mx-1"
+              icon="bx-group"
+            />
+            <VCardTitle class="my-auto">
+              Student count
+            </VCardTitle>
+          </div>
+        </VCardItem>
+        <VCardText class="my-auto text-h5">
+          {{ studentNo }}
+        </VCardText>
+      </VCard>
+    </VCol>
     <!-- Data Table Section -->
     <VCol
       v-if="isLoaded"
@@ -1004,44 +1038,26 @@ onMounted(() => {
             </template>
             <template #item.care_giver.is_bvn_verfied="{ item }">
               <VChip
-                v-if="item.raw.care_giver.is_bvn_verfied === 1"
+                v-if="item.raw.care_giver?.is_bvn_verfied === 1"
                 density="compact"
                 text="Account Verified"
                 color="success"
               />
               <VChip
-                v-else-if="item.raw.bvn?.is_pending === 1"
-                density="compact"
-                text="Processing"
-                color="info"
-              />
-              <template v-else-if="item.raw.bvn?.error_message">
-                <VBtn
-                  density="compact"
-                  variant="tonal"
-                  color="error"
-                  @click="showErrorMessage(item.raw.bvn.error_message)"
-                >
-                  Verification Failed
-                </VBtn>
-              </template>
-              <VBtn
-                v-else-if="Admin && item.raw.care_giver.is_bvn_verfied === 0"
-                :loading="verifyingBvn === item.raw.bvn_id"
-                density="compact"
-                variant="outlined"
-                text="Verify Account"
-                @click="verifyBvn(item.raw.care_giver.bvn_id)"
-              />
-              <VChip
-                v-else
+                v-else-if="item.raw.care_giver?.is_bvn_verfied === 0"
                 density="compact"
                 text="Account Unverified"
                 color="warning"
               />
+              <VChip
+                v-else
+                density="compact"
+                text="No Care Giver Data"
+                color="error"
+              />
             </template>
           </VDataTableServer>
-        </vrow>
+        </VRow>
       </VCard>
     </VCol>
 

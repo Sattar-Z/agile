@@ -76,7 +76,7 @@ const fetchData = async () => {
     const responseData = await response.json()
 
     if (response.ok) {
-      lgas.value = Object.values(responseData.data.lgas)
+      lgas.value = responseData.data.lgas
       attendance.value = responseData.data.overall_attendance
       totalItems.value = lgas.value.length
     }
