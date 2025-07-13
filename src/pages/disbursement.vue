@@ -438,7 +438,7 @@ onMounted(() => {
               />
             </VCol>
             <VCol cols="auto">
-              <span class="text-caption">Cohurt</span>
+              <span class="text-caption">Cohort</span>
               <VSelect
                 v-model="form.cohurt"
                 :items="cohurts"
