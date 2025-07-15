@@ -395,7 +395,6 @@ onMounted(() => {
 
             <VSelect
               v-model="approvalForm.status"
-              :disabled="!canReviewRequest"
               :items="[
                 { title: 'Approve', value: 'approved' },
                 { title: 'Reject', value: 'rejected' },
@@ -428,7 +427,6 @@ onMounted(() => {
         <VBtn
           color="primary"
           :loading="processingId === selectedRequest?.id"
-          :disabled="!canReviewRequest"
           @click="submitApproval"
         >
           Submit
