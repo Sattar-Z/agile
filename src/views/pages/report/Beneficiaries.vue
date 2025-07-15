@@ -526,8 +526,8 @@ const formatCaregiverDetails = (careGiver: CareGiver) => ({
   'Caregiver Highest Qualification': careGiver.qualification || '',
   'Caregiver Employment Status': formatCaregiverEmployment(!!careGiver.is_employed),
   'Caregiver Average Monthly Income': careGiver.income || '',
-  'Bvn': careGiver.bvn.bvn || '',
-  'Nin': careGiver.nin.nin || '',
+  'Bvn': careGiver?.bvn?.bvn || '',
+  'Nin': careGiver?.nin?.nin || '',
 })
 
 const formatStudentForExport = (student: Students): ExportFormat => {
@@ -553,7 +553,7 @@ const formatStudentForExport = (student: Students): ExportFormat => {
     'Textbooks': getYesNoValue(student.text_book),
     'Uniform': getYesNoValue(student.uniform),
     'Writing Materials': getYesNoValue(student.materials),
-    'School Bag': getYesNoValue(student.school_bag),
+    'School Bag': getYesNoValue(student?.school_bag) || '',
     ...formatCaregiverDetails(careGiver),
   }
 }
