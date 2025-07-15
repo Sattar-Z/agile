@@ -316,203 +316,168 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <div v-if="!dataInitialized">
-    <VRow justify="end">
-      <VCol cols="auto">
-        <span class="text-caption">Cohort</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="120"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Session</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="150"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Term</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="120"
-        />
-      </VCol>
-    </VRow>
-    <VRow>
-      <VCol cols="12">
-        <VSkeleton type="table" />
-      </VCol>
-    </VRow>
-  </div>
-  <div v-else>
-    <CsvPreviewModal
-      v-model="showPreviewModal"
-      :csv-data="csvData"
-      :loading="loading"
-      @confirm="submitStudent"
-    />
-    <VRow justify="end">
-      <VCol cols="auto">
-        <span class="text-caption">Cohort</span>
-        <VSelect
-          v-model="form.cohurt"
-          :items="[
-            { title: '1', value: '1' },
-            { title: '2', value: '2' },
-            { title: '3', value: '3' },
-            { title: '4', value: '4' },
-            { title: '5', value: '5' },
-          ]"
-          density="compact"
-          variant="solo-filled"
-          :loading="termLoading"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Session</span>
-        <VSelect
-          v-model="form.session"
-          :items="sessions"
-          density="compact"
-          variant="solo-filled"
-          :loading="termLoading"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Term</span>
-        <VSelect
-          v-model="form.term"
-          :items="availableTerms"
-          item-title="term"
-          item-value="id"
-          density="compact"
-          variant="solo-filled"
-          :loading="termLoading"
-          :disabled="!form.session"
-        />
-      </VCol>
-    </VRow>
+  <CsvPreviewModal
+    v-model="showPreviewModal"
+    :csv-data="csvData"
+    :loading="loading"
+    @confirm="submitStudent"
+  />
+  <VRow justify="end">
+    <VCol cols="auto">
+      <span class="text-caption">Cohort</span>
+      <VSelect
+        v-model="form.cohurt"
+        :items="[
+          { title: '1', value: '1' },
+          { title: '2', value: '2' },
+          { title: '3', value: '3' },
+          { title: '4', value: '4' },
+          { title: '5', value: '5' },
+        ]"
+        density="compact"
+        variant="solo-filled"
+        :loading="termLoading"
+      />
+    </VCol>
+    <VCol cols="auto">
+      <span class="text-caption">Session</span>
+      <VSelect
+        v-model="form.session"
+        :items="sessions"
+        density="compact"
+        variant="solo-filled"
+        :loading="termLoading"
+      />
+    </VCol>
+    <VCol cols="auto">
+      <span class="text-caption">Term</span>
+      <VSelect
+        v-model="form.term"
+        :items="availableTerms"
+        item-title="term"
+        item-value="id"
+        density="compact"
+        variant="solo-filled"
+        :loading="termLoading"
+        :disabled="!form.session"
+      />
+    </VCol>
+  </VRow>
 
-    <VRow>
-      <VCol
-        v-if="!Admin"
-        cols="12"
-        md="8"
-      >
-        <VCard variant="outlined">
-          <VCardText>
-            <VBtn
-              icon="bx-upload"
-              class="mx-2"
-              size="small"
-              variant="tonal"
-            />Beneficiaries Summary
-          </VCardText>
+  <VRow>
+    <VCol
+      v-if="!Admin"
+      cols="12"
+      md="8"
+    >
+      <VCard variant="outlined">
+        <VCardText>
+          <VBtn
+            icon="bx-upload"
+            class="mx-2"
+            size="small"
+            variant="tonal"
+          />Beneficiaries Summary
+        </VCardText>
 
-          <VDivider />
-          <VCardItem>
-            <Table />
-          </VCardItem>
-        </VCard>
-      </VCol>
-      <VCol
-        v-if="!Admin"
-        cols="12"
-        md="4"
+        <VDivider />
+        <VCardItem>
+          <Table />
+        </VCardItem>
+      </VCard>
+    </VCol>
+    <VCol
+      v-if="!Admin"
+      cols="12"
+      md="4"
+    >
+      <VCard
+        class="border-4 border-dashed cursor-pointer"
+        :class="{
+          'border-4 border-dashed border-primary': isCardSelected,
+          'border-4 border-dashed border-success': uploadedFile,
+        }"
+        variant="outlined"
+        color="primary"
+        @click="handleCardClick"
+        @dragover.prevent="handleDragOver"
+        @dragleave.prevent="handleDragLeave"
+        @drop.prevent="handleFileDrop"
       >
-        <VCard
-          class="border-4 border-dashed cursor-pointer"
-          :class="{
-            'border-4 border-dashed border-primary': isCardSelected,
-            'border-4 border-dashed border-success': uploadedFile,
-          }"
-          variant="outlined"
+        <VCardText class="d-flex flex-column align-center justify-center pa-8 my-3">
+          <img
+            src="@images/upload.svg"
+            alt="Upload icon"
+            class="mb-4"
+            width="78"
+            height="78"
+          >
+          <h3 class="text-h5 font-weight-medium mb-2">
+            {{
+              uploadedFile
+                ? `File selected: ${uploadedFile.name}`
+                : (isCardSelected ? 'Drop your files here' : 'Click to upload files')
+            }}
+          </h3>
+          <p class="text-body-1 text-grey-darken-1">
+            Maximum size: 50MB
+          </p>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".csv"
+            class="d-none"
+            @change="handleFileUpload"
+          >
+        </VCardText>
+      </VCard>
+    </VCol>
+    <VCol
+      v-if="Admin"
+      cols="12"
+    >
+      <VCard
+        variant="outlined"
+        closable
+      >
+        <VCardText>
+          <VBtn
+            icon="bx-upload"
+            class="mx-2"
+            size="small"
+            variant="tonal"
+          />Beneficiaries Summary
+        </VCardText>
+
+        <VDivider />
+        <VCardItem>
+          <Table />
+        </VCardItem>
+      </VCard>
+    </VCol>
+    <VCol cols="12">
+      <AllStudentTable :cohurt="form?.cohurt" />
+    </VCol>
+    <VCol cols="12">
+      <LgasTable
+        v-if="isFormReady"
+        :term-id="form?.term"
+        :session="form?.session"
+        :cohurt="form?.cohurt"
+        :loading="termLoading"
+      />
+      <div
+        v-else
+        class="d-flex justify-center align-center"
+        style="min-height: 100px;"
+      >
+        <VProgressCircular
+          indeterminate
           color="primary"
-          @click="handleCardClick"
-          @dragover.prevent="handleDragOver"
-          @dragleave.prevent="handleDragLeave"
-          @drop.prevent="handleFileDrop"
-        >
-          <VCardText class="d-flex flex-column align-center justify-center pa-8 my-3">
-            <img
-              src="@images/upload.svg"
-              alt="Upload icon"
-              class="mb-4"
-              width="78"
-              height="78"
-            >
-            <h3 class="text-h5 font-weight-medium mb-2">
-              {{
-                uploadedFile
-                  ? `File selected: ${uploadedFile.name}`
-                  : (isCardSelected ? 'Drop your files here' : 'Click to upload files')
-              }}
-            </h3>
-            <p class="text-body-1 text-grey-darken-1">
-              Maximum size: 50MB
-            </p>
-            <input
-              ref="fileInput"
-              type="file"
-              accept=".csv"
-              class="d-none"
-              @change="handleFileUpload"
-            >
-          </VCardText>
-        </VCard>
-      </VCol>
-      <VCol
-        v-if="Admin"
-        cols="12"
-      >
-        <VCard
-          variant="outlined"
-          closable
-        >
-          <VCardText>
-            <VBtn
-              icon="bx-upload"
-              class="mx-2"
-              size="small"
-              variant="tonal"
-            />Beneficiaries Summary
-          </VCardText>
-
-          <VDivider />
-          <VCardItem>
-            <Table />
-          </VCardItem>
-        </VCard>
-      </VCol>
-      <VCol cols="12">
-        <AllStudentTable :cohurt="form?.cohurt" />
-      </VCol>
-      <VCol cols="12">
-        <LgasTable
-          v-if="isFormReady"
-          :term-id="form?.term"
-          :session="form?.session"
-          :cohurt="form?.cohurt"
-          :loading="termLoading"
+          size="32"
         />
-        <div
-          v-else
-          class="d-flex justify-center align-center"
-          style="min-height: 100px;"
-        >
-          <VProgressCircular
-            indeterminate
-            color="primary"
-            size="32"
-          />
-          <span class="mx-3">Loading data...</span>
-        </div>
-      </VCol>
-    </VRow>
-  </div>
+        <span class="mx-3">Loading data...</span>
+      </div>
+    </VCol>
+  </VRow>
 </template>

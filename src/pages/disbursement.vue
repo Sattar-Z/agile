@@ -281,211 +281,176 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-  <div v-if="!dataInitialized">
-    <VRow justify="end">
-      <VCol cols="auto">
-        <span class="text-caption">Cohort</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="120"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Session</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="150"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Term</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="120"
-        />
-      </VCol>
-    </VRow>
-    <VRow>
-      <VCol cols="12">
-        <VSkeleton type="table" />
-      </VCol>
-    </VRow>
-  </div>
-  <div v-else>
-    <div>
-      <VTabs
-        v-model="activeTab"
-        show-arrows
-        align-tabs="center"
+  <div>
+    <VTabs
+      v-model="activeTab"
+      show-arrows
+      align-tabs="center"
+    >
+      <VTab
+        v-for="item in tabs"
+        :key="item.icon"
+        :value="item.tab"
       >
-        <VTab
-          v-for="item in tabs"
-          :key="item.icon"
-          :value="item.tab"
-        >
-          <VIcon
-            size="20"
-            start
-            :icon="item.icon"
-          />
-          {{ item.title }}
-        </VTab>
-      </VTabs>
-      <VDivider />
-      <VWindow
-        v-model="activeTab"
-        class="mt-5"
-      >
-        <!-- School -->
-        <VWindowItem value="school">
-          <VRow>
-            <VCol cols="auto">
-              <span class="text-caption">Cohort</span>
-              <VSelect
-                v-model="form.cohurt"
-                :items="cohurts"
-                density="compact"
-                variant="solo-filled"
-                :loading="termLoading"
+        <VIcon
+          size="20"
+          start
+          :icon="item.icon"
+        />
+        {{ item.title }}
+      </VTab>
+    </VTabs>
+    <VDivider />
+    <VWindow
+      v-model="activeTab"
+      class="mt-5"
+    >
+      <!-- School -->
+      <VWindowItem value="school">
+        <VRow>
+          <VCol cols="auto">
+            <span class="text-caption">Cohort</span>
+            <VSelect
+              v-model="form.cohurt"
+              :items="cohurts"
+              density="compact"
+              variant="solo-filled"
+              :loading="termLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">Payment</span>
+            <VAutocomplete
+              v-model="form.payment"
+              :items="payment"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="paymentLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">Session</span>
+            <VSelect
+              v-model="form.session"
+              :items="sessions"
+              density="compact"
+              variant="solo-filled"
+              :loading="termLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">LGA</span>
+            <VAutocomplete
+              v-model="form.lga"
+              :items="lga"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="lgaLoading"
+            />
+          </VCol>
+          <VCol cols="12">
+            <SchoolTable
+              v-if="isFormReady"
+              :payment="form.payment"
+              :session="sessions"
+              :lga-id="form.lga"
+              :cohurt="form.cohurt"
+              @view-school="handleViewSchool"
+            />
+            <div
+              v-else
+              class="d-flex justify-center align-center"
+              style="min-height: 100px;"
+            >
+              <VProgressCircular
+                indeterminate
+                color="primary"
+                size="32"
               />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">Payment</span>
-              <VAutocomplete
-                v-model="form.payment"
-                :items="payment"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="paymentLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">Session</span>
-              <VSelect
-                v-model="form.session"
-                :items="sessions"
-                density="compact"
-                variant="solo-filled"
-                :loading="termLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">LGA</span>
-              <VAutocomplete
-                v-model="form.lga"
-                :items="lga"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="lgaLoading"
-              />
-            </VCol>
-            <VCol cols="12">
-              <SchoolTable
-                v-if="isFormReady"
-                :payment="form.payment"
-                :session="sessions"
-                :lga-id="form.lga"
-                :cohurt="form.cohurt"
-                @view-school="handleViewSchool"
-              />
-              <div
-                v-else
-                class="d-flex justify-center align-center"
-                style="min-height: 100px;"
-              >
-                <VProgressCircular
-                  indeterminate
-                  color="primary"
-                  size="32"
-                />
-                <span class="mx-3">Loading data...</span>
-              </div>
-            </VCol>
-          </VRow>
-        </VWindowItem>
-        <!-- Student -->
-        <VWindowItem value="student">
-          <VRow justify="end">
-            <VCol cols="auto">
-              <span class="text-caption">Payment</span>
-              <VAutocomplete
-                v-model="form.payment"
-                :items="payment"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="paymentLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">School</span>
-              <VAutocomplete
-                v-model="form.school"
-                :items="schools"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="studentLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">Cohort</span>
-              <VSelect
-                v-model="form.cohurt"
-                :items="cohurts"
-                density="compact"
-                variant="solo-filled"
-                :loading="termLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">Term</span>
-              <VSelect
-                v-model="form.term"
-                :items="availableTerms"
-                item-title="term"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :disabled="!form.session"
-              />
-            </VCol>
-          </VRow>
+              <span class="mx-3">Loading data...</span>
+            </div>
+          </VCol>
+        </VRow>
+      </VWindowItem>
+      <!-- Student -->
+      <VWindowItem value="student">
+        <VRow justify="end">
+          <VCol cols="auto">
+            <span class="text-caption">Payment</span>
+            <VAutocomplete
+              v-model="form.payment"
+              :items="payment"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="paymentLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">School</span>
+            <VAutocomplete
+              v-model="form.school"
+              :items="schools"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="studentLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">Cohort</span>
+            <VSelect
+              v-model="form.cohurt"
+              :items="cohurts"
+              density="compact"
+              variant="solo-filled"
+              :loading="termLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">Term</span>
+            <VSelect
+              v-model="form.term"
+              :items="availableTerms"
+              item-title="term"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :disabled="!form.session"
+            />
+          </VCol>
+        </VRow>
 
-          <VRow>
-            <VCol cols="12">
-              <Students
-                v-if="isFormReady"
-                :term-id="form.term"
-                :school="form.school"
-                :payment="form.payment"
-                :cohurt="form.cohurt"
+        <VRow>
+          <VCol cols="12">
+            <Students
+              v-if="isFormReady"
+              :term-id="form.term"
+              :school="form.school"
+              :payment="form.payment"
+              :cohurt="form.cohurt"
+            />
+            <div
+              v-else
+              class="d-flex justify-center align-center"
+              style="min-height: 100px;"
+            >
+              <VProgressCircular
+                indeterminate
+                color="primary"
+                size="32"
               />
-              <div
-                v-else
-                class="d-flex justify-center align-center"
-                style="min-height: 100px;"
-              >
-                <VProgressCircular
-                  indeterminate
-                  color="primary"
-                  size="32"
-                />
-                <span class="mx-3">Loading data...</span>
-              </div>
-            </VCol>
-          </VRow>
-        </VWindowItem>
-      </VWindow>
-    </div>
+              <span class="mx-3">Loading data...</span>
+            </div>
+          </VCol>
+        </VRow>
+      </VWindowItem>
+    </VWindow>
   </div>
 </template>

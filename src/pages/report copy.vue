@@ -278,264 +278,229 @@ const handleLgaGoBack = (): void => {
 </script>
 
 <template>
-  <div v-if="!dataInitialized">
-    <VRow justify="end">
-      <VCol cols="auto">
-        <span class="text-caption">Cohort</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="120"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Session</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="150"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Term</span>
-        <VSkeleton
-          type="text"
-          height="40"
-          width="120"
-        />
-      </VCol>
-    </VRow>
-    <VRow>
-      <VCol cols="12">
-        <VSkeleton type="table" />
-      </VCol>
-    </VRow>
-  </div>
-  <div v-else>
-    <VRow justify="end">
-      <VCol cols="auto">
-        <span class="text-caption">Cohort</span>
-        <VSelect
-          v-model="form.cohurt"
-          :items="[
-            { title: '1', value: '1' },
-            { title: '2', value: '2' },
-            { title: '3', value: '3' },
-            { title: '4', value: '4' },
-            { title: '5', value: '5' },
-          ]"
-          density="compact"
-          variant="solo-filled"
-          :loading="termLoading"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Session</span>
-        <VSelect
-          v-model="form.session"
-          :items="sessions"
-          density="compact"
-          variant="solo-filled"
-          :loading="termLoading"
-        />
-      </VCol>
-      <VCol cols="auto">
-        <span class="text-caption">Term</span>
-        <VSelect
-          v-model="form.term"
-          :items="terms"
-          item-title="term"
-          item-value="id"
-          density="compact"
-          variant="solo-filled"
-          :loading="termLoading"
-        />
-      </VCol>
-    </VRow>
-    <div>
-      <VTabs
-        v-model="activeTab"
-        show-arrows
-        align-tabs="center"
+  <VRow justify="end">
+    <VCol cols="auto">
+      <span class="text-caption">Cohort</span>
+      <VSelect
+        v-model="form.cohurt"
+        :items="[
+          { title: '1', value: '1' },
+          { title: '2', value: '2' },
+          { title: '3', value: '3' },
+          { title: '4', value: '4' },
+          { title: '5', value: '5' },
+        ]"
+        density="compact"
+        variant="solo-filled"
+        :loading="termLoading"
+      />
+    </VCol>
+    <VCol cols="auto">
+      <span class="text-caption">Session</span>
+      <VSelect
+        v-model="form.session"
+        :items="sessions"
+        density="compact"
+        variant="solo-filled"
+        :loading="termLoading"
+      />
+    </VCol>
+    <VCol cols="auto">
+      <span class="text-caption">Term</span>
+      <VSelect
+        v-model="form.term"
+        :items="terms"
+        item-title="term"
+        item-value="id"
+        density="compact"
+        variant="solo-filled"
+        :loading="termLoading"
+      />
+    </VCol>
+  </VRow>
+  <div>
+    <VTabs
+      v-model="activeTab"
+      show-arrows
+      align-tabs="center"
+    >
+      <VTab
+        v-for="item in tabs"
+        :key="item.icon"
+        :value="item.tab"
       >
-        <VTab
-          v-for="item in tabs"
-          :key="item.icon"
-          :value="item.tab"
-        >
-          <VIcon
-            size="20"
-            start
-            :icon="item.icon"
-          />
-          {{ item.title }}
-        </VTab>
-      </VTabs>
-      <VDivider />
-      <VWindow
-        v-model="activeTab"
-        class="mt-5 disable-tab-transition"
-      >
-        <VWindowItem value="Beneficiary">
-          <Beneficiaries />
-        </VWindowItem>
-        <VWindowItem value="CareGivers">
-          <CareGiversTable />
-        </VWindowItem>
-        <VWindowItem value="Attendance">
-          <VRow justify="center">
-            <VCol cols="auto">
-              <span class="text-caption">School</span>
-              <VAutocomplete
-                v-model="form.school"
-                :items="schools"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="studentLoading"
-              />
-            </VCol>
-          </VRow>
-          <VRow>
-            <VCol cols="12">
-              <StudentAttendanceTable
-                v-if="isFormReady"
-                :term-id="form.term"
-                :session="sessions"
-                :school="form.school"
-                :school-name="form.schoolName"
-                :cohurt="form.cohurt"
-              />
-              <div
-                v-else
-                class="d-flex justify-center align-center"
-                style="min-height: 100px;"
-              >
-                <VProgressCircular
-                  indeterminate
-                  color="primary"
-                  size="32"
-                />
-                <span class="mx-3">Loading data...</span>
-              </div>
-            </VCol>
-          </VRow>
-        </VWindowItem>
-        <!-- Payment -->
-        <VWindowItem value="Payments">
-          <VRow>
-            <VCol cols="auto">
-              <span class="text-caption">Cohort</span>
-              <VSelect
-                v-model="form.cohurt"
-                :items="cohurts"
-                density="compact"
-                variant="solo-filled"
-                :loading="termLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">Payment</span>
-              <VAutocomplete
-                v-model="form.payment"
-                :items="payment"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="paymentLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">Session</span>
-              <VSelect
-                v-model="form.session"
-                :items="sessions"
-                density="compact"
-                variant="solo-filled"
-                :loading="termLoading"
-              />
-            </VCol>
-            <VCol cols="auto">
-              <span class="text-caption">LGA</span>
-              <VAutocomplete
-                v-model="form.lga"
-                :items="lga"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                variant="solo-filled"
-                :loading="lgaLoading"
-              />
-            </VCol>
-            <VCol cols="12">
-              <SchoolTable
-                v-if="isFormReady"
-                :payment="form.payment"
-                :session="sessions"
-                :lga-id="form.lga"
-                :cohurt="form.cohurt"
-              />
-              <div
-                v-else
-                class="d-flex justify-center align-center"
-                style="min-height: 100px;"
-              >
-                <VProgressCircular
-                  indeterminate
-                  color="primary"
-                  size="32"
-                />
-                <span class="mx-3">Loading data...</span>
-              </div>
-            </VCol>
-          </VRow>
-        </VWindowItem>
-        <VWindowItem value="Advanced">
-          <Lga
-            v-if="!showSchools && !showStudents && isFormReady"
-            :term-id="form.term"
-            :session="form.session"
-            :cohurt="form.cohurt"
-            :loading="termLoading"
-            @view-lga="handleViewLga"
-          />
-          <LgaSchoolTable
-            v-if="showSchools && !showStudents && isFormReady"
-            :term-id="form.term"
-            :session="form.session"
-            :cohurt="form.cohurt"
-            :loading="termLoading"
-            :lga-id="selectedLgaId"
-            :lga-name="selectedLgaName"
-            @view-school="handleViewSchool"
-            @go-back-lga="handleLgaGoBack"
-          />
-          <StudentTable
-            v-if="!showSchools && showStudents && isFormReady"
-            :term-id="form.term"
-            :session="form.session"
-            :cohurt="form.cohurt"
-            :loading="termLoading"
-            :school-id="selectedSchoolId"
-            :school-name="selectedSchoolName"
-            @go-back-school="handleSchoolGoBack"
-          />
-          <div
-            v-else
-            class="d-flex justify-center align-center"
-            style="min-height: 100px;"
-          >
-            <VProgressCircular
-              indeterminate
-              color="primary"
-              size="32"
+        <VIcon
+          size="20"
+          start
+          :icon="item.icon"
+        />
+        {{ item.title }}
+      </VTab>
+    </VTabs>
+    <VDivider />
+    <VWindow
+      v-model="activeTab"
+      class="mt-5 disable-tab-transition"
+    >
+      <VWindowItem value="Beneficiary">
+        <Beneficiaries />
+      </VWindowItem>
+      <VWindowItem value="CareGivers">
+        <CareGiversTable />
+      </VWindowItem>
+      <VWindowItem value="Attendance">
+        <VRow justify="center">
+          <VCol cols="auto">
+            <span class="text-caption">School</span>
+            <VAutocomplete
+              v-model="form.school"
+              :items="schools"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="studentLoading"
             />
-            <span class="mx-3">Loading data...</span>
-          </div>
-        </VWindowItem>
-      </VWindow>
-    </div>
+          </VCol>
+        </VRow>
+        <VRow>
+          <VCol cols="12">
+            <StudentAttendanceTable
+              v-if="isFormReady"
+              :term-id="form.term"
+              :session="sessions"
+              :school="form.school"
+              :school-name="form.schoolName"
+              :cohurt="form.cohurt"
+            />
+            <div
+              v-else
+              class="d-flex justify-center align-center"
+              style="min-height: 100px;"
+            >
+              <VProgressCircular
+                indeterminate
+                color="primary"
+                size="32"
+              />
+              <span class="mx-3">Loading data...</span>
+            </div>
+          </VCol>
+        </VRow>
+      </VWindowItem>
+      <!-- Payment -->
+      <VWindowItem value="Payments">
+        <VRow>
+          <VCol cols="auto">
+            <span class="text-caption">Cohort</span>
+            <VSelect
+              v-model="form.cohurt"
+              :items="cohurts"
+              density="compact"
+              variant="solo-filled"
+              :loading="termLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">Payment</span>
+            <VAutocomplete
+              v-model="form.payment"
+              :items="payment"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="paymentLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">Session</span>
+            <VSelect
+              v-model="form.session"
+              :items="sessions"
+              density="compact"
+              variant="solo-filled"
+              :loading="termLoading"
+            />
+          </VCol>
+          <VCol cols="auto">
+            <span class="text-caption">LGA</span>
+            <VAutocomplete
+              v-model="form.lga"
+              :items="lga"
+              item-title="name"
+              item-value="id"
+              density="compact"
+              variant="solo-filled"
+              :loading="lgaLoading"
+            />
+          </VCol>
+          <VCol cols="12">
+            <SchoolTable
+              v-if="isFormReady"
+              :payment="form.payment"
+              :session="sessions"
+              :lga-id="form.lga"
+              :cohurt="form.cohurt"
+            />
+            <div
+              v-else
+              class="d-flex justify-center align-center"
+              style="min-height: 100px;"
+            >
+              <VProgressCircular
+                indeterminate
+                color="primary"
+                size="32"
+              />
+              <span class="mx-3">Loading data...</span>
+            </div>
+          </VCol>
+        </VRow>
+      </VWindowItem>
+      <VWindowItem value="Advanced">
+        <Lga
+          v-if="!showSchools && !showStudents && isFormReady"
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+          :loading="termLoading"
+          @view-lga="handleViewLga"
+        />
+        <LgaSchoolTable
+          v-if="showSchools && !showStudents && isFormReady"
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+          :loading="termLoading"
+          :lga-id="selectedLgaId"
+          :lga-name="selectedLgaName"
+          @view-school="handleViewSchool"
+          @go-back-lga="handleLgaGoBack"
+        />
+        <StudentTable
+          v-if="!showSchools && showStudents && isFormReady"
+          :term-id="form.term"
+          :session="form.session"
+          :cohurt="form.cohurt"
+          :loading="termLoading"
+          :school-id="selectedSchoolId"
+          :school-name="selectedSchoolName"
+          @go-back-school="handleSchoolGoBack"
+        />
+        <div
+          v-else
+          class="d-flex justify-center align-center"
+          style="min-height: 100px;"
+        >
+          <VProgressCircular
+            indeterminate
+            color="primary"
+            size="32"
+          />
+          <span class="mx-3">Loading data...</span>
+        </div>
+      </VWindowItem>
+    </VWindow>
   </div>
 </template>

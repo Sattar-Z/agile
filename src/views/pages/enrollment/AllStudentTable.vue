@@ -912,7 +912,7 @@ onMounted(() => {
               icon="bx-group"
             />
             <VCardTitle class="my-auto">
-              Student count
+              Beneficiary count
             </VCardTitle>
           </div>
         </VCardItem>
