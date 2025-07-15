@@ -140,38 +140,6 @@ onMounted(() => {
       />
     </template>
   </VSnackbar>
-
-  <VRow justify="end">
-    <VCol cols="auto">
-      <span class="text-caption">Cohort</span>
-      <VSkeleton
-        type="text"
-        height="40"
-        width="120"
-      />
-    </VCol>
-    <VCol cols="auto">
-      <span class="text-caption">Session</span>
-      <VSkeleton
-        type="text"
-        height="40"
-        width="150"
-      />
-    </VCol>
-    <VCol cols="auto">
-      <span class="text-caption">Term</span>
-      <VSkeleton
-        type="text"
-        height="40"
-        width="120"
-      />
-    </VCol>
-  </VRow>
-  <VRow>
-    <VCol cols="12">
-      <VSkeleton type="table" />
-    </VCol>
-  </VRow>
   <VRow
     hidden
     justify="end"
