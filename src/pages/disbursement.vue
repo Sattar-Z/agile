@@ -312,7 +312,13 @@ onMounted(() => {
             <span class="text-caption">Cohort</span>
             <VSelect
               v-model="form.cohurt"
-              :items="cohurts"
+              :items="[
+                { title: '1', value: '1' },
+                { title: '2', value: '2' },
+                { title: '3', value: '3' },
+                { title: '4', value: '4' },
+                { title: '5', value: '5' },
+              ]"
               density="compact"
               variant="solo-filled"
               :loading="termLoading"
@@ -356,7 +362,7 @@ onMounted(() => {
             <SchoolTable
               v-if="isFormReady"
               :payment="form.payment"
-              :session="sessions"
+              :session="form.session"
               :lga-id="form.lga"
               :cohurt="form.cohurt"
               @view-school="handleViewSchool"

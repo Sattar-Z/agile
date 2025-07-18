@@ -10,7 +10,7 @@ import { callApi } from '@/helpers/request'
 const props = defineProps<{
   lgaId: number | null
   payment: number | null
-  session: string[]
+  session: string | null
   cohurt: string | null
 }>()
 
